@@ -1,8 +1,9 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -68,7 +69,7 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		cursor, cursor, archived, archived, read, read, limit+1,
 	)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to query bookmarks: %s", err.Error()))
+		serverError(w, "failed to query bookmarks", err)
 		return
 	}
 
@@ -86,7 +87,7 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		response.Meta.Cursor = &nextCursor
 	}
 
-	writeJSON(w, 200, response)
+	writeJSON(w, http.StatusOK, response)
 }
 
 func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
@@ -103,11 +104,16 @@ func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 		FROM bookmark bm
 		LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
 		LEFT JOIN tag t ON t.id = bt.tag_id
-		WHERE (bm.id = ?)`,
+		WHERE (bm.id = ?)
+		GROUP BY bm.id`,
 		id,
 	)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to query bookmarks: %s", err.Error()))
+		if errors.Is(err, sql.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "bookmark not found")
+			return
+		}
+		serverError(w, "failed to query bookmark", err)
 		return
 	}
 
@@ -117,7 +123,7 @@ func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 		response.ParsedTags = strings.Split(response.Tags, ", ")
 	}
 
-	writeJSON(w, 200, response)
+	writeJSON(w, http.StatusOK, response)
 }
 
 type CreateBookmarkRequest struct {
@@ -138,7 +144,7 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "URL is required")
 		return
 	}
-	if len(req.URL) >= 2048 {
+	if len(req.URL) > 2048 {
 		writeError(w, http.StatusUnprocessableEntity, "URL cannot be longer than 2048")
 		return
 	}
@@ -151,13 +157,13 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusConflict, "bookmark already exists")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to create bookmark")
+		serverError(w, "failed to create bookmark", err)
 		return
 	}
 
 	bmID, err := bm.LastInsertId()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to get last inserted bookmark id")
+		serverError(w, "failed to get last inserted bookmark id", err)
 		return
 	}
 
@@ -171,8 +177,7 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 				tag,
 			).Scan(&id)
 			if err != nil {
-				slog.Error("failed to upsert tag", "tag", tag, "error", err)
-				writeError(w, http.StatusInternalServerError, "failed to upsert tags")
+				serverError(w, "failed to upsert tag", err, "tag", tag)
 				return
 			}
 			tagIDs = append(tagIDs, id)
@@ -192,8 +197,10 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 			args...,
 		)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to create bookmark tags")
+			serverError(w, "failed to create bookmark tags", err)
 			return
 		}
 	}
+
+	writeJSON(w, http.StatusCreated, map[string]int64{"id": bmID})
 }

@@ -31,11 +31,16 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	buf.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, errorResponse{Error: msg})
+}
+
+func serverError(w http.ResponseWriter, msg string, err error, attrs ...any) {
+	slog.Error(msg, append([]any{"error", err}, attrs...)...)
+	writeError(w, http.StatusInternalServerError, msg)
 }
 
 func pathParamInt(r *http.Request, key string) (int64, error) {
@@ -62,7 +67,7 @@ func queryParam[T string | int | bool](r *http.Request, key string, defaultVal T
 	case string:
 		result = raw
 	case int:
-		result, err = strconv.ParseUint(raw, 10, 64)
+		result, err = strconv.Atoi(raw)
 	case bool:
 		result, err = strconv.ParseBool(raw)
 	}
