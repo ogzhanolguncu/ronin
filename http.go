@@ -33,11 +33,11 @@ func newRouter(h *handler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", h.healthz)
-	mux.HandleFunc("GET /bookmarks", h.listBookmarks)
+	mux.HandleFunc("GET /bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET /bookmarks/{id}", h.getBookmark)
 	mux.HandleFunc("POST /bookmarks", h.createBookmark)
-	mux.HandleFunc("PATCH /bookmarks/{id}", h.updateBookmark)
-	mux.HandleFunc("DELETE /bookmarks/{id}", h.deleteBookmark)
+	// mux.HandleFunc("PATCH /bookmarks/{id}", h.updateBookmark)
+	// mux.HandleFunc("DELETE /bookmarks/{id}", h.deleteBookmark)
 
 	return applyMiddleware(mux,
 		corsMiddleware,

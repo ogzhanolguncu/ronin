@@ -1,32 +1,91 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type Bookmark struct {
-	ID          int64  `db:"id"          json:"id"`
-	URL         string `db:"url"         json:"url"`
-	Title       string `db:"title"       json:"title"`
-	Description string `db:"description" json:"description"`
-	Archived    bool   `db:"archived"    json:"archived"`
-	Read        bool   `db:"read"        json:"read"`
-	CreatedAt   uint64 `db:"created_at"  json:"created_at"`
-	UpdatedAt   uint64 `db:"updated_at"  json:"updated_at"`
+	ID          int64    `db:"id"          json:"id"`
+	URL         string   `db:"url"         json:"url"`
+	Title       string   `db:"title"       json:"title"`
+	Notes       string   `db:"notes"       json:"notes"`
+	Description string   `db:"description" json:"description"`
+	Archived    bool     `db:"archived"    json:"archived"`
+	Read        bool     `db:"read"        json:"read"`
+	Tags        string   `db:"tags" json:"-"`
+	ParsedTags  []string `db:"-"         json:"tags"`
+	CreatedAt   uint64   `db:"created_at"  json:"created_at"`
+	UpdatedAt   uint64   `db:"updated_at"  json:"updated_at"`
 }
 
-func (h *handler) listBookmarks(w http.ResponseWriter, r *http.Request) {
+type ResponseMeta struct {
+	Cursor *int64 `json:"cursor"`
+}
+
+type ListBookmarksResponse struct {
+	Bookmarks []Bookmark   `json:"bookmarks"`
+	Meta      ResponseMeta `json:"meta"`
+}
+
+func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
+	limit, err := queryParam[int64](r, "limit", 50)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid limit: %s", err.Error()))
+		return
+	}
+	cursor, err := queryParam[int64](r, "cursor", 0)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid cursor: %s", err.Error()))
+		return
+	}
+
+	var response ListBookmarksResponse
+	err = h.store.SelectContext(r.Context(), &response.Bookmarks,
+		`
+		SELECT bm.*, GROUP_CONCAT(t.name, ', ') AS tags
+		FROM bookmark bm
+		LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
+		LEFT JOIN tag t ON t.id = bt.tag_id
+		WHERE (? = 0 OR bm.id > ?)
+		GROUP BY bm.id
+		ORDER BY bm.id ASC
+		LIMIT ?`,
+		cursor, cursor, limit+1,
+	)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to query bookmarks: %s", err.Error()))
+		return
+	}
+
+	for i := range response.Bookmarks {
+		if response.Bookmarks[i].Tags == "" {
+			response.Bookmarks[i].ParsedTags = []string{}
+		} else {
+			response.Bookmarks[i].ParsedTags = strings.Split(response.Bookmarks[i].Tags, ", ")
+		}
+	}
+
+	if int64(len(response.Bookmarks)) > limit {
+		response.Bookmarks = response.Bookmarks[:limit]
+		nextCursor := response.Bookmarks[limit-1].ID
+		response.Meta.Cursor = &nextCursor
+	}
+
+	writeJSON(w, 200, response)
 }
 
 func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateBookmarkRequest struct {
-	URL         string  `json:"url"`
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
-	Notes       *string `json:"notes"`
-	Tags        *string `json:"tags"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Notes       string `json:"notes"`
+	Tags        string `json:"tags"`
 }
 
 func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +103,7 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.store.ExecContext(r.Context(),
+	bm, err := h.store.ExecContext(r.Context(),
 		`INSERT INTO bookmark (url, title, description, notes) VALUES (?, ?, ?, ?)`, req.URL, req.Title, req.Description, req.Notes,
 	)
 	if err != nil {
@@ -55,10 +114,46 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to create bookmark")
 		return
 	}
-}
 
-func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
-}
+	bmID, err := bm.LastInsertId()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get last inserted bookmark id")
+		return
+	}
 
-func (h *handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
+	var tagIDs []int64
+	if req.Tags != "" {
+		tags := strings.FieldsSeq(req.Tags)
+		for tag := range tags {
+			var id int64
+			err := h.store.QueryRowContext(r.Context(),
+				"INSERT INTO tag (name) VALUES (?) ON CONFLICT(name) DO UPDATE SET name=name RETURNING id",
+				tag,
+			).Scan(&id)
+			if err != nil {
+				slog.Error("failed to upsert tag", "tag", tag, "error", err)
+				writeError(w, http.StatusInternalServerError, "failed to upsert tags")
+				return
+			}
+			tagIDs = append(tagIDs, id)
+		}
+	}
+
+	if len(tagIDs) > 0 {
+		placeholders := make([]string, len(tagIDs))
+		args := make([]any, len(tagIDs)*2)
+		for i, tagID := range tagIDs {
+			placeholders[i] = "(?, ?)"
+			args[i*2] = bmID
+			args[i*2+1] = tagID
+		}
+		_, err := h.store.ExecContext(r.Context(),
+			"INSERT INTO bookmark_tag (bookmark_id, tag_id) VALUES "+strings.Join(placeholders, ", "),
+			args...,
+		)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to create bookmark tags")
+			return
+		}
+	}
 }
