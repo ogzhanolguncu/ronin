@@ -47,7 +47,7 @@ func pathParamInt(r *http.Request, key string) (int64, error) {
 	return v, nil
 }
 
-func queryParam[T string | int64 | bool](r *http.Request, key string, defaultVal T) (T, error) {
+func queryParam[T string | int | bool](r *http.Request, key string, defaultVal T) (T, error) {
 	raw := r.URL.Query().Get(key)
 	if raw == "" {
 		return defaultVal, nil
@@ -61,8 +61,8 @@ func queryParam[T string | int64 | bool](r *http.Request, key string, defaultVal
 	switch any(defaultVal).(type) {
 	case string:
 		result = raw
-	case int64:
-		result, err = strconv.ParseInt(raw, 10, 64)
+	case int:
+		result, err = strconv.ParseUint(raw, 10, 64)
 	case bool:
 		result, err = strconv.ParseBool(raw)
 	}

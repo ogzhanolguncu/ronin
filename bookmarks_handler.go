@@ -15,8 +15,8 @@ type Bookmark struct {
 	Description string   `db:"description" json:"description"`
 	Archived    bool     `db:"archived"    json:"archived"`
 	Read        bool     `db:"read"        json:"read"`
-	Tags        string   `db:"tags" json:"-"`
-	ParsedTags  []string `db:"-"         json:"tags"`
+	Tags        string   `db:"tags"        json:"-"`
+	ParsedTags  []string `db:"-"           json:"tags"`
 	CreatedAt   uint64   `db:"created_at"  json:"created_at"`
 	UpdatedAt   uint64   `db:"updated_at"  json:"updated_at"`
 }
@@ -31,14 +31,24 @@ type ListBookmarksResponse struct {
 }
 
 func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
-	limit, err := queryParam[int64](r, "limit", 50)
+	limit, err := queryParam(r, "limit", 50)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid limit: %s", err.Error()))
 		return
 	}
-	cursor, err := queryParam[int64](r, "cursor", 0)
+	cursor, err := queryParam(r, "cursor", 0)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid cursor: %s", err.Error()))
+		return
+	}
+	archived, err := queryParam(r, "archived", -1)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid archived: %s", err.Error()))
+		return
+	}
+	read, err := queryParam(r, "read", -1)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid read: %s", err.Error()))
 		return
 	}
 
@@ -50,10 +60,12 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
 		LEFT JOIN tag t ON t.id = bt.tag_id
 		WHERE (? = 0 OR bm.id > ?)
+			AND (? = -1 OR bm.archived = ?)
+			AND (? = -1 OR bm.read = ?)
 		GROUP BY bm.id
 		ORDER BY bm.id ASC
 		LIMIT ?`,
-		cursor, cursor, limit+1,
+		cursor, cursor, archived, archived, read, read, limit+1,
 	)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to query bookmarks: %s", err.Error()))
@@ -68,7 +80,7 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if int64(len(response.Bookmarks)) > limit {
+	if len(response.Bookmarks) > limit {
 		response.Bookmarks = response.Bookmarks[:limit]
 		nextCursor := response.Bookmarks[limit-1].ID
 		response.Meta.Cursor = &nextCursor
@@ -78,6 +90,34 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
+	id, err := pathParamInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid bookmark id: %s", err.Error()))
+		return
+	}
+
+	var response Bookmark
+	err = h.store.GetContext(r.Context(), &response,
+		`
+		SELECT bm.*, GROUP_CONCAT(t.name, ', ') AS tags
+		FROM bookmark bm
+		LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
+		LEFT JOIN tag t ON t.id = bt.tag_id
+		WHERE (bm.id = ?)`,
+		id,
+	)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to query bookmarks: %s", err.Error()))
+		return
+	}
+
+	if response.Tags == "" {
+		response.ParsedTags = []string{}
+	} else {
+		response.ParsedTags = strings.Split(response.Tags, ", ")
+	}
+
+	writeJSON(w, 200, response)
 }
 
 type CreateBookmarkRequest struct {
