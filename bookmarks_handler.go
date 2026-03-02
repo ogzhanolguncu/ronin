@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+const bookmarkBaseQuery = `
+	SELECT bm.*, GROUP_CONCAT(t.name, ', ') AS tags
+	FROM bookmark bm
+	LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
+	LEFT JOIN tag t ON t.id = bt.tag_id`
+
 type Bookmark struct {
 	ID          int64    `db:"id"          json:"id"`
 	URL         string   `db:"url"         json:"url"`
@@ -20,6 +26,14 @@ type Bookmark struct {
 	ParsedTags  []string `db:"-"           json:"tags"`
 	CreatedAt   uint64   `db:"created_at"  json:"created_at"`
 	UpdatedAt   uint64   `db:"updated_at"  json:"updated_at"`
+}
+
+func (b *Bookmark) parseTags() {
+	if b.Tags == "" {
+		b.ParsedTags = []string{}
+	} else {
+		b.ParsedTags = strings.Split(b.Tags, ", ")
+	}
 }
 
 type ResponseMeta struct {
@@ -55,11 +69,7 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	var response ListBookmarksResponse
 	err = h.store.SelectContext(r.Context(), &response.Bookmarks,
-		`
-		SELECT bm.*, GROUP_CONCAT(t.name, ', ') AS tags
-		FROM bookmark bm
-		LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
-		LEFT JOIN tag t ON t.id = bt.tag_id
+		bookmarkBaseQuery+`
 		WHERE (? = 0 OR bm.id > ?)
 			AND (? = -1 OR bm.archived = ?)
 			AND (? = -1 OR bm.read = ?)
@@ -74,11 +84,7 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := range response.Bookmarks {
-		if response.Bookmarks[i].Tags == "" {
-			response.Bookmarks[i].ParsedTags = []string{}
-		} else {
-			response.Bookmarks[i].ParsedTags = strings.Split(response.Bookmarks[i].Tags, ", ")
-		}
+		response.Bookmarks[i].parseTags()
 	}
 
 	if len(response.Bookmarks) > limit {
@@ -99,11 +105,7 @@ func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 
 	var response Bookmark
 	err = h.store.GetContext(r.Context(), &response,
-		`
-		SELECT bm.*, GROUP_CONCAT(t.name, ', ') AS tags
-		FROM bookmark bm
-		LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
-		LEFT JOIN tag t ON t.id = bt.tag_id
+		bookmarkBaseQuery+`
 		WHERE (bm.id = ?)
 		GROUP BY bm.id`,
 		id,
@@ -117,11 +119,7 @@ func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if response.Tags == "" {
-		response.ParsedTags = []string{}
-	} else {
-		response.ParsedTags = strings.Split(response.Tags, ", ")
-	}
+	response.parseTags()
 
 	writeJSON(w, http.StatusOK, response)
 }

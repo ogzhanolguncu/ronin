@@ -6,7 +6,13 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
+
+type handler struct {
+	store *sqlx.DB
+}
 
 func NewHTTP(store *Store) *http.Server {
 	h := &handler{store: store.db}
@@ -32,7 +38,9 @@ func NewHTTP(store *Store) *http.Server {
 func newRouter(h *handler) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", h.healthz)
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
 	mux.HandleFunc("GET /bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET /bookmarks/{id}", h.getBookmark)
 	mux.HandleFunc("POST /bookmarks", h.createBookmark)
