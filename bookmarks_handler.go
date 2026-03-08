@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var ErrNotFound = errors.New("not found")
+
 const bookmarkBaseQuery = `
 	SELECT bm.*, GROUP_CONCAT(t.name, ', ') AS tags
 	FROM bookmark bm
@@ -201,4 +203,89 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]int64{"id": bmID})
+}
+
+type UpdateBookmarkRequest struct {
+	ID          int    `json:"id"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Notes       string `json:"notes"`
+	Tags        string `json:"tags"`
+}
+
+func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
+	req, ok := decode[UpdateBookmarkRequest](r, w)
+	if !ok {
+		return
+	}
+
+	err := WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
+		result, err := tx.ExecContext(
+			r.Context(),
+			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ? WHERE id = ?`,
+			req.URL,
+			req.Title,
+			req.Description,
+			req.Notes,
+			req.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update bookmark: %w", err)
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to check rows affected: %w", err)
+		}
+		if rows == 0 {
+			return ErrNotFound
+		}
+
+		var tagIDs []int64
+		if req.Tags != "" {
+			for tag := range strings.FieldsSeq(req.Tags) {
+				var id int64
+				err := tx.QueryRowContext(r.Context(),
+					"INSERT INTO tag (name) VALUES (?) ON CONFLICT(name) DO UPDATE SET name=name RETURNING id",
+					tag,
+				).Scan(&id)
+				if err != nil {
+					return fmt.Errorf("failed to upsert tag %q: %w", tag, err)
+				}
+				tagIDs = append(tagIDs, id)
+			}
+		}
+
+		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", req.ID); err != nil {
+			return fmt.Errorf("failed to delete bookmark tags: %w", err)
+		}
+
+		if len(tagIDs) > 0 {
+			placeholders := make([]string, len(tagIDs))
+			args := make([]any, len(tagIDs)*2)
+			for i, tagID := range tagIDs {
+				placeholders[i] = "(?, ?)"
+				args[i*2] = req.ID
+				args[i*2+1] = tagID
+			}
+			if _, err = tx.ExecContext(r.Context(),
+				"INSERT INTO bookmark_tag (bookmark_id, tag_id) VALUES "+strings.Join(placeholders, ", "),
+				args...,
+			); err != nil {
+				return fmt.Errorf("failed to insert bookmark tags: %w", err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			writeError(w, http.StatusNotFound, "bookmark not found")
+			return
+		}
+		serverError(w, "failed to update bookmark", err)
+		return
+	}
+
+	writeJSON(w, http.StatusNoContent, nil)
 }
