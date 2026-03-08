@@ -342,3 +342,91 @@ func (h *handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusNoContent, nil)
 }
+
+type ArchiveEntry struct {
+	ID       int64 `json:"id"`
+	Archived bool  `json:"archived"`
+}
+
+type ArchiveBookmarkRequest struct {
+	IDs []ArchiveEntry `json:"ids_archived"`
+}
+
+func (h *handler) archiveBookmarks(w http.ResponseWriter, r *http.Request) {
+	req, ok := decode[ArchiveBookmarkRequest](r, w)
+	if !ok {
+		return
+	}
+	if len(req.IDs) == 0 {
+		writeError(w, http.StatusUnprocessableEntity, "at least 1 archive entry is required")
+		return
+	}
+
+	// CASE WHEN id = ? THEN ? ...
+	caseClauses := make([]string, len(req.IDs))
+	ids := make([]any, len(req.IDs))
+	args := make([]any, 0, len(req.IDs)*2+len(req.IDs))
+
+	for i, entry := range req.IDs {
+		caseClauses[i] = "WHEN ? THEN ?"
+		args = append(args, entry.ID, entry.Archived)
+		ids[i] = entry.ID
+	}
+
+	query := "UPDATE bookmark SET archived = CASE id " +
+		strings.Join(caseClauses, " ") +
+		" END WHERE id IN (?" + strings.Repeat(",?", len(req.IDs)-1) + ")"
+
+	args = append(args, ids...)
+
+	if _, err := h.store.ExecContext(r.Context(), query, args...); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to archive bookmarks")
+		return
+	}
+
+	writeJSON(w, http.StatusNoContent, nil)
+}
+
+type ReadEntry struct {
+	ID   int64 `json:"id"`
+	Read bool  `json:"read"`
+}
+
+type ReadBookmarkRequest struct {
+	IDs []ReadEntry `json:"ids_read"`
+}
+
+func (h *handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
+	req, ok := decode[ReadBookmarkRequest](r, w)
+	if !ok {
+		return
+	}
+	if len(req.IDs) == 0 {
+		writeError(w, http.StatusUnprocessableEntity, "at least 1 read entry is required")
+		return
+	}
+
+	// CASE WHEN id = ? THEN ? ...
+	caseClauses := make([]string, len(req.IDs))
+	ids := make([]any, len(req.IDs))
+	args := make([]any, 0, len(req.IDs)*2+len(req.IDs))
+
+	for i, entry := range req.IDs {
+		caseClauses[i] = "WHEN ? THEN ?"
+		args = append(args, entry.ID, entry.Read)
+		ids[i] = entry.ID
+	}
+
+	query := "UPDATE bookmark SET read = CASE id " +
+		strings.Join(caseClauses, " ") +
+		" END WHERE id IN (?" + strings.Repeat(",?", len(req.IDs)-1) + ")"
+
+	args = append(args, ids...)
+
+	if _, err := h.store.ExecContext(r.Context(), query, args...); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to read bookmarks")
+		return
+	}
+
+	writeJSON(w, http.StatusNoContent, nil)
+}

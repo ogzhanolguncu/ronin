@@ -47,6 +47,8 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("PUT    /bookmarks", h.updateBookmark)
 	mux.HandleFunc("DELETE /bookmarks/{id}", h.deleteBookmark)
 	mux.HandleFunc("DELETE /bookmarks", h.deleteBookmarks)
+	mux.HandleFunc("PATCH  /bookmarks/archive", h.archiveBookmarks)
+	mux.HandleFunc("PATCH  /bookmarks/read", h.readBookmarks)
 
 	return applyMiddleware(mux,
 		corsMiddleware,
