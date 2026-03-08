@@ -51,6 +51,8 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("PATCH  /bookmarks/archive", h.archiveBookmarks)
 	mux.HandleFunc("PATCH  /bookmarks/read", h.readBookmarks)
 
+	mux.HandleFunc("GET    /metadata", h.getMetadata)
+
 	return applyMiddleware(mux,
 		corsMiddleware,
 		recoveryMiddleware,
