@@ -6,10 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"modernc.org/sqlite"
 )
+
+type DBTX interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
 
 const (
 	sqliteConstraintUnique     = 2067 // SQLITE_CONSTRAINT_UNIQUE — duplicate unique field
@@ -140,4 +145,21 @@ func WithTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
 	}
 
 	return tx.Commit()
+}
+
+func BulkDelete(ctx context.Context, db DBTX, table, column string, ids []int) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	query := "DELETE FROM " + table + " WHERE " + column + " IN (" + strings.Join(placeholders, ",") + ")"
+	if _, err := db.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("bulk delete from %s: %w", table, err)
+	}
+	return nil
 }

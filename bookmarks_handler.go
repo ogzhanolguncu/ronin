@@ -289,3 +289,56 @@ func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusNoContent, nil)
 }
+
+func (h *handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
+	id, err := pathParamInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid bookmark id: %s", err.Error()))
+		return
+	}
+
+	err = WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
+		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark WHERE id = ?", id); err != nil {
+			return fmt.Errorf("failed to delete tags: %w", err)
+		}
+
+		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", id); err != nil {
+			return fmt.Errorf("failed to delete bookmark tags: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		serverError(w, "failed to update bookmark", err)
+		return
+	}
+
+	writeJSON(w, http.StatusNoContent, nil)
+}
+
+type DeleteBookmarkRequest struct {
+	IDs []int `json:"ids"`
+}
+
+func (h *handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
+	req, ok := decode[DeleteBookmarkRequest](r, w)
+	if !ok {
+		return
+	}
+
+	err := WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
+		if err := BulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
+			return fmt.Errorf("failed to delete bookmarks: %w", err)
+		}
+		if err := BulkDelete(r.Context(), tx, "bookmark_tag", "bookmark_id", req.IDs); err != nil {
+			return fmt.Errorf("failed to delete bookmark tags: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		serverError(w, "failed to update bookmark", err)
+		return
+	}
+
+	writeJSON(w, http.StatusNoContent, nil)
+}
