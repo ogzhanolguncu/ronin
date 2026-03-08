@@ -92,28 +92,10 @@ func migrate(db *sqlx.DB) error {
 			UPDATE tag SET updated_at = unixepoch() WHERE id = NEW.id;
 		END`,
 
-		// FTS5 full-text search
+		// Standalone FTS5 table with tags column, managed in Go code
 		`CREATE VIRTUAL TABLE IF NOT EXISTS bookmark_fts USING fts5(
-			title, description, notes, url,
-			content='bookmark', content_rowid='id'
+			title, description, notes, url, tags
 		)`,
-		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_insert
-		AFTER INSERT ON bookmark BEGIN
-			INSERT INTO bookmark_fts(rowid, title, description, notes, url)
-			VALUES (NEW.id, NEW.title, NEW.description, NEW.notes, NEW.url);
-		END`,
-		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_delete
-		BEFORE DELETE ON bookmark BEGIN
-			INSERT INTO bookmark_fts(bookmark_fts, rowid, title, description, notes, url)
-			VALUES ('delete', OLD.id, OLD.title, OLD.description, OLD.notes, OLD.url);
-		END`,
-		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_update
-		AFTER UPDATE ON bookmark BEGIN
-			INSERT INTO bookmark_fts(bookmark_fts, rowid, title, description, notes, url)
-			VALUES ('delete', OLD.id, OLD.title, OLD.description, OLD.notes, OLD.url);
-			INSERT INTO bookmark_fts(rowid, title, description, notes, url)
-			VALUES (NEW.id, NEW.title, NEW.description, NEW.notes, NEW.url);
-		END`,
 	}
 
 	for _, stmt := range stmts {

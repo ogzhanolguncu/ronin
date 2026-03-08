@@ -146,9 +146,13 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 
 	var bmID int64
 	err := WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(r.Context(),
+		result, err := tx.ExecContext(
+			r.Context(),
 			`INSERT INTO bookmark (url, title, description, notes) VALUES (?, ?, ?, ?)`,
-			req.URL, req.Title, req.Description, req.Notes,
+			req.URL,
+			req.Title,
+			req.Description,
+			req.Notes,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create bookmark: %w", err)
@@ -159,7 +163,20 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 			return fmt.Errorf("failed to get last inserted bookmark id: %w", err)
 		}
 
-		return upsertTagsAndLink(r.Context(), tx, bmID, req.Tags)
+		if err := upsertTagsAndLink(r.Context(), tx, bmID, req.Tags); err != nil {
+			return err
+		}
+
+		return insertFTS(
+			r.Context(),
+			tx,
+			bmID,
+			req.Title,
+			req.Description,
+			req.Notes,
+			req.URL,
+			req.Tags,
+		)
 	})
 	if err != nil {
 		if IsUniqueConstraintErr(err) {
@@ -208,7 +225,11 @@ func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		return nil
+		if err = deleteFTS(r.Context(), tx, int64(req.ID)); err != nil {
+			return err
+		}
+
+		return insertFTS(r.Context(), tx, int64(req.ID), req.Title, req.Description, req.Notes, req.URL, req.Tags)
 	})
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
@@ -230,6 +251,10 @@ func (h *handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
+		if err := deleteFTS(r.Context(), tx, int64(id)); err != nil {
+			return err
+		}
+
 		result, err := tx.ExecContext(r.Context(), "DELETE FROM bookmark WHERE id = ?", id)
 		if err != nil {
 			return fmt.Errorf("failed to delete bookmark: %w", err)
@@ -267,6 +292,11 @@ func (h *handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
+		for _, id := range req.IDs {
+			if err := deleteFTS(r.Context(), tx, int64(id)); err != nil {
+				return err
+			}
+		}
 		if err := BulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
 			return fmt.Errorf("failed to delete bookmarks: %w", err)
 		}

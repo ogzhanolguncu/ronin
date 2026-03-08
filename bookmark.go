@@ -87,6 +87,25 @@ type ReadBookmarkRequest struct {
 	IDs []ReadEntry `json:"ids_read"`
 }
 
+func insertFTS(ctx context.Context, db DBTX, id int64, title, description, notes, url, tags string) error {
+	_, err := db.ExecContext(ctx,
+		"INSERT INTO bookmark_fts(rowid, title, description, notes, url, tags) VALUES (?, ?, ?, ?, ?, ?)",
+		id, title, description, notes, url, tags,
+	)
+	if err != nil {
+		return fmt.Errorf("insert FTS for bookmark %d: %w", id, err)
+	}
+	return nil
+}
+
+func deleteFTS(ctx context.Context, db DBTX, id int64) error {
+	_, err := db.ExecContext(ctx, "DELETE FROM bookmark_fts WHERE rowid = ?", id)
+	if err != nil {
+		return fmt.Errorf("delete FTS for bookmark %d: %w", id, err)
+	}
+	return nil
+}
+
 // upsertTagsAndLink upserts tags by name, then inserts bookmark_tag rows for the given bookmark ID.
 // Caller is responsible for deleting old bookmark_tag rows if needed.
 func upsertTagsAndLink(ctx context.Context, db DBTX, bookmarkID int64, tags string) error {
