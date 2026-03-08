@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,6 +13,9 @@ import (
 )
 
 func main() {
+	seed := flag.Int("seed", 0, "seed the database with N test bookmarks and exit")
+	flag.Parse()
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -19,6 +23,17 @@ func main() {
 	if err != nil {
 		slog.Error("failed to init store", "err", err)
 		os.Exit(1)
+	}
+
+	if *seed > 0 {
+		ctx := context.Background()
+		if err := seedBookmarks(ctx, store, *seed); err != nil {
+			slog.Error("seed failed", "err", err)
+			os.Exit(1)
+		}
+		slog.Info("seeding complete", "count", *seed)
+		store.Close()
+		os.Exit(0)
 	}
 
 	srv := NewHTTP(store)

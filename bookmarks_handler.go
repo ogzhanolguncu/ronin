@@ -29,17 +29,27 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	query := bookmarkBaseQuery + " WHERE 1=1"
+	var args []any
+
+	if cursor > 0 {
+		query += " AND bm.id > ?"
+		args = append(args, cursor)
+	}
+	if archived != -1 {
+		query += " AND bm.archived = ?"
+		args = append(args, archived)
+	}
+	if read != -1 {
+		query += " AND bm.read = ?"
+		args = append(args, read)
+	}
+
+	query += " ORDER BY bm.id ASC LIMIT ?"
+	args = append(args, limit+1)
+
 	var response ListBookmarksResponse
-	err = h.store.SelectContext(r.Context(), &response.Bookmarks,
-		bookmarkBaseQuery+`
-		WHERE (? = 0 OR bm.id > ?)
-			AND (? = -1 OR bm.archived = ?)
-			AND (? = -1 OR bm.read = ?)
-		GROUP BY bm.id
-		ORDER BY bm.id ASC
-		LIMIT ?`,
-		cursor, cursor, archived, archived, read, read, limit+1,
-	)
+	err = h.store.SelectContext(r.Context(), &response.Bookmarks, query, args...)
 	if err != nil {
 		serverError(w, "failed to query bookmarks", err)
 		return
@@ -58,6 +68,40 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, response)
 }
 
+func (h *handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
+	q, err := queryParam(r, "q", "")
+	if err != nil || q == "" {
+		writeError(w, http.StatusUnprocessableEntity, "q parameter is required")
+		return
+	}
+	limit, err := queryParam(r, "limit", 50)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid limit: %s", err.Error()))
+		return
+	}
+
+	var response ListBookmarksResponse
+	err = h.store.SelectContext(r.Context(), &response.Bookmarks,
+		bookmarkBaseQuery+`
+		WHERE bm.id IN (
+			SELECT rowid FROM bookmark_fts WHERE bookmark_fts MATCH ?
+		)
+		ORDER BY bm.id DESC
+		LIMIT ?`,
+		q, limit,
+	)
+	if err != nil {
+		serverError(w, "failed to search bookmarks", err)
+		return
+	}
+
+	for i := range response.Bookmarks {
+		response.Bookmarks[i].parseTags()
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
 func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 	id, err := pathParamInt(r, "id")
 	if err != nil {
@@ -68,8 +112,7 @@ func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 	var response Bookmark
 	err = h.store.GetContext(r.Context(), &response,
 		bookmarkBaseQuery+`
-		WHERE (bm.id = ?)
-		GROUP BY bm.id`,
+		WHERE bm.id = ?`,
 		id,
 	)
 	if err != nil {
