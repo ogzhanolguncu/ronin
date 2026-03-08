@@ -38,20 +38,20 @@ func NewHTTP(store *Store) *http.Server {
 func newRouter(h *handler) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/v1/healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
-	mux.HandleFunc("GET    /bookmarks/search", h.searchBookmarks)
-	mux.HandleFunc("GET    /bookmarks", h.getBookmarks)
-	mux.HandleFunc("GET    /bookmarks/{id}", h.getBookmark)
-	mux.HandleFunc("POST   /bookmarks", h.createBookmark)
-	mux.HandleFunc("PUT    /bookmarks", h.updateBookmark)
-	mux.HandleFunc("DELETE /bookmarks/{id}", h.deleteBookmark)
-	mux.HandleFunc("DELETE /bookmarks", h.deleteBookmarks)
-	mux.HandleFunc("PATCH  /bookmarks/archive", h.archiveBookmarks)
-	mux.HandleFunc("PATCH  /bookmarks/read", h.readBookmarks)
+	mux.HandleFunc("GET    /api/v1/bookmarks/search", h.searchBookmarks)
+	mux.HandleFunc("GET    /api/v1/bookmarks", h.getBookmarks)
+	mux.HandleFunc("GET    /api/v1/bookmarks/{id}", h.getBookmark)
+	mux.HandleFunc("POST   /api/v1/bookmarks", h.createBookmark)
+	mux.HandleFunc("PUT    /api/v1/bookmarks", h.updateBookmark)
+	mux.HandleFunc("DELETE /api/v1/bookmarks/{id}", h.deleteBookmark)
+	mux.HandleFunc("DELETE /api/v1/bookmarks", h.deleteBookmarks)
+	mux.HandleFunc("PATCH  /api/v1/bookmarks/archive", h.archiveBookmarks)
+	mux.HandleFunc("PATCH  /api/v1/bookmarks/read", h.readBookmarks)
 
-	mux.HandleFunc("GET    /metadata", h.getMetadata)
+	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 
 	return applyMiddleware(mux,
 		corsMiddleware,

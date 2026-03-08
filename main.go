@@ -19,7 +19,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	store, err := NewStore("./sanctum.db")
+	store, err := NewStore("./safha.db")
 	if err != nil {
 		slog.Error("failed to init store", "err", err)
 		os.Exit(1)

@@ -49,7 +49,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	var createdID int64
 
 	t.Run("CreateBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
 			URL:         "https://example.com",
 			Title:       "Example",
 			Description: "An example site",
@@ -73,7 +73,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("CreateBookmark_DuplicateURL", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
 			URL:   "https://example.com",
 			Title: "Duplicate",
 		})
@@ -85,7 +85,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("CreateBookmark_MissingURL", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
 			Title: "No URL",
 		})
 		defer resp.Body.Close()
@@ -96,7 +96,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("GetBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/bookmarks/%d", createdID), nil)
+		resp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
@@ -119,7 +119,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("GetBookmark_NotFound", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodGet, "/bookmarks/999", nil)
+		resp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks/999", nil)
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusNotFound {
@@ -128,7 +128,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("ListBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodGet, "/bookmarks", nil)
+		resp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks", nil)
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
@@ -146,7 +146,7 @@ func TestBookmarkHandlers(t *testing.T) {
 
 	t.Run("ListBookmarks_Pagination", func(t *testing.T) {
 		// Create a second bookmark so we have 2 total
-		createResp := doRequest(t, srv, http.MethodPost, "/bookmarks", CreateBookmarkRequest{
+		createResp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
 			URL:   "https://example2.com",
 			Title: "Example 2",
 			Tags:  "pagination",
@@ -156,7 +156,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		createResp.Body.Close()
 		paginationID := created["id"]
 
-		resp := doRequest(t, srv, http.MethodGet, "/bookmarks?limit=1", nil)
+		resp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks?limit=1", nil)
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
@@ -175,11 +175,11 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 
 		// Clean up: delete the second bookmark
-		doRequest(t, srv, http.MethodDelete, fmt.Sprintf("/bookmarks/%d", paginationID), nil).Body.Close()
+		doRequest(t, srv, http.MethodDelete, fmt.Sprintf("/api/v1/bookmarks/%d", paginationID), nil).Body.Close()
 	})
 
 	t.Run("UpdateBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPut, "/bookmarks", UpdateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks", UpdateBookmarkRequest{
 			ID:          int(createdID),
 			URL:         "https://example.com/updated",
 			Title:       "Updated Example",
@@ -194,7 +194,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 
 		// Verify via GET
-		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/bookmarks/%d", createdID), nil)
+		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
 		var bm Bookmark
@@ -213,7 +213,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("UpdateBookmark_NotFound", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPut, "/bookmarks", UpdateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks", UpdateBookmarkRequest{
 			ID:    9999,
 			URL:   "https://nonexistent.com",
 			Title: "Nonexistent",
@@ -226,7 +226,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("ArchiveBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPatch, "/bookmarks/archive", ArchiveBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPatch, "/api/v1/bookmarks/archive", ArchiveBookmarkRequest{
 			IDs: []ArchiveEntry{{ID: createdID, Archived: true}},
 		})
 		defer resp.Body.Close()
@@ -236,7 +236,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 
 		// Verify via GET
-		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/bookmarks/%d", createdID), nil)
+		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
 		var bm Bookmark
@@ -247,7 +247,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("ReadBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPatch, "/bookmarks/read", ReadBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPatch, "/api/v1/bookmarks/read", ReadBookmarkRequest{
 			IDs: []ReadEntry{{ID: createdID, Read: true}},
 		})
 		defer resp.Body.Close()
@@ -257,7 +257,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 
 		// Verify via GET
-		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/bookmarks/%d", createdID), nil)
+		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
 		var bm Bookmark
@@ -270,7 +270,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	var secondID int64
 
 	t.Run("CreateSecondBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
 			URL:   "https://second.com",
 			Title: "Second",
 			Tags:  "second",
@@ -287,7 +287,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("DeleteBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodDelete, fmt.Sprintf("/bookmarks/%d", createdID), nil)
+		resp := doRequest(t, srv, http.MethodDelete, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusNoContent {
@@ -295,7 +295,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 
 		// Verify 404 on GET
-		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/bookmarks/%d", createdID), nil)
+		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
 		if getResp.StatusCode != http.StatusNotFound {
@@ -304,7 +304,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("DeleteBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodDelete, "/bookmarks", DeleteBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodDelete, "/api/v1/bookmarks", DeleteBookmarkRequest{
 			IDs: []int{int(secondID)},
 		})
 		defer resp.Body.Close()
@@ -314,7 +314,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 
 		// Verify empty list
-		listResp := doRequest(t, srv, http.MethodGet, "/bookmarks", nil)
+		listResp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks", nil)
 		defer listResp.Body.Close()
 
 		var list ListBookmarksResponse

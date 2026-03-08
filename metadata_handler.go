@@ -55,7 +55,7 @@ func fetchMetadata(ctx context.Context, rawURL string) (*MetadataResponse, error
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "Sanctum/1.0")
+	req.Header.Set("User-Agent", "Safha/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {

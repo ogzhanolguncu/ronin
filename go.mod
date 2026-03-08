@@ -1,4 +1,4 @@
-module github.com/ogzhanolguncu/sanctum
+module github.com/ogzhanolguncu/safha
 
 go 1.25.1
 
