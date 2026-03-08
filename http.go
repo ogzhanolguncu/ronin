@@ -41,6 +41,7 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
+	mux.HandleFunc("GET    /bookmarks/search", h.searchBookmarks)
 	mux.HandleFunc("GET    /bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET    /bookmarks/{id}", h.getBookmark)
 	mux.HandleFunc("POST   /bookmarks", h.createBookmark)
