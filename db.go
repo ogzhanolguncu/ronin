@@ -34,6 +34,8 @@ func openDB(path string) (*sqlx.DB, error) {
 		"_synchronous":  {"NORMAL"},
 		"_busy_timeout": {"5000"},
 		"_cache_size":   {"-20000"},
+		"_temp_store":   {"memory"},
+		"_mmap_size":    {"268435456"},
 	}
 	dsn := path + "?" + params.Encode()
 
@@ -80,6 +82,7 @@ func migrate(db *sqlx.DB) error {
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_archived ON bookmark(archived)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_read ON bookmark(read)`,
+		`CREATE INDEX IF NOT EXISTS idx_bookmark_archived_read_id ON bookmark(archived, read, id)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_tag_tag_id ON bookmark_tag(tag_id)`,
 		`CREATE TRIGGER IF NOT EXISTS bookmark_updated_at
 		AFTER UPDATE ON bookmark

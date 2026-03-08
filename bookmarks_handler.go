@@ -45,7 +45,7 @@ func (h *handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		args = append(args, read)
 	}
 
-	query += " ORDER BY bm.id ASC LIMIT ?"
+	query += " GROUP BY bm.id ORDER BY bm.id ASC LIMIT ?"
 	args = append(args, limit+1)
 
 	var response ListBookmarksResponse
@@ -86,6 +86,7 @@ func (h *handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 		WHERE bm.id IN (
 			SELECT rowid FROM bookmark_fts WHERE bookmark_fts MATCH ?
 		)
+		GROUP BY bm.id
 		ORDER BY bm.id DESC
 		LIMIT ?`,
 		q, limit,
@@ -112,7 +113,8 @@ func (h *handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 	var response Bookmark
 	err = h.store.GetContext(r.Context(), &response,
 		bookmarkBaseQuery+`
-		WHERE bm.id = ?`,
+		WHERE bm.id = ?
+		GROUP BY bm.id`,
 		id,
 	)
 	if err != nil {

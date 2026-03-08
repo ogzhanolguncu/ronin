@@ -10,12 +10,12 @@ import (
 var ErrNotFound = errors.New("not found")
 
 const bookmarkBaseQuery = `
-	SELECT bm.*,
-		(SELECT GROUP_CONCAT(t.name, ', ')
-		 FROM bookmark_tag bt
-		 JOIN tag t ON t.id = bt.tag_id
-		 WHERE bt.bookmark_id = bm.id) AS tags
-	FROM bookmark bm`
+	SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
+	       bm.archived, bm.read, bm.created_at, bm.updated_at,
+	       COALESCE(GROUP_CONCAT(t.name, ', '), '') AS tags
+	FROM bookmark bm
+	LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
+	LEFT JOIN tag t ON t.id = bt.tag_id`
 
 type Bookmark struct {
 	ID          int64    `db:"id"          json:"id"`
