@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef, useMemo, useCallback } from 'react'
 import { Select, createListCollection } from '@ark-ui/react/select'
 import { SearchIcon, ChevronDownIcon } from '../lib/icons'
 import { BookmarkItem } from './bookmark-item'
@@ -18,30 +18,36 @@ const sortCollection = createListCollection({
 export function BookmarkList() {
   const { tag: activeTag } = useSearch({ from: '/' })
   const navigate = useNavigate({ from: '/' })
-  const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [sort, setSort] = useState<'newest' | 'oldest' | 'az'>('newest')
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setDebouncedQuery(value), 300)
+  }, [])
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['bookmarks', debouncedQuery],
     queryFn: () => debouncedQuery ? searchBookmarks(debouncedQuery) : getBookmarks(),
   })
 
-  const items = (data?.bookmarks ?? [])
-    .filter((b) => !activeTag || b.tags.includes(activeTag))
-    .sort((a, b) => {
-      if (sort === 'oldest') return a.created_at - b.created_at
-      if (sort === 'az') return a.title.localeCompare(b.title)
-      return b.created_at - a.created_at
-    })
+  const items = useMemo(() =>
+    (data?.bookmarks ?? [])
+      .filter((b) => !activeTag || b.tags.includes(activeTag))
+      .sort((a, b) => {
+        if (sort === 'oldest') return a.created_at - b.created_at
+        if (sort === 'az') return a.title.localeCompare(b.title)
+        return b.created_at - a.created_at
+      }),
+    [data, activeTag, sort]
+  )
 
-  const handleTagClick = (tag: string) =>
-    navigate({ search: (prev) => ({ ...prev, tag }) })
+  const handleTagClick = useCallback(
+    (tag: string) => navigate({ search: (prev) => ({ ...prev, tag }) }),
+    [navigate]
+  )
 
   const label = activeTag ? `#${activeTag}` : 'All bookmarks'
 
@@ -54,8 +60,7 @@ export function BookmarkList() {
             className={s.searchInput}
             type="text"
             placeholder="Search bookmarks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearch}
           />
         </div>
         <Select.Root
@@ -98,10 +103,10 @@ export function BookmarkList() {
             <div className={s.empty}>
               <div className={s.emptyGlyph}>◈</div>
               <div className={s.emptyTitle}>
-                {searchQuery ? 'No results' : 'No bookmarks yet'}
+                {debouncedQuery ? 'No results' : 'No bookmarks yet'}
               </div>
               <div className={s.emptySub}>
-                {searchQuery ? 'Try a different search term' : 'Press N or click Add bookmark'}
+                {debouncedQuery ? 'Try a different search term' : 'Press N or click Add bookmark'}
               </div>
             </div>
           ) : (

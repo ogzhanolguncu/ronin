@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState, useMemo } from 'react'
 import { Tooltip } from '@ark-ui/react/tooltip'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDate } from '../lib/format'
@@ -13,18 +13,19 @@ type Props = {
   onTagClick: (tag: string) => void
 }
 
-export function BookmarkItem({ bookmark: b, onTagClick }: Props) {
+export const BookmarkItem = memo(function BookmarkItem({ bookmark: b, onTagClick }: Props) {
   const queryClient = useQueryClient()
   const [notesOpen, setNotesOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
 
-  let hostname = b.url
-  try {
-    hostname = new URL(b.url).hostname
-  } catch {
-    // malformed URL — display as-is
-  }
+  const hostname = useMemo(() => {
+    try {
+      return new URL(b.url).hostname
+    } catch {
+      return b.url
+    }
+  }, [b.url])
 
   const handleArchive = async () => {
     await archiveBookmarks([{ id: b.id, archived: !b.archived }])
@@ -141,4 +142,4 @@ export function BookmarkItem({ bookmark: b, onTagClick }: Props) {
       )}
     </div>
   )
-}
+})
