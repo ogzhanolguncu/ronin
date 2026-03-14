@@ -8,6 +8,9 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: IndexPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    tag: typeof search.tag === 'string' ? search.tag : undefined,
+  }),
 })
 
 const routeTree = rootRoute.addChildren([indexRoute])

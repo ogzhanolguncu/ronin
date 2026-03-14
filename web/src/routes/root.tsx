@@ -1,26 +1,15 @@
 import { Outlet } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FilterContext } from '../lib/filter-context'
+import { useQueryClient } from '@tanstack/react-query'
 import { Sidebar } from '../components/sidebar'
 import { BookmarkDialog } from '../components/bookmark-dialog'
-import { getBookmarks, createBookmark } from '../lib/api'
+import { createBookmark } from '../lib/api'
 import type { Bookmark, CreateBookmarkData } from '../lib/types'
 
 export function RootLayout() {
   const queryClient = useQueryClient()
-  const [activeTag, setActiveTag] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editBookmark, setEditBookmark] = useState<Bookmark | undefined>(undefined)
-
-  const { data } = useQuery({
-    queryKey: ['bookmarks'],
-    queryFn: () => getBookmarks(),
-  })
-  console.log({ data })
-
-  const tags = [...new Set((data?.bookmarks ?? []).flatMap((b) => b.tags))].sort()
-  const totalCount = data?.bookmarks.length ?? 0
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -58,13 +47,9 @@ export function RootLayout() {
   }
 
   return (
-    <FilterContext.Provider value={{ activeTag, onTagClick: setActiveTag }}>
+    <>
       <div className="app">
         <Sidebar
-          tags={tags}
-          activeTag={activeTag}
-          onTagClick={setActiveTag}
-          totalCount={totalCount}
           onAddClick={() => {
             setEditBookmark(undefined)
             setDialogOpen(true)
@@ -78,6 +63,6 @@ export function RootLayout() {
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
       />
-    </FilterContext.Provider>
+    </>
   )
 }

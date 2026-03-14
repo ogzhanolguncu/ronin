@@ -1,15 +1,23 @@
+import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { GridIcon, ClockIcon, PlusIcon } from '../lib/icons'
+import { getBookmarks } from '../lib/api'
 import s from './sidebar.module.css'
 
 type Props = {
-  tags: string[]
-  activeTag: string | null
-  onTagClick: (tag: string | null) => void
-  totalCount?: number
   onAddClick?: () => void
 }
 
-export function Sidebar({ tags, activeTag, onTagClick, totalCount = 0, onAddClick }: Props) {
+export function Sidebar({ onAddClick }: Props) {
+  const { tag: activeTag } = useSearch({ from: '/' })
+  const navigate = useNavigate({ from: '/' })
+  const { data } = useQuery({ queryKey: ['bookmarks'], queryFn: () => getBookmarks() })
+  const tags = [...new Set((data?.bookmarks ?? []).flatMap((b) => b.tags))].sort()
+  const totalCount = data?.bookmarks.length ?? 0
+
+  const handleTagClick = (tag: string | undefined) =>
+    navigate({ search: (prev) => ({ ...prev, tag }) })
+
   return (
     <aside className={s.sidebar}>
       <div className={s.logoWrap}>
@@ -23,8 +31,8 @@ export function Sidebar({ tags, activeTag, onTagClick, totalCount = 0, onAddClic
       <div className={s.navSection}>
         <div className={s.navLabel}>Library</div>
         <div
-          className={[s.navItem, activeTag === null ? s.active : ''].filter(Boolean).join(' ')}
-          onClick={() => onTagClick(null)}
+          className={[s.navItem, !activeTag ? s.active : ''].filter(Boolean).join(' ')}
+          onClick={() => handleTagClick(undefined)}
         >
           <GridIcon />
           All bookmarks
@@ -43,7 +51,7 @@ export function Sidebar({ tags, activeTag, onTagClick, totalCount = 0, onAddClic
             <div
               key={tag}
               className={[s.tagItem, activeTag === tag ? s.active : ''].filter(Boolean).join(' ')}
-              onClick={() => onTagClick(tag)}
+              onClick={() => handleTagClick(tag)}
             >
               <span className={s.tagPip}></span>
               {tag}
