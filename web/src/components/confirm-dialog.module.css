@@ -1,0 +1,54 @@
+.confirmBox {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 20px;
+  width: 300px;
+  box-shadow: 0 16px 40px #00000020;
+  transform: scale(0.97);
+  transition: transform 0.15s;
+}
+
+.confirmMsg {
+  font-size: var(--text-base);
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.confirmMsg strong { font-weight: 500; }
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.btnSecondary {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--muted2);
+  font-family: 'Geist', sans-serif;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btnSecondary:hover { border-color: var(--border2); color: var(--text); }
+
+.btnDanger {
+  padding: 7px 14px;
+  background: var(--red);
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-family: 'Geist', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+.btnDanger:hover { opacity: 0.88; }

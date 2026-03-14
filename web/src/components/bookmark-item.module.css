@@ -1,0 +1,173 @@
+.bmItem {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: background 0.1s;
+  position: relative;
+}
+
+.bmItem:hover { background: var(--surface); }
+
+.bmHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bmFavicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.bmTitle {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.11s;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bmTitle:hover { color: var(--accent); }
+
+.bmUrl {
+  font-family: 'Geist Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  display: block;
+  font-weight: 300;
+  transition: color 0.11s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bmItem:hover .bmUrl { color: var(--muted2); }
+
+.bmDesc {
+  font-size: var(--text-sm);
+  color: var(--muted2);
+  font-weight: 300;
+  line-height: 1.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bmTag {
+  font-family: 'Geist Mono', monospace;
+  font-size: var(--text-2xs);
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.11s;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.bmTag:hover { color: var(--accent-hover); }
+
+.bmMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.bmActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -6px
+}
+
+.bmSep {
+  color: var(--border2);
+  font-size: var(--text-2xs);
+  user-select: none;
+}
+
+.bmDate {
+  font-family: 'Geist Mono', monospace;
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  font-weight: 300;
+}
+
+.bmTextAction {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  font-size: var(--text-sm);
+  padding: 2px 6px;
+  transition: color 0.11s, background 0.11s, border-color 0.11s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.bmTextAction:hover {
+  color: var(--text2);
+  background: var(--surface2);
+  border-color: var(--border);
+}
+
+.bmTextActionDanger:hover {
+  color: var(--red);
+  background: var(--red-dim);
+  border-color: var(--red-dim);
+}
+
+.bmTextAction svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.bmNotes {
+  font-size: var(--text-sm);
+  color: var(--muted2);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.55;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+
+.bmTooltip {
+  background: var(--text);
+  color: var(--bg);
+  font-family: 'Geist', sans-serif;
+  font-size: var(--text-2xs);
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 8px #00000022;
+}
+
+.bmItem.removing {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.18s, transform 0.18s;
+  pointer-events: none;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bmItem.new { animation: slideIn 0.2s ease; }
