@@ -14,7 +14,7 @@ export default defineConfig({
         name: 'Safha',
         short_name: 'Safha',
         description: 'Bookmark manager',
-        theme_color: '#1f7a75',
+        theme_color: '#9a3324',
         background_color: '#f5f0e8',
         display: 'standalone',
         icons: [

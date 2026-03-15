@@ -1,9 +1,10 @@
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { GridIcon, ClockIcon, PlusIcon } from '../lib/icons'
+import { GridIcon, ClockIcon, PlusIcon, SunIcon, MoonIcon } from '../lib/icons'
 import { getBookmarks } from '../lib/api'
 import { TagSkeleton } from './skeleton'
 import { Button } from '@/components/ui/button'
+import { useTheme } from '@/hooks/use-theme'
 
 type Props = {
   onAddClick?: () => void
@@ -12,6 +13,7 @@ type Props = {
 export function Sidebar({ onAddClick }: Props) {
   const { tag: activeTag } = useSearch({ from: '/' })
   const navigate = useNavigate({ from: '/' })
+  const { theme, toggleTheme } = useTheme()
   const { data, isLoading } = useQuery({ queryKey: ['bookmarks'], queryFn: () => getBookmarks() })
   const tags = [...new Set((data?.bookmarks ?? []).flatMap((b) => b.tags))].sort()
   const totalCount = data?.bookmarks.length ?? 0
@@ -21,12 +23,17 @@ export function Sidebar({ onAddClick }: Props) {
 
   return (
     <aside className="bg-surface border-r border-border flex flex-col h-full overflow-hidden">
-      <div className="px-[18px] h-[68px] flex flex-col justify-center border-b border-border shrink-0">
-        <div className="flex items-center">
-          <span className="text-base font-semibold text-foreground tracking-tight">Safha</span>
-          <span className="w-[5px] h-[5px] rounded-full bg-primary ml-0.5 mb-1.5 shrink-0 inline-block" />
+      <div className="px-[18px] h-[68px] flex items-center justify-between border-b border-border shrink-0">
+        <div>
+          <div className="flex items-center">
+            <span className="text-base font-semibold text-foreground tracking-tight">Safha</span>
+            <span className="w-[5px] h-[5px] rounded-full bg-primary ml-0.5 mb-1.5 shrink-0 inline-block" />
+          </div>
+          <div className="font-mono text-xs text-muted-foreground font-light tracking-wide mt-0.5">صفحة</div>
         </div>
-        <div className="font-mono text-xs text-muted-foreground font-light tracking-wide mt-0.5">صفحة</div>
+        <Button variant="ghost" size="icon-sm" onClick={toggleTheme} aria-label="Toggle theme">
+          {theme === 'dark' ? <SunIcon className="w-3.5 h-3.5" /> : <MoonIcon className="w-3.5 h-3.5" />}
+        </Button>
       </div>
 
       <div className="pt-4 pb-1.5 shrink-0">

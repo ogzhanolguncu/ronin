@@ -9,4 +9,6 @@ export {
   X as CloseIcon,
   FileText as NotesIcon,
   ChevronDown as ChevronDownIcon,
+  Sun as SunIcon,
+  Moon as MoonIcon,
 } from 'lucide-react'

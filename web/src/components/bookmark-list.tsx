@@ -67,11 +67,11 @@ export function BookmarkList() {
             onChange={handleSearch}
           />
         </div>
-        <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
-          <SelectTrigger className="min-w-[108px]">
+        <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)} >
+          <SelectTrigger >
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position='popper'>
             {sortOptions.map((item) => (
               <SelectItem key={item.value} value={item.value}>
                 {item.label}
