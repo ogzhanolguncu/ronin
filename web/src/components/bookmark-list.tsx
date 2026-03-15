@@ -5,6 +5,7 @@ import { BookmarkItem } from './bookmark-item'
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getBookmarks, searchBookmarks } from '../lib/api'
+import { BookmarkSkeleton } from './skeleton'
 import s from './bookmark-list.module.css'
 
 const sortCollection = createListCollection({
@@ -91,9 +92,11 @@ export function BookmarkList() {
         </div>
         <div className={s.bmListViewport}>
           {isLoading ? (
-            <div className={s.empty}>
-              <div className={s.emptyTitle}>Loading…</div>
-            </div>
+            <>
+              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                <BookmarkSkeleton key={i} delay={i * 0.1} />
+              ))}
+            </>
           ) : isError ? (
             <div className={s.empty}>
               <div className={s.emptyTitle}>Failed to load bookmarks</div>

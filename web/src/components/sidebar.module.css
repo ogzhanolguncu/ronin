@@ -178,13 +178,13 @@
   gap: 7px;
   letter-spacing: 0.01em;
   transition: all 0.13s;
-  box-shadow: 0 1px 3px #1f7a7530, 0 1px 0 #ffffff30 inset;
+  box-shadow: 0 1px 3px #b8322530, 0 1px 0 #ffffff30 inset;
 }
 
 .addBtn:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px #1f7a7535;
+  box-shadow: 0 3px 8px #b8322535;
 }
 
 .addBtn svg { width: 12px; height: 12px; }

@@ -2,6 +2,7 @@ import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { GridIcon, ClockIcon, PlusIcon } from '../lib/icons'
 import { getBookmarks } from '../lib/api'
+import { TagSkeleton } from './skeleton'
 import s from './sidebar.module.css'
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 export function Sidebar({ onAddClick }: Props) {
   const { tag: activeTag } = useSearch({ from: '/' })
   const navigate = useNavigate({ from: '/' })
-  const { data } = useQuery({ queryKey: ['bookmarks'], queryFn: () => getBookmarks() })
+  const { data, isLoading } = useQuery({ queryKey: ['bookmarks'], queryFn: () => getBookmarks() })
   const tags = [...new Set((data?.bookmarks ?? []).flatMap((b) => b.tags))].sort()
   const totalCount = data?.bookmarks.length ?? 0
 
@@ -47,16 +48,22 @@ export function Sidebar({ onAddClick }: Props) {
       <div className={s.tagsSection}>
         <div className={s.navLabel} style={{ marginBottom: '8px' }}>Tags</div>
         <div className={s.tagsInner}>
-          {tags.map((tag) => (
-            <div
-              key={tag}
-              className={[s.tagItem, activeTag === tag ? s.active : ''].filter(Boolean).join(' ')}
-              onClick={() => handleTagClick(tag)}
-            >
-              <span className={s.tagPip}></span>
-              {tag}
-            </div>
-          ))}
+          {isLoading ? (
+            [0, 1, 2, 3, 4, 5].map((i) => (
+              <TagSkeleton key={i} delay={i * 0.1} />
+            ))
+          ) : (
+            tags.map((tag) => (
+              <div
+                key={tag}
+                className={[s.tagItem, activeTag === tag ? s.active : ''].filter(Boolean).join(' ')}
+                onClick={() => handleTagClick(tag)}
+              >
+                <span className={s.tagPip}></span>
+                {tag}
+              </div>
+            ))
+          )}
         </div>
       </div>
 

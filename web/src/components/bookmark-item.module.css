@@ -1,9 +1,9 @@
 .bmItem {
-  padding: 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   transition: background 0.1s;
   position: relative;
 }
@@ -24,7 +24,7 @@
 }
 
 .bmTitle {
-  font-size: var(--text-base);
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--text);
   text-decoration: none;
@@ -89,7 +89,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: -6px
+  margin-left: -6px;
 }
 
 .bmSep {
