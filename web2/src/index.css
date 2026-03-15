@@ -2,8 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource/noto-serif-jp/400.css";
 
 @custom-variant dark (&:is(.dark *));
+
+@property --indicator-opacity {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
 
 :root {
   --background: oklch(0.965 0.009 84.6);
@@ -36,6 +43,15 @@
   --accent-hover: oklch(0.22 0.012 60);
   --accent-dim: oklch(0.28 0.015 60 / 0.08);
   --red-dim: oklch(0.5 0.15 27 / 0.071);
+
+  /* Japanese accent colors */
+  --sumi: oklch(0.25 0.005 60);
+  --ai: oklch(0.42 0.08 255);
+  --shu: oklch(0.55 0.14 30);
+  --kinari: oklch(0.94 0.015 90);
+
+  /* Soft border */
+  --border-soft: color-mix(in oklch, var(--border) 60%, var(--background));
 }
 
 .dark {
@@ -67,11 +83,20 @@
   --accent-hover: oklch(0.87 0.045 60);
   --accent-dim: oklch(0.82 0.04 60 / 0.1);
   --red-dim: oklch(0.6 0.15 27 / 0.094);
+
+  /* Japanese accent colors (dark) */
+  --sumi: oklch(0.82 0.008 60);
+  --ai: oklch(0.62 0.09 255);
+  --shu: oklch(0.62 0.14 30);
+  --kinari: oklch(0.22 0.01 90);
+
+  --border-soft: color-mix(in oklch, var(--border) 60%, var(--background));
 }
 
 @theme inline {
   --font-sans: "Geist Variable", sans-serif;
   --font-mono: "Geist Mono", monospace;
+  --font-jp: "Noto Serif JP", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -105,6 +130,12 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-dim: var(--accent-dim);
   --color-red-dim: var(--red-dim);
+
+  --color-sumi: var(--sumi);
+  --color-ai: var(--ai);
+  --color-shu: var(--shu);
+  --color-kinari: var(--kinari);
+  --color-border-soft: var(--border-soft);
 }
 
 @layer base {
@@ -121,7 +152,9 @@ html {
 }
 
 body {
-  background: oklch(0.927 0.015 80.7);
+  background:
+    radial-gradient(ellipse at 30% 20%, oklch(0.95 0.01 80 / 0.5), transparent 60%),
+    oklch(0.927 0.015 80.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -130,7 +163,9 @@ body {
 }
 
 .dark body {
-  background: oklch(0.167 0.01 294.4);
+  background:
+    radial-gradient(ellipse at 30% 20%, oklch(0.22 0.01 294 / 0.4), transparent 60%),
+    oklch(0.167 0.01 294.4);
 }
 
 /* App shell */
@@ -148,10 +183,80 @@ body {
     0 1px 0 oklch(1 0 0 / 0.533) inset,
     0 20px 60px oklch(0 0 0 / 0.102),
     0 4px 16px oklch(0 0 0 / 0.071);
+
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 
 .dark .app {
   box-shadow: none;
+}
+
+/* Paper grain texture */
+.paper-grain {
+  position: relative;
+}
+.paper-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.03;
+  mix-blend-mode: multiply;
+  background: repeating-conic-gradient(
+    oklch(0.3 0 0) 0% 25%,
+    transparent 0% 50%
+  ) 0 0 / 4px 4px;
+}
+
+.dark .paper-grain::before {
+  mix-blend-mode: soft-light;
+  opacity: 0.03;
+}
+
+/* Active indicator animation */
+.nav-indicator-active {
+  --indicator-opacity: 1;
+  transition: --indicator-opacity 400ms ease-out;
+  border-left-color: oklch(from var(--primary) l c h / var(--indicator-opacity));
+}
+
+.nav-indicator-inactive {
+  --indicator-opacity: 0;
+  transition: --indicator-opacity 200ms ease-out;
+  border-left-color: transparent;
+}
+
+/* Tags scroll fade mask */
+.tags-scroll {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 12px,
+    black calc(100% - 12px),
+    transparent
+  );
+}
+
+@supports (animation-timeline: scroll()) {
+  .tags-scroll {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 16px,
+      black calc(100% - 16px),
+      transparent
+    );
+  }
 }
 
 /* Scrollbar utility */
@@ -182,4 +287,3 @@ body {
     background-position: 200% 0;
   }
 }
-

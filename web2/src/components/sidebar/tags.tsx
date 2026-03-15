@@ -36,14 +36,14 @@ export const Tags = () => {
     setActiveTag((prev) => (prev === tag ? null : tag));
   };
   return (
-    <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto py-4">
+    <div className="tags-scroll thin-scrollbar min-h-0 flex-1 overflow-y-auto py-4">
       <div className="flex flex-col gap-px">
         {tags.map((tag) => (
           <button
             key={tag.name}
             type="button"
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 text-xs transition-colors font-mono",
+              "flex items-center gap-2 px-4 py-[7px] text-xs font-mono transition-colors",
               activeTag === tag.name
                 ? "text-primary"
                 : "text-muted2 hover:bg-surface2 hover:text-text2",
