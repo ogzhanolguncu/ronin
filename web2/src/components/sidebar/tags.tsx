@@ -1,15 +1,32 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { SidebarLabel } from "./sidebar-section";
 
 const tags = [
-  "design",
-  "dev",
-  "inspiration",
-  "reading",
-  "tools",
-  "reference",
-  "later",
+  { name: "design", count: 14 },
+  { name: "dev", count: 38 },
+  { name: "inspiration", count: 7 },
+  { name: "reading", count: 23 },
+  { name: "tools", count: 11 },
+  { name: "reference", count: 5 },
+  { name: "later", count: 19 },
+  { name: "work", count: 42 },
+  { name: "personal", count: 9 },
+  { name: "research", count: 16 },
+  { name: "bookmarks", count: 31 },
+  { name: "archive", count: 8 },
+  { name: "tutorials", count: 12 },
+  { name: "photography", count: 6 },
+  { name: "music", count: 15 },
+  { name: "recipes", count: 21 },
+  { name: "travel", count: 4 },
+  { name: "finance", count: 17 },
+  { name: "health", count: 10 },
+  { name: "writing", count: 13 },
+  { name: "videos", count: 27 },
+  { name: "podcasts", count: 8 },
+  { name: "quotes", count: 34 },
+  { name: "freelance", count: 3 },
+  { name: "ux", count: 20 },
 ];
 
 export const Tags = () => {
@@ -19,28 +36,24 @@ export const Tags = () => {
     setActiveTag((prev) => (prev === tag ? null : tag));
   };
   return (
-    <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto pt-3.5 pb-1.5">
-      <SidebarLabel>Tags</SidebarLabel>
+    <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto py-4">
       <div className="flex flex-col gap-px">
         {tags.map((tag) => (
           <button
-            key={tag}
+            key={tag.name}
             type="button"
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 text-xs transition-all",
-              activeTag === tag
-                ? "bg-accent-dim text-primary font-medium"
+              "flex items-center gap-2 px-4 py-1.5 text-xs transition-colors font-mono",
+              activeTag === tag.name
+                ? "text-primary"
                 : "text-muted2 hover:bg-surface2 hover:text-text2",
             )}
-            onClick={() => handleTagClick(tag)}
+            onClick={() => handleTagClick(tag.name)}
           >
-            <span
-              className={cn(
-                "size-1.5 shrink-0 rounded-full transition-colors",
-                activeTag === tag ? "bg-primary" : "bg-border2",
-              )}
-            />
-            {tag}
+            #{tag.name}
+            <span className="text-muted-foreground ml-auto text-[11px]">
+              {tag.count}
+            </span>
           </button>
         ))}
       </div>

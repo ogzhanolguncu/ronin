@@ -1,25 +1,15 @@
 import { cn } from "@/lib/utils";
 import type { NavItem } from "./types";
 
-export function SidebarLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-muted-foreground mb-2 px-4 text-[13px] font-medium tracking-wide">
-      {children}
-    </div>
-  );
-}
-
 const ACTIVE_ITEM = "all";
+
 export function SidebarSection({
-  label,
   items,
 }: {
-  label: string;
   items: NavItem[];
 }) {
   return (
-    <div className="shrink-0 pt-4 pb-1.5">
-      <SidebarLabel>{label}</SidebarLabel>
+    <div className="shrink-0 pt-4 pb-2.5">
       {items.map((item) => (
         <NavRow key={item.id} item={item} isActive={item.id === ACTIVE_ITEM} />
       ))}
@@ -41,10 +31,12 @@ function NavRow({ item, isActive }: { item: NavItem; isActive: boolean }) {
       {item.icon}
       {item.label}
       {item.count !== undefined && (
-        <span className="text-muted-foreground bg-surface2 ml-auto rounded-sm px-1 py-px font-mono text-[11px] border-border border mr-2">
+        <span className="text-muted-foreground ml-auto py-px font-mono text-[11px] mr-4">
           {item.count}
         </span>
       )}
     </button>
   );
 }
+
+
