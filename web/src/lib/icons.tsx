@@ -1,12 +1,12 @@
 export {
-  MagnifyingGlassIcon as SearchIcon,
-  Pencil1Icon         as EditIcon,
-  TrashIcon           as DeleteIcon,
-  ArchiveIcon,
-  DashboardIcon       as GridIcon,
-  ClockIcon,
-  PlusIcon,
-  Cross2Icon          as CloseIcon,
-  FileTextIcon        as NotesIcon,
-  ChevronDownIcon,
-} from '@radix-ui/react-icons'
+  Search as SearchIcon,
+  Pencil as EditIcon,
+  Trash2 as DeleteIcon,
+  Archive as ArchiveIcon,
+  LayoutGrid as GridIcon,
+  Clock as ClockIcon,
+  Plus as PlusIcon,
+  X as CloseIcon,
+  FileText as NotesIcon,
+  ChevronDown as ChevronDownIcon,
+} from 'lucide-react'

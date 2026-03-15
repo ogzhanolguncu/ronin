@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react'
-import { Dialog } from '@ark-ui/react/dialog'
-import { TagsInput } from '@ark-ui/react/tags-input'
-import { Portal } from '@ark-ui/react/portal'
-import { CloseIcon } from '../lib/icons'
+import { useState, useEffect, type KeyboardEvent } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import type { Bookmark, CreateBookmarkData } from '../lib/types'
-import s from './bookmark-dialog.module.css'
 
 type Props = {
   open: boolean
-  bookmark?: Bookmark // undefined = create mode
+  bookmark?: Bookmark
   onClose: () => void
   onSave: (data: CreateBookmarkData) => void
 }
@@ -18,116 +24,116 @@ export function BookmarkDialog({ open, bookmark, onClose, onSave }: Props) {
   const [title, setTitle] = useState(bookmark?.title ?? '')
   const [notes, setNotes] = useState(bookmark?.notes ?? '')
   const [tags, setTags] = useState<string[]>(bookmark?.tags ?? [])
+  const [tagInput, setTagInput] = useState('')
 
-  // Sync form state when bookmark changes (e.g. switching from create to edit)
   useEffect(() => {
     setUrl(bookmark?.url ?? '')
     setTitle(bookmark?.title ?? '')
     setNotes(bookmark?.notes ?? '')
     setTags(bookmark?.tags ?? [])
+    setTagInput('')
   }, [bookmark])
 
   const handleSave = () => {
-    // Stage 2: add Zod validation here
     if (!url.trim() || !title.trim()) return
     onSave({ url: url.trim(), title: title.trim(), notes: notes.trim(), tags })
   }
 
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const value = tagInput.trim()
+    if (e.key === 'Enter' && value) {
+      e.preventDefault()
+      if (!tags.includes(value)) {
+        setTags([...tags, value])
+      }
+      setTagInput('')
+    }
+    if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      setTags(tags.slice(0, -1))
+    }
+  }
+
+  const removeTag = (index: number) => {
+    setTags(tags.filter((_, i) => i !== index))
+  }
+
   return (
-    <Dialog.Root
-      open={open}
-      onOpenChange={({ open: isOpen }) => !isOpen && onClose()}
-      lazyMount
-      unmountOnExit
-    >
-      <Portal>
-        <Dialog.Positioner
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: '#18140faa',
-            backdropFilter: 'blur(3px)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Dialog.Content className={s.modal}>
-            <div className={s.modalHeader}>
-              <Dialog.Title className={s.modalTitle}>
-                {bookmark ? 'Edit bookmark' : 'New bookmark'}
-              </Dialog.Title>
-              <Dialog.CloseTrigger className={s.modalClose}>
-                <CloseIcon />
-              </Dialog.CloseTrigger>
-            </div>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{bookmark ? 'Edit bookmark' : 'New bookmark'}</DialogTitle>
+        </DialogHeader>
 
-            <div className={s.formGroup}>
-              <label className={s.formLabel} htmlFor="f-url">URL</label>
+        <div className="flex flex-col gap-3">
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" htmlFor="f-url">URL</label>
+            <Input
+              id="f-url"
+              type="url"
+              placeholder="https://"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" htmlFor="f-title">Title</label>
+            <Input
+              id="f-title"
+              type="text"
+              placeholder="Page title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" htmlFor="f-notes">Notes</label>
+            <Textarea
+              id="f-notes"
+              placeholder="Why you saved this..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="min-h-[68px]"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Tags</label>
+            <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-input/20 px-2.5 py-1.5 min-h-[38px] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30 transition-colors">
+              {tags.map((tag, index) => (
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className="gap-1 font-mono text-[10px] text-primary border-primary/30 bg-primary/5"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    className="opacity-60 hover:opacity-100 ml-0.5 text-[0.9em] leading-none"
+                    onClick={() => removeTag(index)}
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
               <input
-                className={s.formInput}
-                id="f-url"
-                type="url"
-                placeholder="https://"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                autoFocus
+                className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-foreground text-xs font-light placeholder:text-muted-foreground"
+                placeholder="tag, press Enter"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
               />
             </div>
+          </div>
+        </div>
 
-            <div className={s.formGroup}>
-              <label className={s.formLabel} htmlFor="f-title">Title</label>
-              <input
-                className={s.formInput}
-                id="f-title"
-                type="text"
-                placeholder="Page title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-
-            <div className={s.formGroup}>
-              <label className={s.formLabel} htmlFor="f-notes">Notes</label>
-              <textarea
-                className={s.formTextarea}
-                id="f-notes"
-                placeholder="Why you saved this..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-
-            <div className={s.formGroup}>
-              <label className={s.formLabel}>Tags</label>
-              <TagsInput.Root
-                value={tags}
-                onValueChange={(e) => setTags(e.value)}
-              >
-                <TagsInput.Control className={s.tagsInputWrap}>
-                  {tags.map((tag, index) => (
-                    <TagsInput.Item key={index} index={index} value={tag} className={s.tagChip}>
-                      <TagsInput.ItemText>{tag}</TagsInput.ItemText>
-                      <TagsInput.ItemDeleteTrigger>×</TagsInput.ItemDeleteTrigger>
-                    </TagsInput.Item>
-                  ))}
-                  <TagsInput.Input
-                    className={s.tagsTextInput}
-                    placeholder="tag, press Enter"
-                  />
-                </TagsInput.Control>
-                <TagsInput.HiddenInput />
-              </TagsInput.Root>
-            </div>
-
-            <div className={s.modalFooter}>
-              <Dialog.CloseTrigger className={s.btnSecondary}>Cancel</Dialog.CloseTrigger>
-              <button className={s.btnPrimary} onClick={handleSave}>Save</button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Portal>
-    </Dialog.Root>
+        <DialogFooter className="border-t border-border pt-3.5 mt-1">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

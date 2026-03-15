@@ -1,6 +1,9 @@
-import { Dialog } from '@ark-ui/react/dialog'
-import { Portal } from '@ark-ui/react/portal'
-import s from './confirm-dialog.module.css'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 type Props = {
   open: boolean
@@ -11,36 +14,16 @@ type Props = {
 
 export function ConfirmDialog({ open, title, onClose, onConfirm }: Props) {
   return (
-    <Dialog.Root
-      open={open}
-      onOpenChange={({ open: isOpen }) => !isOpen && onClose()}
-      lazyMount
-      unmountOnExit
-    >
-      <Portal>
-        <Dialog.Positioner
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: '#18140f88',
-            backdropFilter: 'blur(2px)',
-            zIndex: 110,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Dialog.Content className={s.confirmBox}>
-            <p className={s.confirmMsg}>
-              Remove <strong>{title}</strong>? This cannot be undone.
-            </p>
-            <div className={s.confirmActions}>
-              <Dialog.CloseTrigger className={s.btnSecondary}>Cancel</Dialog.CloseTrigger>
-              <button className={s.btnDanger} onClick={onConfirm}>Remove</button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Portal>
-    </Dialog.Root>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent showCloseButton={false} className="max-w-[300px] gap-4">
+        <p className="text-[13px] text-foreground leading-relaxed">
+          Remove <strong className="font-medium">{title}</strong>? This cannot be undone.
+        </p>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="destructive" onClick={onConfirm}>Remove</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
