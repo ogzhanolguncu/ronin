@@ -9,8 +9,8 @@ export function ContentToolbar() {
         <Input
           variant="ghost"
           placeholder="Search bookmarks, tags, collections..."
-          className="flex-1 text-[13px] placeholder:text-[13px] border-b border-transparent transition-colors duration-300 focus:border-border-soft"
-          leftIcon={<SearchIcon strokeWidth={2.5} />}
+          className="flex-1 text-sm placeholder:text-muted2/40 border-b border-transparent transition-colors duration-300 focus:border-border-soft"
+          leftIcon={<SearchIcon strokeWidth={1.5} />}
         />
       </div>
 

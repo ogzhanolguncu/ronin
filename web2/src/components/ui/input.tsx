@@ -34,7 +34,7 @@ function Input({
   const isGhost = variant === "ghost"
 
   const iconClasses =
-    "pointer-events-none absolute top-1/2 -translate-y-1/2 select-none text-muted2 [&>svg]:size-3.5"
+    "pointer-events-none absolute top-1/2 -translate-y-1/2 select-none [&>svg]:size-3.5"
 
   if (!leftIcon && !rightIcon) {
     return (
@@ -49,28 +49,39 @@ function Input({
 
   return (
     <div className="relative w-full" data-slot="input-wrapper">
-      {leftIcon && (
-        <span
-          className={cn(iconClasses, isGhost ? "left-0" : "left-2.5")}
-          aria-hidden="true"
-        >
-          {leftIcon}
-        </span>
-      )}
       <input
         type={type}
         data-slot="input"
         className={cn(
           inputVariants({ variant }),
+          "peer",
           leftIcon && (isGhost ? "pl-5" : "pl-8"),
           rightIcon && (isGhost ? "pr-5" : "pr-8"),
           className
         )}
         {...props}
       />
+      {leftIcon && (
+        <span
+          className={cn(
+            iconClasses,
+            isGhost
+              ? "left-0 text-muted2/40 peer-[:not(:placeholder-shown)]:text-muted2 transition-colors duration-200"
+              : "left-2.5 text-muted2"
+          )}
+          aria-hidden="true"
+        >
+          {leftIcon}
+        </span>
+      )}
       {rightIcon && (
         <span
-          className={cn(iconClasses, isGhost ? "right-0" : "right-2.5")}
+          className={cn(
+            iconClasses,
+            isGhost
+              ? "right-0 text-muted2/40 peer-[:not(:placeholder-shown)]:text-muted2 transition-colors duration-200"
+              : "right-2.5 text-muted2"
+          )}
           aria-hidden="true"
         >
           {rightIcon}
