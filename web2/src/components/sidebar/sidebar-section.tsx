@@ -22,7 +22,7 @@ function NavRow({ item, isActive }: { item: NavItem; isActive: boolean }) {
     <button
       type="button"
       className={cn(
-        "flex w-full items-center gap-2 border-l-2 py-2 pl-[14px] text-xs transition-all [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0",
+        "flex w-full items-center gap-2 border-l-2 py-2 pl-3.5 text-xs transition-all [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0",
         isActive
           ? "nav-indicator-active text-primary bg-accent-dim font-medium"
           : "nav-indicator-inactive text-muted2 hover:text-text2 hover:bg-surface2",

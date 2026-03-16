@@ -7,6 +7,7 @@ import {
   StarIcon,
 } from "../ui/icons";
 import { Header } from "./header";
+import { Collections } from "./collections";
 import { Tags } from "./tags";
 import type { NavItem } from "./types";
 import { SidebarSection } from "./sidebar-section";
@@ -23,12 +24,16 @@ export function Sidebar() {
     <aside className="paper-grain bg-surface border-border-soft relative flex h-full flex-col overflow-hidden border-r">
       <Header />
       <SidebarSection items={VIEW_ITEMS} />
+      <Collections />
       <Tags />
-      <div className="border-border bg-surface shrink-0 border-t px-4 py-4">
-        <Button className="w-full gap-1.5">
+      <div className="shrink-0 border-t border-border-soft/50 px-4 py-3">
+        <button
+          type="button"
+          className="flex items-center gap-2.5 text-xs text-muted2/40 transition-colors hover:text-muted2"
+        >
           <PlusIcon className="h-3 w-3" />
           Add bookmark
-        </Button>
+        </button>
       </div>
     </aside>
   );

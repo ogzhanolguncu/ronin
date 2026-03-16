@@ -29,21 +29,28 @@ const tags = [
   { name: "ux", count: 20 },
 ];
 
+const VISIBLE_COUNT = 10;
+
 export const Tags = () => {
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const handleTagClick = (tag: string) => {
     setActiveTag((prev) => (prev === tag ? null : tag));
   };
+
+  const visibleTags = expanded ? tags : tags.slice(0, VISIBLE_COUNT);
+  const hiddenCount = tags.length - VISIBLE_COUNT;
+
   return (
-    <div className="tags-scroll thin-scrollbar min-h-0 flex-1 overflow-y-auto py-4">
+    <div className="tags-scroll thin-scrollbar shrink-0 border-t border-border-soft/50 pt-3 pb-3 min-h-0 flex-1 overflow-y-auto">
       <div className="flex flex-col gap-px">
-        {tags.map((tag) => (
+        {visibleTags.map((tag) => (
           <button
             key={tag.name}
             type="button"
             className={cn(
-              "flex items-center gap-2 px-4 py-[7px] text-xs font-mono transition-colors",
+              "flex items-center gap-2 px-4 py-1.5 text-xs transition-colors",
               activeTag === tag.name
                 ? "text-primary"
                 : "text-muted2 hover:bg-surface2 hover:text-text2",
@@ -51,11 +58,20 @@ export const Tags = () => {
             onClick={() => handleTagClick(tag.name)}
           >
             #{tag.name}
-            <span className="text-muted-foreground ml-auto text-[11px]">
+            <span className="text-muted-foreground ml-auto font-mono text-[11px]">
               {tag.count}
             </span>
           </button>
         ))}
+        {!expanded && hiddenCount > 0 && (
+          <button
+            type="button"
+            className="px-4 py-1.5 text-[11px] text-muted2/40 transition-colors hover:text-muted2 text-left"
+            onClick={() => setExpanded(true)}
+          >
+            +{hiddenCount} more
+          </button>
+        )}
       </div>
     </div>
   );

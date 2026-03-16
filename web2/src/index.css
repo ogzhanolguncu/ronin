@@ -145,10 +145,67 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+  ::selection {
+    background-color: oklch(from var(--primary) l c h / 0.2);
+    color: var(--foreground);
+  }
+  ::placeholder {
+    color: var(--muted-foreground);
+  }
+  input[type="radio"],
+  input[type="checkbox"],
+  input[type="range"] {
+    accent-color: var(--primary);
+  }
+ 
+  button,
+  input,
+  textarea,
+  select {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 200ms ease-out;
+  }
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-color: var(--ring);
+  }
+  /* Link styling */
+  a {
+    color: var(--primary);
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.25em;
+    transition: text-decoration-color 200ms ease-out;
+  }
+  a:hover {
+    text-decoration-color: currentColor;
+  }
+  /* Cursor hints */
+  button,
+  select,
+  [role="button"] {
+    cursor: pointer;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    cursor: text;
+  }
+  /* Text overflow */
+  body {
+    word-break: break-word;
+  }
 }
 
 html {
   scrollbar-gutter: stable;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "liga" 1, "kern" 1;
 }
 
 body {
@@ -183,6 +240,7 @@ body {
     0 1px 0 oklch(1 0 0 / 0.533) inset,
     0 20px 60px oklch(0 0 0 / 0.102),
     0 4px 16px oklch(0 0 0 / 0.071);
+  position: relative;
 
   opacity: 1;
   transform: translateY(0);
@@ -193,6 +251,22 @@ body {
   @starting-style {
     opacity: 0;
     transform: translateY(4px);
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .app {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -276,6 +350,18 @@ body {
 }
 .thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Accessibility: Respect motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Shimmer animation for skeletons */
