@@ -4,20 +4,18 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 
 export function ContentToolbar() {
   return (
-    <>
-      <div className="px-6 pt-6 pb-4">
-        <div className="flex items-center gap-2">
-          {/* <SearchIcon className="size-3.5 text-sumi" /> */}
-          <Input
-            variant="ghost"
-            placeholder="Search bookmarks..."
-            className="search-input flex-1"
-          />
-        </div>
+    <div className="border-b border-border-soft/50">
+      <div className="px-6 pt-5 pb-3">
+        <Input
+          variant="ghost"
+          placeholder="Search bookmarks..."
+          className="flex-1 text-[13px] placeholder:text-[13px] border-b border-transparent transition-colors duration-300 focus:border-border-soft"
+          leftIcon={<SearchIcon strokeWidth={2.5} />}
+        />
       </div>
 
-      <div className="flex items-baseline justify-between px-6 pb-4">
-        <h2 className="text-xs font-mono tracking-wide text-muted2 uppercase">
+      <div className="flex items-baseline justify-between px-6 pb-3">
+        <h2 className="text-xs font-mono tracking-wide text-muted2/80 uppercase">
           All bookmarks
         </h2>
         <NativeSelect variant="ghost" size="sm" defaultValue="newest">
@@ -27,6 +25,6 @@ export function ContentToolbar() {
           <NativeSelectOption value="za">Z → A</NativeSelectOption>
         </NativeSelect>
       </div>
-    </>
+    </div>
   );
 }
