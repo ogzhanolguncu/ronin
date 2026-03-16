@@ -1,0 +1,114 @@
+import { BookmarkItem } from "./bookmark-item";
+import { BookmarkSkeleton } from "./bookmark-skeleton";
+
+const MOCK_BOOKMARKS = [
+  {
+    id: 1,
+    url: "https://rauno.me",
+    title: "Rauno Freiberg",
+    hostname: "rauno.me",
+    description: "Interface design and engineering.",
+    tags: ["design", "inspiration"],
+    date: "Mar 12, 2025",
+    notes: "",
+  },
+  {
+    id: 2,
+    url: "https://linear.app",
+    title: "Linear — Plan and build products",
+    hostname: "linear.app",
+    description:
+      "Linear is a better way to build products. Streamline issues, projects, and product roadmaps.",
+    tags: ["tools", "productivity"],
+    date: "Mar 10, 2025",
+    notes: "Great example of keyboard-first UX design.",
+  },
+  {
+    id: 3,
+    url: "https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/",
+    title: "What Is ChatGPT Doing … and Why Does It Work?",
+    hostname: "writings.stephenwolfram.com",
+    description: "",
+    tags: ["ai", "research"],
+    date: "Feb 28, 2025",
+    notes: "",
+  },
+  {
+    id: 4,
+    url: "https://www.robinsloan.com/lab/new-fonts/",
+    title: "New fonts for the lab",
+    hostname: "robinsloan.com",
+    description:
+      "Exploring typefaces that feel right for long-form reading on screens.",
+    tags: ["typography"],
+    date: "Feb 20, 2025",
+    notes:
+      "The serif choices here pair well with the kinari background aesthetic we use.",
+  },
+  {
+    id: 5,
+    url: "https://tailwindcss.com/docs",
+    title: "Tailwind CSS Documentation",
+    hostname: "tailwindcss.com",
+    description: "",
+    tags: ["css", "reference"],
+    date: "Feb 15, 2025",
+    notes: "",
+  },
+  {
+    id: 6,
+    url: "https://paco.me",
+    title: "Paco Coursey",
+    hostname: "paco.me",
+    description: "Design engineer building interfaces and tools.",
+    tags: ["design", "engineering"],
+    date: "Feb 10, 2025",
+    notes: "",
+  },
+  {
+    id: 7,
+    url: "https://worrydream.com/refs/Tufte_-_Envisioning_Information.pdf",
+    title: "Envisioning Information — Edward Tufte",
+    hostname: "worrydream.com",
+    description:
+      "Classic text on information design, visual explanations, and data density.",
+    tags: ["design", "data-viz", "books"],
+    date: "Jan 30, 2025",
+    notes:
+      "Chapter 3 on layering and separation is directly relevant to our card layout decisions.",
+  },
+];
+
+const showSkeleton = false;
+
+export function BookmarkList() {
+  if (showSkeleton) {
+    return (
+      <div>
+        {Array.from({ length: 7 }, (_, i) => (
+          <BookmarkSkeleton key={i} delay={i * 0.08} />
+        ))}
+      </div>
+    );
+  }
+
+  if (MOCK_BOOKMARKS.length === 0) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-[32px] text-muted2/25 mb-4">◈</p>
+        <p className="text-[13px] text-muted2 font-medium">Nothing here yet</p>
+        <p className="text-[11px] text-muted2/60 font-light mt-1">
+          Add your first bookmark to begin
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {MOCK_BOOKMARKS.map((bookmark) => (
+        <BookmarkItem key={bookmark.id} bookmark={bookmark} />
+      ))}
+    </div>
+  );
+}

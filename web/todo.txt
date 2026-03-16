@@ -1,7 +1,0 @@
-- Make sure both tags and searches persisted on url
-- when user clicks on a tag we should search both BE and FE
-- create Dialog is  not enough both in terms of UI it should look like unkey dialog and also input should be like search input style. create items are not fully there. tags are not really good. polish
-- add proper pagination
-- search bookmarks should search both tags and bookmarks
-- dark UI
-

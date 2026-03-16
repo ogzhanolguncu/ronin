@@ -4,7 +4,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 
 export function ContentToolbar() {
   return (
-    <div className="border-b border-border-soft/50">
+    <div className="border-b border-border-soft/50 h-24">
       <div className="px-6 pt-5 pb-3">
         <Input
           variant="ghost"
