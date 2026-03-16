@@ -278,6 +278,15 @@ body {
   background: transparent;
 }
 
+/* Search input focus transition */
+.search-input {
+  border-bottom: 1px solid transparent;
+  transition: border-color 300ms ease;
+}
+.search-input:focus {
+  border-color: var(--border-soft);
+}
+
 /* Shimmer animation for skeletons */
 @keyframes shimmer {
   0% {
