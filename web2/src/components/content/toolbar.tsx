@@ -8,14 +8,14 @@ export function ContentToolbar() {
       <div className="px-6 pt-5 pb-3">
         <Input
           variant="ghost"
-          placeholder="Search bookmarks..."
+          placeholder="Search bookmarks, tags, collections..."
           className="flex-1 text-[13px] placeholder:text-[13px] border-b border-transparent transition-colors duration-300 focus:border-border-soft"
           leftIcon={<SearchIcon strokeWidth={2.5} />}
         />
       </div>
 
       <div className="flex items-baseline justify-between px-6 pb-3">
-        <h2 className="text-xs font-mono tracking-wide text-muted2/80 uppercase">
+        <h2 className="text-xs font-mono tracking-tight text-muted2">
           All bookmarks
         </h2>
         <NativeSelect variant="ghost" size="sm" defaultValue="newest">

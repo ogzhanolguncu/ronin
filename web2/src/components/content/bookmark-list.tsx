@@ -95,7 +95,6 @@ export function BookmarkList() {
   if (MOCK_BOOKMARKS.length === 0) {
     return (
       <div className="py-20 text-center">
-        <p className="text-[32px] text-muted2/25 mb-4">◈</p>
         <p className="text-[13px] text-muted2 font-medium">Nothing here yet</p>
         <p className="text-[11px] text-muted2/60 font-light mt-1">
           Add your first bookmark to begin
@@ -107,7 +106,11 @@ export function BookmarkList() {
   return (
     <div>
       {MOCK_BOOKMARKS.map((bookmark) => (
-        <BookmarkItem key={bookmark.id} bookmark={bookmark} />
+        <BookmarkItem
+          key={bookmark.id}
+          bookmark={bookmark}
+          onTagClick={(tag) => console.log("filter by", tag)}
+        />
       ))}
     </div>
   );

@@ -13,12 +13,18 @@ interface Bookmark {
   notes?: string;
 }
 
-export function BookmarkItem({ bookmark }: { bookmark: Bookmark }) {
+export function BookmarkItem({
+  bookmark,
+  onTagClick,
+}: {
+  bookmark: Bookmark;
+  onTagClick?: (tag: string) => void;
+}) {
   const [notesOpen, setNotesOpen] = useState(false);
-  const hasNotes = !!bookmark.notes;
+  const hasNotes = Boolean(bookmark.notes);
 
   return (
-    <div className="relative px-6 py-[18px] border-b border-border-soft/40 first:border-t-0 transition-colors duration-200 hover:bg-surface">
+    <div className="relative px-6 py-5 border-b border-border-soft/40 first:border-t-0 transition-colors duration-200 hover:bg-surface">
       {/* Action cluster — always visible, top-right */}
       <div className="absolute top-3 right-4 flex items-center gap-0.5">
         <Button
@@ -79,9 +85,16 @@ export function BookmarkItem({ bookmark }: { bookmark: Bookmark }) {
       )}
 
       {/* Row 4: Tags + Date */}
-      <div className="flex items-center gap-1.5 mt-1.5 font-mono text-[10px] text-muted2/80">
+      <div className="flex items-center gap-1.5 mt-1.5 font-mono text-[10px] text-muted2">
         {bookmark.tags.map((tag) => (
-          <span key={tag}>#{tag}</span>
+          <button
+            key={tag}
+            type="button"
+            className="transition-colors hover:text-primary"
+            onClick={() => onTagClick?.(tag)}
+          >
+            #{tag}
+          </button>
         ))}
         {bookmark.tags.length > 0 && <span>·</span>}
         <span className="text-muted2/60">{bookmark.date}</span>
@@ -89,7 +102,7 @@ export function BookmarkItem({ bookmark }: { bookmark: Bookmark }) {
 
       {/* Notes expansion */}
       {hasNotes && notesOpen && (
-        <p className="text-[11px] text-text2/80 font-light italic leading-relaxed font-jp mt-2 pt-2 border-t border-border-soft/40">
+        <p className="text-[11px] text-text2/80 font-light leading-relaxed font-jp mt-2 pt-2 border-t border-border-soft/40">
           {bookmark.notes}
         </p>
       )}
