@@ -215,8 +215,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 40px 24px;
+  min-height: 100dvh;
+  padding: 0px 24px;
 }
 
 .dark body {
