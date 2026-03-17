@@ -131,7 +131,7 @@ function FormTagInput({ label, error, id, ...props }: FormTagInputProps) {
       )}
       <TagInput id={inputId} {...props} />
       {error && (
-        <p className="text-[11px] text-destructive">
+        <p className="text-xs text-destructive">
           {error}
         </p>
       )}

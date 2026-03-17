@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { revalidateLogic, useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import {
   Dialog,
@@ -15,15 +15,33 @@ import { FormInput, FormTextarea } from "@/components/ui/form-input";
 import { FormTagInput } from "@/components/ui/tag-input";
 import { PlusIcon } from "@/components/ui/icons";
 
-const urlSchema = z.url("Must be a valid URL");
+const bookmarkSchema = z.object({
+  url: z.url("Must be a valid URL"),
+  title: z.string().max(200, "Title must be 200 characters or less"),
+  description: z.string().max(500, "Description must be 500 characters or less"),
+  notes: z.string().max(2000, "Notes must be 2000 characters or less"),
+  tags: z
+    .array(z.string().min(1).max(50, "Tag must be 50 characters or less"))
+    .max(20, "Maximum 20 tags"),
+});
 
 export function AddBookmarkDialog() {
   const [open, setOpen] = useState(false);
 
   const form = useForm({
-    defaultValues: { url: "", title: "", description: "", notes: "", tags: [] as string[] },
+    defaultValues: {
+      url: "",
+      title: "",
+      description: "",
+      notes: "",
+      tags: [] as string[],
+    },
+    validationLogic: revalidateLogic(),
+    validators: {
+      onDynamic: bookmarkSchema,
+    },
     onSubmit: async ({ value }) => {
-      console.log({ tags: value.tags })
+      console.log({ tags: value.tags });
       form.reset();
       setOpen(false);
     },
@@ -64,7 +82,7 @@ export function AddBookmarkDialog() {
           }}
         >
           <div className="px-6 py-4 flex flex-col gap-6">
-            <form.Field name="url" validators={{ onSubmit: urlSchema }}>
+            <form.Field name="url">
               {(field) => (
                 <FormInput
                   variant="ghost"
@@ -76,7 +94,7 @@ export function AddBookmarkDialog() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="https://brandur.org/interfaces"
-                  error={field.state.meta.errors[0]?.toString()}
+                  error={field.state.meta.errors[0]?.message}
                   autoFocus
                 />
               )}

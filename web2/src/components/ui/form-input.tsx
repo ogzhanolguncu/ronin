@@ -26,7 +26,7 @@ function FormInput({ label, error, id, variant, ...props }: FormInputProps) {
         {...props}
       />
       {error && (
-        <p id={`${inputId}-error`} className="text-[11px] text-destructive">
+        <p id={`${inputId}-error`} className="text-xs text-destructive">
           {error}
         </p>
       )}
@@ -62,7 +62,7 @@ function FormTextarea({ label, error, id, className, variant, ...props }: FormTe
         {...props}
       />
       {error && (
-        <p id={`${textareaId}-error`} className="text-[11px] text-destructive">
+        <p id={`${textareaId}-error`} className="text-xs text-destructive">
           {error}
         </p>
       )}
