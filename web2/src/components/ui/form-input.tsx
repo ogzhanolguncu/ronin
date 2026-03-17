@@ -14,7 +14,7 @@ function FormInput({ label, error, id, variant, ...props }: FormInputProps) {
   return (
     <div className="flex flex-col gap-2.5">
       {label && (
-        <label htmlFor={inputId} className="text-[13px] font-medium text-foreground/70">
+        <label htmlFor={inputId} className="text-[13px] font-medium text-foreground/80">
           {label}
         </label>
       )}
@@ -46,7 +46,7 @@ function FormTextarea({ label, error, id, className, variant, ...props }: FormTe
   return (
     <div className="flex flex-col gap-2.5">
       {label && (
-        <label htmlFor={textareaId} className="text-[13px] font-medium text-foreground/70">
+        <label htmlFor={textareaId} className="text-[13px] font-medium text-foreground/80">
           {label}
         </label>
       )}

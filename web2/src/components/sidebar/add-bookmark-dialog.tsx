@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormTextarea } from "@/components/ui/form-input";
+import { FormTagInput } from "@/components/ui/tag-input";
 import { PlusIcon } from "@/components/ui/icons";
 
 const urlSchema = z.url("Must be a valid URL");
@@ -20,13 +21,9 @@ export function AddBookmarkDialog() {
   const [open, setOpen] = useState(false);
 
   const form = useForm({
-    defaultValues: { url: "", title: "", description: "", notes: "", tags: "" },
+    defaultValues: { url: "", title: "", description: "", notes: "", tags: [] as string[] },
     onSubmit: async ({ value }) => {
-      const tags = value.tags
-        ?.split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      console.log({ tags })
+      console.log({ tags: value.tags })
       form.reset();
       setOpen(false);
     },
@@ -71,7 +68,7 @@ export function AddBookmarkDialog() {
               {(field) => (
                 <FormInput
                   variant="ghost"
-                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/50"
+                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/30 "
                   label="URL"
                   id={field.name}
                   name={field.name}
@@ -89,7 +86,7 @@ export function AddBookmarkDialog() {
               {(field) => (
                 <FormInput
                   variant="ghost"
-                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/50"
+                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/30"
                   label="Title"
                   id={field.name}
                   name={field.name}
@@ -105,7 +102,7 @@ export function AddBookmarkDialog() {
               {(field) => (
                 <FormInput
                   variant="ghost"
-                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/50"
+                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/30"
                   label="Description"
                   id={field.name}
                   name={field.name}
@@ -121,7 +118,7 @@ export function AddBookmarkDialog() {
               {(field) => (
                 <FormTextarea
                   variant="ghost"
-                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/50"
+                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/30 py-0"
                   label="Notes"
                   id={field.name}
                   name={field.name}
@@ -135,16 +132,16 @@ export function AddBookmarkDialog() {
 
             <form.Field name="tags">
               {(field) => (
-                <FormInput
+                <FormTagInput
                   variant="ghost"
-                  className="border-b border-border-soft/50 transition-colors focus:border-border-soft placeholder:text-muted2/50"
+                  className="border-b border-border-soft/50 transition-colors focus-within:border-border-soft placeholder:text-muted2/30 font-mono"
                   label="Tags"
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="engineering, api-design"
+                  onChange={(tags) => field.handleChange(tags)}
+                  placeholder="#engineering, #api-design"
                 />
               )}
             </form.Field>
