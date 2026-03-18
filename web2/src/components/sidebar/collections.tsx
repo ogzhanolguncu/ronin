@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { PlusIcon } from "@/components/ui/icons";
 import { useState } from "react";
 
-const MOCK_COLLECTIONS = [
+export const MOCK_COLLECTIONS = [
   { id: 1, name: "Reading list", color: "oklch(0.55 0.14 30)" },
   { id: 2, name: "Design refs", color: "oklch(0.42 0.08 255)" },
   { id: 3, name: "Work resources", color: "oklch(0.55 0.16 145)" },

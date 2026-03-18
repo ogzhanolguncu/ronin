@@ -12,16 +12,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FormInput, FormTextarea } from "@/components/ui/form-input";
+import { FormInput, FormTextarea, FormSelect } from "@/components/ui/form-input";
 import { FormTagInput } from "@/components/ui/tag-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
+import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
 
 const bookmarkSchema = z.object({
   url: z.url("Please enter a valid URL"),
   title: z.string().max(200, "Title must be 200 characters or less"),
   description: z.string().max(500, "Description must be 500 characters or less"),
   notes: z.string().max(2000, "Notes must be 2000 characters or less"),
+  collectionId: z.string(),
   tags: z
     .array(z.string().min(1).max(50, "Tag must be 50 characters or less"))
     .max(20, "Maximum 20 tags"),
@@ -35,6 +37,7 @@ export function AddBookmarkDialog() {
   const form = useForm({
     defaultValues: {
       url: "",
+      collectionId: "",
       title: "",
       description: "",
       notes: "",
@@ -46,7 +49,7 @@ export function AddBookmarkDialog() {
       onDynamic: bookmarkSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log({ tags: value.tags });
+      console.log({ tags: value.tags, collectionId: value.collectionId });
       form.reset();
       setNotesOpen(false);
       setOpen(false);
@@ -122,6 +125,25 @@ export function AddBookmarkDialog() {
               )}
             </form.Field>
 
+            <form.Field name="collectionId">
+              {(field) => (
+                <FormSelect
+                  label="Collection"
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  hint="Manage collections from the sidebar."
+                  options={MOCK_COLLECTIONS.map((c) => ({
+                    value: String(c.id),
+                    label: c.name,
+                  }))}
+                />
+              )}
+            </form.Field>
+
+
             <form.Field name="title">
               {(field) => (
                 <FormInput
@@ -151,6 +173,7 @@ export function AddBookmarkDialog() {
                 />
               )}
             </form.Field>
+
 
             <form.Field name="notes">
               {(field) => (

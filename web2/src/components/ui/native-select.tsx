@@ -29,10 +29,10 @@ function NativeSelect({
         data-slot="native-select"
         data-size={size}
         className={cn(
-          "w-full min-w-0 appearance-none py-1 text-sm transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground disabled:pointer-events-none disabled:cursor-not-allowed",
+          "w-full min-w-0 appearance-none py-1 text-sm text-foreground transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground disabled:pointer-events-none disabled:cursor-not-allowed",
           isGhost
             ? "pr-5 pl-0 bg-transparent font-mono text-xs tracking-wide text-muted2 cursor-pointer transition-colors duration-300 hover:text-foreground focus-visible:ring-0"
-            : "pr-8 pl-2.5 h-8 rounded-lg border border-input bg-transparent placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-[size=sm]:py-0.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+            : "pr-8 pl-2.5 h-8 rounded-sm border border-border-soft bg-background disabled:opacity-50 placeholder:text-muted-foreground focus-visible:border-ring aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-[size=sm]:h-7 data-[size=sm]:py-0.5"
         )}
         {...props}
       />
