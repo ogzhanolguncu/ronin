@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
-import { PlusIcon } from "@/components/ui/icons";
 import { useState } from "react";
+import { getCollectionColor } from "@/lib/colors";
+import { AddCollectionDialog } from "@/components/sidebar/add-collection-dialog";
 
 export const MOCK_COLLECTIONS = [
-  { id: 1, name: "Reading list", color: "oklch(0.55 0.14 30)" },
-  { id: 2, name: "Design refs", color: "oklch(0.42 0.08 255)" },
-  { id: 3, name: "Work resources", color: "oklch(0.55 0.16 145)" },
-];
+  { id: 1, name: "Reading list", slug: "reading-list", colorId: 1 },
+  { id: 2, name: "Design refs", slug: "design-refs", colorId: 2 },
+  { id: 3, name: "Work resources", slug: "work-resources", colorId: 3 },
+] as const;
 
 export function Collections() {
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -32,18 +33,12 @@ export function Collections() {
           >
             <span
               className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: collection.color }}
+              style={{ backgroundColor: getCollectionColor(collection.colorId)?.value }}
             />
             {collection.name}
           </button>
         ))}
-        <button
-          type="button"
-          className="flex items-center gap-2.5 px-4 py-1.5 text-xs text-muted2/40 transition-colors hover:text-muted2"
-        >
-          <PlusIcon className="h-3 w-3" />
-          New collection
-        </button>
+        <AddCollectionDialog />
       </div>
     </div>
   );
