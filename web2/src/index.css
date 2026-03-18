@@ -42,12 +42,14 @@
   --muted2: oklch(0.525 0.012 106.8);
   --accent-hover: oklch(0.22 0.012 60);
   --accent-dim: oklch(0.28 0.015 60 / 0.08);
-  --red-dim: oklch(0.5 0.15 27 / 0.071);
+  --red-dim: oklch(0.5 0.16 27 / 0.09);
+  --kitsune: oklch(0.45 0.14 75);
+  --yellow-dim: oklch(0.45 0.14 75 / 0.09);
 
   /* Japanese accent colors */
   --sumi: oklch(0.25 0.005 60);
   --ai: oklch(0.42 0.08 255);
-  --shu: oklch(0.55 0.14 30);
+  --shu: oklch(0.48 0.16 30);
   --kinari: oklch(0.94 0.015 90);
 
   /* Soft border */
@@ -83,6 +85,8 @@
   --accent-hover: oklch(0.87 0.045 60);
   --accent-dim: oklch(0.82 0.04 60 / 0.1);
   --red-dim: oklch(0.6 0.15 27 / 0.094);
+  --kitsune: oklch(0.68 0.12 75);
+  --yellow-dim: oklch(0.68 0.12 75 / 0.094);
 
   /* Japanese accent colors (dark) */
   --sumi: oklch(0.82 0.008 60);
@@ -130,6 +134,8 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-dim: var(--accent-dim);
   --color-red-dim: var(--red-dim);
+  --color-kitsune: var(--kitsune);
+  --color-yellow-dim: var(--yellow-dim);
 
   --color-sumi: var(--sumi);
   --color-ai: var(--ai);
@@ -332,6 +338,49 @@ body {
       transparent
     );
   }
+}
+
+/* Sidebar edge — soft depth between planes (Yugen) */
+.sidebar-edge {
+  box-shadow: 1px 0 4px oklch(0 0 0 / 0.03);
+}
+.dark .sidebar-edge {
+  box-shadow: 1px 0 4px oklch(0 0 0 / 0.12);
+}
+
+/* Content scroll mist — items emerge from toolbar edge (Yugen) */
+@property --mist-top {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --mist-bottom {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.content-scroll-mist {
+  mask-image: linear-gradient(
+    to bottom,
+    oklch(0 0 0 / var(--mist-top)),
+    black 24px,
+    black calc(100% - 16px),
+    oklch(0 0 0 / var(--mist-bottom))
+  );
+  animation: mist-top linear, mist-bottom linear;
+  animation-timeline: scroll(self);
+  animation-range: 0px 24px, calc(100% - 24px) 100%;
+  animation-fill-mode: both;
+}
+
+@keyframes mist-top {
+  from { --mist-top: 1; }
+  to { --mist-top: 0; }
+}
+@keyframes mist-bottom {
+  from { --mist-bottom: 0; }
+  to { --mist-bottom: 1; }
 }
 
 /* Scrollbar utility */

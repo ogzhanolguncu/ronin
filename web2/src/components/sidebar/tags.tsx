@@ -39,7 +39,7 @@ export const Tags = () => {
 
 
   return (
-    <div className="tags-scroll thin-scrollbar shrink-0 border-t border-border-soft/50 pt-3 pb-3 min-h-0 flex-1 overflow-y-auto">
+    <div className="tags-scroll thin-scrollbar shrink-0 border-t border-border-soft/50 pt-3 pb-3 min-h-0 flex-1 overflow-y-auto content-scroll-mist">
       <div className="flex flex-col gap-px">
         {tags.map((tag) => (
           <button

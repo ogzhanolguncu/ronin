@@ -20,7 +20,7 @@ const VIEW_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   return (
-    <aside className="paper-grain bg-surface border-border-soft relative flex h-full flex-col overflow-hidden border-r">
+    <aside className="paper-grain bg-surface border-border-soft/60 relative flex h-full flex-col overflow-hidden border-r sidebar-edge" >
       <Header />
       <SidebarSection items={VIEW_ITEMS} />
       <Collections />

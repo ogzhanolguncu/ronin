@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArchiveIcon, DeleteIcon, NotesIcon } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 interface Bookmark {
   id: number;
@@ -21,33 +22,86 @@ export function BookmarkItem({
   onTagClick?: (tag: string) => void;
 }) {
   const [notesOpen, setNotesOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
+  const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const archiveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasNotes = Boolean(bookmark.notes);
 
+  useEffect(() => {
+    return () => {
+      if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
+      if (archiveTimeoutRef.current) clearTimeout(archiveTimeoutRef.current);
+    };
+  }, []);
+
+  function handleDeleteClick() {
+    if (confirmingDelete) {
+      if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
+      setConfirmingDelete(false);
+      console.log("delete", bookmark.id);
+    } else {
+      setConfirmingDelete(true);
+      deleteTimeoutRef.current = setTimeout(() => {
+        setConfirmingDelete(false);
+      }, 3000);
+    }
+  }
+
+  function handleArchiveClick() {
+    if (confirmingArchive) {
+      if (archiveTimeoutRef.current) clearTimeout(archiveTimeoutRef.current);
+      setConfirmingArchive(false);
+      console.log("archive", bookmark.id);
+    } else {
+      setConfirmingArchive(true);
+      archiveTimeoutRef.current = setTimeout(() => {
+        setConfirmingArchive(false);
+      }, 3000);
+    }
+  }
+
   return (
-    <div className="group relative px-6 py-6 border-b border-border-soft/40 first:border-t-0 transition-colors duration-200 hover:bg-surface ">
+    <div className="group relative px-6 py-6 first:border-t-0 transition-colors duration-200 hover:bg-surface">
       {/* Action cluster — always visible, top-right */}
       <div className="absolute top-3 right-4 flex items-center gap-0.5">
         <Button
           variant="ghost"
-          size="icon-xs"
-          className="text-muted2/40 hover:text-foreground transition-colors"
-          onClick={() => console.log("archive", bookmark.id)}
+          size={confirmingArchive ? "xs" : "icon-xs"}
+          className={cn(
+            "transition-all duration-300 ease-out",
+            confirmingArchive
+              ? "bg-yellow-dim text-kitsune hover:bg-yellow-dim/80"
+              : "text-muted2/40 hover:text-foreground"
+          )}
+          onClick={handleArchiveClick}
         >
           <ArchiveIcon />
+          {confirmingArchive && (
+            <span className="text-[11px] font-medium">archive?</span>
+          )}
         </Button>
         <Button
           variant="ghost"
-          size="icon-xs"
-          className="text-muted2/40 hover:text-destructive transition-colors"
-          onClick={() => console.log("delete", bookmark.id)}
+          size={confirmingDelete ? "xs" : "icon-xs"}
+          className={cn(
+            "transition-all duration-300 ease-out",
+            confirmingDelete
+              ? "bg-red-dim text-shu hover:bg-destructive/20"
+              : "text-muted2/40 hover:text-destructive"
+          )}
+          onClick={handleDeleteClick}
         >
           <DeleteIcon />
+          {confirmingDelete && (
+            <span className="text-[11px] font-medium">delete?</span>
+          )}
         </Button>
         {hasNotes && (
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-muted2/40 hover:text-foreground transition-colors"
+            className="text-muted2/40 hover:text-foreground transition-colors duration-300 ease-out"
             onClick={() => setNotesOpen((o) => !o)}
           >
             <NotesIcon />
@@ -79,7 +133,7 @@ export function BookmarkItem({
 
       {/* Row 3: Description */}
       {bookmark.description && (
-        <p className="text-xs text-muted2 font-light leading-relaxed mt-3 line-clamp-2">
+        <p className="text-xs text-muted2 font-light leading-relaxed mt-4 line-clamp-2">
           {bookmark.description}
         </p>
       )}
