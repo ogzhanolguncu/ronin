@@ -11,6 +11,7 @@ type TagInputProps = {
   className?: string
   label?: string
   error?: string
+  hint?: React.ReactNode
   id?: string
   name?: string
 }
@@ -27,7 +28,7 @@ function TagInput({
   onChange,
   onBlur,
   placeholder,
-  variant = "ghost",
+  variant = "default",
   className,
   id,
   name,
@@ -70,7 +71,7 @@ function TagInput({
     <div
       className={cn(
         inputVariants({ variant }),
-        "flex flex-wrap items-center gap-1.5 cursor-text",
+        "flex flex-wrap items-center gap-1.5 cursor-text focus-within:border-ring",
         className,
       )}
       onClick={() => inputRef.current?.focus()}
@@ -99,7 +100,7 @@ function TagInput({
         id={id}
         name={name}
         type="text"
-        className="min-w-[60px] flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted2/30"
+        className="min-w-[60px] flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -119,21 +120,30 @@ function TagInput({
 
 type FormTagInputProps = TagInputProps
 
-function FormTagInput({ label, error, id, ...props }: FormTagInputProps) {
+function FormTagInput({ label, error, hint, id, ...props }: FormTagInputProps) {
   const generatedId = React.useId()
   const inputId = id ?? generatedId
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2">
       {label && (
-        <label htmlFor={inputId} className="text-[13px] font-medium text-foreground/70 font-sans">
+        <label htmlFor={inputId} className="text-sm font-medium text-foreground/80 font-sans">
           {label}
         </label>
       )}
       <TagInput id={inputId} {...props} />
-      {error && (
-        <p className="text-xs text-destructive">
-          {error}
-        </p>
+      {(error || hint) && (
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {error && (
+              <p className="text-xs text-destructive/80 border-l-2 border-destructive/30 pl-2 animate-in fade-in duration-200">
+                {error}
+              </p>
+            )}
+            {!error && hint && (
+              <p className="text-[13px] text-muted2/60">{hint}</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )

@@ -112,7 +112,7 @@ export function BookmarkItem({
         >
           <div className="overflow-hidden">
             <div className="pl-3 border-l-2 border-border-soft/50 group-hover:border-border-soft bg-surface/50 group-hover:bg-surface2 rounded-r py-2 pr-3 transition-colors duration-200">
-              <p className="text-[11px] text-foreground/60 font-light leading-relaxed italic">
+              <p className="text-[11px] text-foreground/60 font-light leading-relaxed">
                 {bookmark.notes}
               </p>
             </div>
