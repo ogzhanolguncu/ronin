@@ -236,7 +236,7 @@ body {
 .app {
   width: 1400px;
   max-width: 100%;
-  height: 900px;
+  height: 1200px;
   border-radius: 12px;
   overflow: hidden;
   display: grid;
@@ -315,29 +315,6 @@ body {
   --indicator-opacity: 0;
   transition: --indicator-opacity 200ms ease-out;
   border-left-color: transparent;
-}
-
-/* Tags scroll fade mask */
-.tags-scroll {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    black 12px,
-    black calc(100% - 12px),
-    transparent
-  );
-}
-
-@supports (animation-timeline: scroll()) {
-  .tags-scroll {
-    mask-image: linear-gradient(
-      to bottom,
-      transparent,
-      black 16px,
-      black calc(100% - 16px),
-      transparent
-    );
-  }
 }
 
 /* Sidebar edge — soft depth between planes (Yugen) */

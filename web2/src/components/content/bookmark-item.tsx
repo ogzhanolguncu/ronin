@@ -63,8 +63,13 @@ export function BookmarkItem({
 
   return (
     <div className="group relative px-6 py-6 first:border-t-0 transition-colors duration-200 hover:bg-surface">
-      {/* Action cluster — always visible, top-right */}
-      <div className="absolute top-3 right-4 flex items-center gap-0.5">
+      {/* Action cluster — revealed on hover */}
+      <div className={cn(
+        "absolute top-3 right-4 flex items-center gap-0.5 transition-opacity duration-200 ease-out",
+        confirmingDelete || confirmingArchive
+          ? "opacity-100"
+          : "opacity-0 group-hover:opacity-100",
+      )}>
         <Button
           variant="ghost"
           size={confirmingArchive ? "xs" : "icon-xs"}

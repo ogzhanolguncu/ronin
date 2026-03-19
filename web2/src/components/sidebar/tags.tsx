@@ -39,8 +39,9 @@ export const Tags = () => {
 
 
   return (
-    <div className="tags-scroll thin-scrollbar shrink-0 border-t border-border-soft/50 pt-4 pb-4 min-h-0 flex-1 overflow-y-auto content-scroll-mist font-mono">
-      <div className="flex flex-col gap-0.5">
+    <div className="border-t border-border-soft/50 min-h-0 flex-1 flex flex-col">
+      <div className="thin-scrollbar overflow-y-auto content-scroll-mist font-mono py-3">
+        <div className="flex flex-col">
         {tags.map((tag) => (
           <button
             key={tag.name}
@@ -64,6 +65,7 @@ export const Tags = () => {
             </span>
           </button>
         ))}
+        </div>
       </div>
     </div>
   );

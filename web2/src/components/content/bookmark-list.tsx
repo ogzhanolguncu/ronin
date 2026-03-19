@@ -77,6 +77,26 @@ const MOCK_BOOKMARKS = [
     notes:
       "Chapter 3 on layering and separation is directly relevant to our card layout decisions.",
   },
+  {
+    id: 8,
+    url: "https://www.figma.com",
+    title: "Figma — Collaborative design tool",
+    hostname: "figma.com",
+    description: "The collaborative interface design tool. Build products, design systems, and collaborate on anything.",
+    tags: ["design", "tools"],
+    date: "Mar 15, 2025",
+    notes: "Essential for design handoff and component documentation.",
+  },
+  {
+    id: 9,
+    url: "https://github.com",
+    title: "GitHub — Where the world builds software",
+    hostname: "github.com",
+    description: "GitHub is where over 100 million developers shape the future of software.",
+    tags: ["development", "version-control"],
+    date: "Mar 18, 2025",
+    notes: "",
+  },
 ];
 
 const showSkeleton = false;
