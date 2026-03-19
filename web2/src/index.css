@@ -300,8 +300,12 @@ body {
 }
 
 .dark .paper-grain::before {
-  mix-blend-mode: soft-light;
-  opacity: 0.03;
+  mix-blend-mode: overlay;
+  opacity: 0.12;
+  background: repeating-conic-gradient(
+    oklch(0.85 0 0) 0% 25%,
+    transparent 0% 50%
+  ) 0 0 / 4px 4px;
 }
 
 /* Active indicator animation */

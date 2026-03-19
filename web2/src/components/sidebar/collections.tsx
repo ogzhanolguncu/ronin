@@ -20,7 +20,7 @@ export function Collections() {
   const [activeId, setActiveId] = useState<number | null>(null);
 
   return (
-    <div className="shrink-0 max-h-[350px] min-h-0 flex flex-col border-t border-border-soft/50">
+    <div className="shrink-0 max-h-[350px] min-h-0 flex flex-col border-t border-border-soft/30">
       <div className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
         <div className="flex flex-col">
           <AddCollectionDialog />
