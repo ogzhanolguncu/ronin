@@ -14,4 +14,7 @@ export {
   Moon as MoonIcon,
   Inbox as InboxIcon,
   Star as StarIcon,
+  Eye as ViewIcon,
+  ExternalLink as ExternalLinkIcon,
+  BookOpen as ReaderModeIcon,
 } from "lucide-react";

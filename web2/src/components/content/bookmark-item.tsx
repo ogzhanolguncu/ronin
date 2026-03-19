@@ -1,25 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArchiveIcon, DeleteIcon, NotesIcon } from "@/components/ui/icons";
+import { ArchiveIcon, DeleteIcon, NotesIcon, ViewIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
+import type { Bookmark } from "@/lib/types";
 
-interface Bookmark {
-  id: number;
-  url: string;
-  title: string;
-  hostname: string;
-  description?: string;
-  tags: string[];
-  date: string;
-  notes?: string;
-}
+export type { Bookmark };
 
 export function BookmarkItem({
   bookmark,
   onTagClick,
+  onViewClick,
 }: {
   bookmark: Bookmark;
   onTagClick?: (tag: string) => void;
+  onViewClick?: (bookmark: Bookmark) => void;
 }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -72,12 +66,20 @@ export function BookmarkItem({
       )}>
         <Button
           variant="ghost"
+          size="icon-xs"
+          className="text-muted2/60 hover:text-foreground transition-colors duration-300 ease-out"
+          onClick={() => onViewClick?.(bookmark)}
+        >
+          <ViewIcon />
+        </Button>
+        <Button
+          variant="ghost"
           size={confirmingArchive ? "xs" : "icon-xs"}
           className={cn(
             "transition-all duration-300 ease-out",
             confirmingArchive
-              ? "bg-yellow-dim text-kitsune hover:bg-yellow-dim/80"
-              : "text-muted2/40 hover:text-foreground"
+              ? "bg-yellow-dim text-kitsune hover:bg-kitsune/15"
+              : "text-muted2/60 hover:text-kitsune"
           )}
           onClick={handleArchiveClick}
         >
@@ -92,8 +94,8 @@ export function BookmarkItem({
           className={cn(
             "transition-all duration-300 ease-out",
             confirmingDelete
-              ? "bg-red-dim text-shu hover:bg-destructive/20"
-              : "text-muted2/40 hover:text-destructive"
+              ? "bg-red-dim text-shu hover:bg-shu/15"
+              : "text-muted2/60 hover:text-shu"
           )}
           onClick={handleDeleteClick}
         >
@@ -106,7 +108,7 @@ export function BookmarkItem({
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-muted2/40 hover:text-foreground transition-colors duration-300 ease-out"
+            className="text-muted2/60 hover:text-foreground transition-colors duration-300 ease-out"
             onClick={() => setNotesOpen((o) => !o)}
           >
             <NotesIcon />
@@ -115,7 +117,7 @@ export function BookmarkItem({
       </div>
 
       {/* Row 1: Favicon + Title */}
-      <div className="flex items-center gap-2 min-w-0 pr-20">
+      <div className="flex items-center gap-2 min-w-0 pr-28">
         <img
           src={`https://www.google.com/s2/favicons?domain=${bookmark.hostname}&sz=32`}
           alt=""
@@ -138,14 +140,14 @@ export function BookmarkItem({
 
       {/* Row 3: Description */}
       {bookmark.description && (
-        <p className="text-xs text-muted2 font-light leading-relaxed mt-4 line-clamp-2">
+        <p className="text-xs text-muted2 font-light leading-relaxed mt-4 line-clamp-2 max-w-130">
           {bookmark.description}
         </p>
       )}
 
       {/* Row 4: Tags + Date */}
       <div className="flex items-center gap-2.5 mt-3 font-mono text-[11px] text-muted2">
-        {bookmark.tags.map((tag) => (
+        {bookmark.tags.slice(0, 6).map((tag) => (
           <button
             key={tag}
             type="button"
@@ -155,6 +157,9 @@ export function BookmarkItem({
             #{tag}
           </button>
         ))}
+        {bookmark.tags.length > 6 && (
+          <span className="text-muted2/70 font-medium tabular-nums font-mono select-none">+{bookmark.tags.length - 6}</span>
+        )}
         <span className="ml-auto">{bookmark.date}</span>
       </div>
 

@@ -67,9 +67,9 @@
   --primary-foreground: oklch(0.15 0.015 60);
   --secondary: oklch(0.285 0.013 292.1);
   --secondary-foreground: oklch(0.822 0.015 84.6);
-  --muted: oklch(0.285 0.013 292.1);
+  --muted: oklch(0.26 0.013 292.1);
   --muted-foreground: oklch(0.626 0.012 95.3);
-  --accent: oklch(0.285 0.013 292.1);
+  --accent: oklch(0.31 0.016 292.1);
   --accent-foreground: oklch(0.911 0.012 84.6);
   --destructive: oklch(0.6 0.15 27);
   --border: oklch(0.339 0.018 294.6);
@@ -90,7 +90,7 @@
 
   /* Japanese accent colors (dark) */
   --sumi: oklch(0.82 0.008 60);
-  --ai: oklch(0.62 0.09 255);
+  --ai: oklch(0.72 0.10 255);
   --shu: oklch(0.62 0.14 30);
   --kinari: oklch(0.22 0.01 90);
 
@@ -236,7 +236,7 @@ body {
 .app {
   width: 1400px;
   max-width: 100%;
-  height: 1200px;
+  height: min(1200px, 100dvh);
   border-radius: 12px;
   overflow: hidden;
   display: grid;
