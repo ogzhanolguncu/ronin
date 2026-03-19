@@ -1,8 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource/noto-serif-jp/400.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -98,9 +95,8 @@
 }
 
 @theme inline {
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
-  --font-jp: "Noto Serif JP", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

@@ -26,7 +26,7 @@ export const Header = () => {
           )}
         </Button>
       </div>
-      <div className="text-muted2 font-jp mt-1.5 text-sm tracking-wider">
+      <div className="text-muted2 mt-1.5 text-sm tracking-wider">
         残心
       </div>
     </div>

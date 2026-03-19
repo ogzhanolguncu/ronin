@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { revalidateLogic, useForm } from "@tanstack/react-form";
-import { z } from "zod";
+import { z } from "zod/mini";
 import {
   Dialog,
   DialogClose,
@@ -19,9 +19,9 @@ import { cn, slugify } from "@/lib/utils";
 const collectionSchema = z.object({
   name: z
     .string()
-    .min(1, "Name is required")
-    .max(50, "Name must be 50 characters or less"),
-  colorId: z.number().min(1, "Please pick a color"),
+    .check(z.refine((v) => v.length >= 1, "Name is required"))
+    .check(z.refine((v) => v.length <= 50, "Name must be 50 characters or less")),
+  colorId: z.number().check(z.refine((v) => v >= 1, "Please pick a color")),
 });
 
 export function AddCollectionDialog() {
