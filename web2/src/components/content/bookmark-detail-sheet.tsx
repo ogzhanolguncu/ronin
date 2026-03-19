@@ -1,19 +1,20 @@
 import { DialogTitle } from "@/components/ui/dialog";
 import { ExternalLinkIcon, ReaderModeIcon, NotesIcon } from "@/components/ui/icons";
 import type { Bookmark } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
   return (
-    <div className="px-7 pt-6 pb-7 flex flex-col max-h-[70vh] overflow-y-auto">
+    <div className="px-7 pt-6 pb-8 flex flex-col max-h-[70vh] overflow-y-auto">
       {/* Header: favicon + title + url + archive link */}
       <div className="flex items-start gap-3">
         <img
-          src={`https://www.google.com/s2/favicons?domain=${bookmark.hostname}&sz=32`}
+          src={`https://www.google.com/s2/favicons?domain=${bookmark.hostname}&sz=64`}
           alt=""
-          className="w-5 h-5 rounded-sm shrink-0 mt-0.5"
+          className="w-7 h-7 rounded-sm shrink-0 mt-px"
         />
         <div className="flex-1 min-w-0">
-          <DialogTitle className="text-base font-medium text-foreground leading-[1.5] tracking-tight">
+          <DialogTitle className="text-[17px] font-semibold text-foreground leading-[1.5]">
             {bookmark.title}
           </DialogTitle>
           <a
@@ -25,7 +26,7 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
             {bookmark.url}
           </a>
           {(bookmark.reader_mode_url || bookmark.web_archive_url) && (
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-2 mt-2">
               {bookmark.reader_mode_url && (
                 <a
                   href={bookmark.reader_mode_url}
@@ -58,8 +59,8 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
 
       {bookmark.description && (
         <>
-          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mt-7 mb-4" />
-          <p className="text-[13px] text-foreground/80 leading-[1.8]">
+          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mt-6 mb-5" />
+          <p className="text-sm text-foreground/80 leading-[1.8]">
             {bookmark.description}
           </p>
         </>
@@ -101,7 +102,7 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
 
       {/* Status badges — only when present */}
       {(bookmark.is_archived || bookmark.is_unread) && (
-        <div className="flex items-center gap-2 mt-8">
+        <div className="flex items-center gap-2 mt-7">
           {bookmark.is_archived && (
             <span className="font-mono text-[11px] text-muted2 ring-1 ring-border rounded-sm px-1.5 py-0.5">
               archived
@@ -116,7 +117,7 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
       )}
 
       {/* Tags + date */}
-      <div className={`flex items-center gap-2.5 flex-wrap ${bookmark.is_archived || bookmark.is_unread ? "mt-3" : "mt-8"}`}>
+      <div className={cn("flex items-center gap-2.5 flex-wrap", bookmark.is_archived || bookmark.is_unread ? "mt-4" : "mt-7")}>
         {bookmark.tags.map((tag) => (
           <span key={tag} className="font-mono text-[11px] text-muted2/70">
             #{tag}

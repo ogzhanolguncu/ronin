@@ -75,7 +75,7 @@ export function AddBookmarkDialog() {
           Add bookmark
         </button>
       </DialogTrigger>
-      <DialogContent showCloseButton={false} className="bg-surface border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
+      <DialogContent showCloseButton={false} className="bg-background border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
         <div className="px-6 pt-8 pb-6">
           <DialogHeader>
             <DialogTitle className="text-base font-medium">Add bookmark</DialogTitle>
