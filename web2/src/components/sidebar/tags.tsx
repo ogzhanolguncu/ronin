@@ -39,14 +39,14 @@ export const Tags = () => {
 
 
   return (
-    <div className="tags-scroll thin-scrollbar shrink-0 border-t border-border-soft/50 pt-3 pb-3 min-h-0 flex-1 overflow-y-auto content-scroll-mist">
-      <div className="flex flex-col gap-px">
+    <div className="tags-scroll thin-scrollbar shrink-0 border-t border-border-soft/50 pt-4 pb-4 min-h-0 flex-1 overflow-y-auto content-scroll-mist font-mono">
+      <div className="flex flex-col gap-0.5">
         {tags.map((tag) => (
           <button
             key={tag.name}
             type="button"
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 text-xs transition-colors",
+              "flex items-center gap-2 px-4 py-2 text-xs transition-colors",
               activeTag === tag.name
                 ? "text-primary"
                 : "text-muted2 hover:bg-surface2 hover:text-text2",
@@ -54,7 +54,12 @@ export const Tags = () => {
             onClick={() => handleTagClick(tag.name)}
           >
             #{tag.name}
-            <span className="text-muted-foreground ml-auto font-mono text-[11px]">
+            <span className={cn(
+              "ml-auto text-[11px] transition-colors tabular-nums",
+              activeTag === tag.name
+                ? "text-primary/60"
+                : "text-muted-foreground",
+            )}>
               {tag.count}
             </span>
           </button>

@@ -25,7 +25,7 @@ export function Sidebar() {
       <SidebarSection items={VIEW_ITEMS} />
       <Collections />
       <Tags />
-      <div className="shrink-0 border-t border-border-soft/50 px-4 py-3">
+      <div className="shrink-0 border-t border-border-soft/50 px-4 py-4">
         <AddBookmarkDialog />
       </div>
     </aside>

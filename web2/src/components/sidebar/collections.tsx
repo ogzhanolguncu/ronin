@@ -13,14 +13,14 @@ export function Collections() {
   const [activeId, setActiveId] = useState<number | null>(null);
 
   return (
-    <div className="shrink-0 border-t border-border-soft/50 pt-3 pb-3">
-      <div className="flex flex-col gap-px">
+    <div className="shrink-0 border-t border-border-soft/50 pt-4 pb-4">
+      <div className="flex flex-col gap-0.5">
         {MOCK_COLLECTIONS.map((collection) => (
           <button
             key={collection.id}
             type="button"
             className={cn(
-              "flex items-center gap-2.5 px-4 py-1.5 text-xs transition-colors  font-mono",
+              "flex items-center gap-2.5 px-4 py-2 text-xs transition-colors font-mono",
               activeId === collection.id
                 ? "text-primary"
                 : "text-muted2 hover:bg-surface2 hover:text-text2",
