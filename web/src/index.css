@@ -401,27 +401,6 @@ body {
 }
 
 
-/* Dark mode — cursor-following ambient light (Yugen) */
-:root {
-  --glow-x: 50vw;
-  --glow-y: 50vh;
-}
-
-.dark body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(
-    550px circle at var(--glow-x) var(--glow-y),
-    oklch(0.16 0.018 270 / 0.18),
-    oklch(0.14 0.012 294 / 0.06) 40%,
-    transparent 70%
-  );
-  transition: background 200ms ease-out;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dark body::after {
     display: none;

@@ -149,7 +149,10 @@ function mapIsToView(value: string): string | undefined {
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 font-mono text-xs text-primary px-1.5 py-0.5">
+    <span
+      className="inline-flex items-center gap-1 font-mono text-xs text-primary px-1.5 py-0.5 cursor-pointer hover:brightness-125 transition-[filter] duration-300"
+      onClick={(e) => { e.stopPropagation(); onRemove(); }}
+    >
       {label}
       <button
         type="button"

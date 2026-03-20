@@ -4,6 +4,7 @@ import { BookmarkItem } from "./bookmark-item";
 import { BookmarkSkeleton } from "./bookmark-skeleton";
 import { BookmarkDetailSheet } from "./bookmark-detail-sheet";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
+import { urlState } from "@/lib/url-state-instance";
 import type { Bookmark } from "@/lib/types";
 
 export const ITEMS_PER_PAGE = 10;
@@ -191,7 +192,12 @@ export function BookmarkList({ currentPage }: BookmarkListProps) {
           <BookmarkItem
             key={bookmark.id}
             bookmark={bookmark}
-            onTagClick={(tag) => console.log("filter by", tag)}
+            onTagClick={(tag) => urlState.set((prev) => ({
+                tags: prev.tags.includes(tag)
+                  ? prev.tags.filter((t) => t !== tag)
+                  : [...prev.tags, tag],
+                page: 1,
+              }))}
             onViewClick={handleViewClick}
           />
         ))}
