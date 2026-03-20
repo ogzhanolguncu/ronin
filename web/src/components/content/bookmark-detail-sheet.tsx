@@ -59,7 +59,7 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
 
       {bookmark.description && (
         <>
-          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mt-6 mb-5" />
+          <div className="h-px bg-gradient-to-r from-transparent via-border dark:via-primary/10 to-transparent mt-6 mb-5" />
           <p className="text-sm text-foreground/80 leading-[1.8]">
             {bookmark.description}
           </p>
@@ -67,7 +67,7 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
       )}
 
       {bookmark.notes && (
-        <div className="pl-3 pr-3 py-2.5 border-l border-border/40 bg-foreground/[0.025] rounded-r-sm mt-7">
+        <div className="pl-3 pr-3 py-2.5 border-l border-border/40 dark:border-border/60 bg-foreground/[0.025] dark:bg-foreground/[0.05] rounded-r-sm mt-7">
           <p className="text-[12px] text-foreground/70 leading-[1.75]">
             {bookmark.notes}
           </p>

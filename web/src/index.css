@@ -224,8 +224,9 @@ body {
 
 .dark body {
   background:
-    radial-gradient(ellipse at 30% 20%, oklch(0.22 0.01 294 / 0.4), transparent 60%),
-    oklch(0.167 0.01 294.4);
+    radial-gradient(ellipse at 30% 20%, oklch(0.22 0.015 294 / 0.5), transparent 50%),
+    radial-gradient(ellipse at 80% 80%, oklch(0.18 0.01 60 / 0.3), transparent 50%),
+    oklch(0.145 0.01 294.4);
 }
 
 /* App shell */
@@ -322,7 +323,9 @@ body {
   box-shadow: 1px 0 4px oklch(0 0 0 / 0.03);
 }
 .dark .sidebar-edge {
-  box-shadow: 1px 0 4px oklch(0 0 0 / 0.12);
+  box-shadow:
+    1px 0 8px oklch(0 0 0 / 0.2),
+    1px 0 24px oklch(0 0 0 / 0.08);
 }
 
 /* Content scroll mist — items emerge from toolbar edge (Yugen) */
@@ -377,6 +380,52 @@ body {
 }
 .thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Dark mode — dialog glow (Yugen) */
+.dark [data-slot="dialog-content"] {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.06) inset,
+    0 24px 80px oklch(0 0 0 / 0.6),
+    0 0 60px oklch(from var(--primary) l c h / 0.04);
+}
+
+/* Dark mode — active nav luminance */
+.dark .nav-indicator-active {
+  text-shadow: 0 0 20px oklch(from var(--primary) l c h / 0.15);
+}
+
+/* Dark mode — collection dot glow */
+.dark .dot-glow {
+  box-shadow: 0 0 6px currentColor;
+}
+
+
+/* Dark mode — cursor-following ambient light (Yugen) */
+:root {
+  --glow-x: 50vw;
+  --glow-y: 50vh;
+}
+
+.dark body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    550px circle at var(--glow-x) var(--glow-y),
+    oklch(0.16 0.018 270 / 0.18),
+    oklch(0.14 0.012 294 / 0.06) 40%,
+    transparent 70%
+  );
+  transition: background 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dark body::after {
+    display: none;
+  }
 }
 
 /* Accessibility: Respect motion preferences */

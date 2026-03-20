@@ -187,6 +187,7 @@ export function BookmarkList() {
         <DialogPortal>
           <DialogOverlay />
           <DialogPrimitive.Content
+            data-slot="dialog-content"
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-[440px] bg-background rounded-xl ring-1 ring-foreground/8 outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 duration-200 ease-out"
           >
             {selectedBookmark && <BookmarkDetailSheet bookmark={selectedBookmark} />}

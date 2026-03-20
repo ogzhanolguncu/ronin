@@ -41,8 +41,8 @@ export function Collections() {
               }
             >
               <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: getCollectionColor(collection.colorId)?.value }}
+                className="h-2 w-2 shrink-0 rounded-full dot-glow"
+                style={{ backgroundColor: getCollectionColor(collection.colorId)?.value, color: getCollectionColor(collection.colorId)?.value }}
               />
               {collection.name}
             </button>

@@ -64,7 +64,7 @@ export function AddCollectionDialog() {
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className="bg-surface border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[400px]"
+        className="bg-background  border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[400px]"
       >
         <div className="px-6 pt-8 pb-6">
           <DialogHeader>
@@ -115,7 +115,7 @@ export function AddCollectionDialog() {
                         className={cn(
                           "size-5 rounded-full cursor-pointer transition-shadow",
                           field.state.value === color.id &&
-                            "ring-2 ring-offset-2 ring-foreground/40",
+                          "ring-2 ring-offset-2 ring-foreground/40",
                         )}
                         style={{ backgroundColor: color.value }}
                         onClick={() => field.handleChange(color.id)}
