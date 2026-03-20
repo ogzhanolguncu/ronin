@@ -1,9 +1,10 @@
 import { DialogTitle } from "@/components/ui/dialog";
 import { ExternalLinkIcon, ReaderModeIcon, NotesIcon } from "@/components/ui/icons";
+import { formatRelativeTime } from "@/lib/format-time";
 import type { Bookmark } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
+export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
   return (
     <div className="px-7 pt-6 pb-8 flex flex-col max-h-[70vh] overflow-y-auto">
       {/* Header: favicon + title + url + archive link */}
@@ -124,7 +125,7 @@ export function BookmarkDetailSheet({ bookmark }: { bookmark: Bookmark }) {
           </span>
         ))}
         <span className="font-mono text-[11px] text-muted2 ml-auto">
-          {bookmark.date}
+          {formatRelativeTime(bookmark.date)}
         </span>
       </div>
     </div>

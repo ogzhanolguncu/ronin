@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArchiveIcon, DeleteIcon, NotesIcon, ViewIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { Bookmark } from "@/lib/types";
-
-export type { Bookmark };
+import { formatRelativeTime } from "@/lib/format-time";
 
 export function BookmarkItem({
   bookmark,
@@ -160,7 +159,7 @@ export function BookmarkItem({
         {bookmark.tags.length > 6 && (
           <span className="text-muted2/70 font-medium tabular-nums font-mono select-none">+{bookmark.tags.length - 6}</span>
         )}
-        <span className="ml-auto">{bookmark.date}</span>
+        <span className="ml-auto">{formatRelativeTime(bookmark.date)}</span>
       </div>
 
       {/* Notes expansion */}

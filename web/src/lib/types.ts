@@ -12,7 +12,7 @@ export interface Bookmark {
   hostname: string;
   description?: string;
   tags: string[];
-  date: string;
+  date: number;
   notes?: string;
   is_archived?: boolean;
   is_unread?: boolean;

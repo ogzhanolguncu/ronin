@@ -18,10 +18,10 @@ const VIEW_ITEMS: NavItem[] = [
   { id: "archived", label: "Archived", icon: <ArchiveIcon />, count: 5 },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onLogout }: { onLogout: () => void }) {
   return (
     <aside className="paper-grain bg-surface border-border-soft/60 relative flex h-full flex-col overflow-hidden border-r sidebar-edge" >
-      <Header />
+      <Header onLogout={onLogout} />
       <SidebarSection items={VIEW_ITEMS} />
       <Collections />
       <Tags />

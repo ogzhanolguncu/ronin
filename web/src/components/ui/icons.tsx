@@ -19,4 +19,5 @@ export {
   BookOpen as ReaderModeIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  LogOut as LogOutIcon,
 } from "lucide-react";

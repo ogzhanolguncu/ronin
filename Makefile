@@ -1,17 +1,16 @@
 .PHONY: dev run build web preview
 
 dev:
+	$(MAKE) -j2 dev-backend dev-frontend
+
+dev-backend:
 	DEV=1 go run .
+
+dev-frontend:
+	cd web && pnpm dev
 
 run:
 	set -a && . ./.env && set +a && go run .
-
-build:
-	cd web && pnpm build
-	go build -o ronin .
-
-web:
-	cd web && pnpm dev
 
 preview:
 	cd web && pnpm build

@@ -8,13 +8,21 @@ function App() {
     () => import.meta.env.DEV || window.__AUTH__ === "authenticated"
   );
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST" });
+    } finally {
+      setIsUnlocked(false);
+    }
+  };
+
   if (!isUnlocked) {
     return <PassphraseGate onUnlock={() => setIsUnlocked(true)} />;
   }
 
   return (
     <div className="app">
-      <Sidebar />
+      <Sidebar onLogout={handleLogout} />
       <Content />
     </div>
   );

@@ -1,8 +1,8 @@
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "../ui/button";
-import { MoonIcon, SunIcon } from "../ui/icons";
+import { LogOutIcon, MoonIcon, SunIcon } from "../ui/icons";
 
-export const Header = () => {
+export const Header = ({ onLogout }: { onLogout: () => void }) => {
   const { theme, toggleTheme } = useTheme();
   return (
     <div className="border-border-soft flex h-24 shrink-0 flex-col justify-center border-b px-4">
@@ -13,18 +13,29 @@ export const Header = () => {
           </span>
           <span className="bg-shu mb-1.5 ml-0.5 inline-block size-1.5 shrink-0 rounded-[1px] shadow-[0_0_3px_oklch(0.55_0.14_30/0.3)]" />
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <SunIcon className="size-3.5" />
-          ) : (
-            <MoonIcon className="size-3.5" />
-          )}
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <SunIcon className="size-3.5" />
+            ) : (
+              <MoonIcon className="size-3.5" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onLogout}
+            aria-label="Log out"
+            className="text-muted2 transition-colors duration-300 hover:text-shu"
+          >
+            <LogOutIcon className="size-3.5" />
+          </Button>
+        </div>
       </div>
       <div className="text-muted2 mt-1.5 text-sm tracking-wider">
         浪人
