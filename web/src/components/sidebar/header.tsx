@@ -9,7 +9,7 @@ export const Header = () => {
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center">
           <span className="text-foreground text-base font-semibold tracking-tight">
-            Zanshin
+            Rōnin
           </span>
           <span className="bg-shu mb-1.5 ml-0.5 inline-block size-1.5 shrink-0 rounded-[1px] shadow-[0_0_3px_oklch(0.55_0.14_30/0.3)]" />
         </div>
@@ -27,7 +27,7 @@ export const Header = () => {
         </Button>
       </div>
       <div className="text-muted2 mt-1.5 text-sm tracking-wider">
-        残心
+        浪人
       </div>
     </div>
   );
