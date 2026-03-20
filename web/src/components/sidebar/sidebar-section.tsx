@@ -1,26 +1,42 @@
 import { cn } from "@/lib/utils";
+import { useUrlState } from "@/hooks/use-url-state";
+import { urlState } from "@/lib/url-state-instance";
 import type { NavItem } from "./types";
-
-const ACTIVE_ITEM = "all";
 
 export function SidebarSection({
   items,
 }: {
   items: NavItem[];
 }) {
+  const view = useUrlState((s) => s.view);
+
   return (
     <div className="shrink-0 py-3 flex flex-col">
       {items.map((item) => (
-        <NavRow key={item.id} item={item} isActive={item.id === ACTIVE_ITEM} />
+        <NavRow
+          key={item.id}
+          item={item}
+          isActive={item.id === view}
+          onClick={() => urlState.set({ view: item.id })}
+        />
       ))}
     </div>
   );
 }
 
-function NavRow({ item, isActive }: { item: NavItem; isActive: boolean }) {
+function NavRow({
+  item,
+  isActive,
+  onClick,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={cn(
         "flex w-full items-center gap-2 border-l-2 py-2.5 pl-3.5 text-xs transition-all [&_svg]:size-3.5 [&_svg]:shrink-0",
         isActive

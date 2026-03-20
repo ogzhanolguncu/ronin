@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { getCollectionColor } from "@/lib/colors";
+import { useUrlState } from "@/hooks/use-url-state";
+import { urlState } from "@/lib/url-state-instance";
 import { AddCollectionDialog } from "@/components/sidebar/add-collection-dialog";
 
 export const MOCK_COLLECTIONS = [
@@ -17,36 +18,37 @@ export const MOCK_COLLECTIONS = [
 ] as const;
 
 export function Collections() {
-  const [activeId, setActiveId] = useState<number | null>(null);
+  const collection = useUrlState((s) => s.collection);
 
   return (
     <div className="shrink-0 max-h-[350px] min-h-0 flex flex-col border-t border-border-soft/30">
       <div className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
         <div className="flex flex-col">
           <AddCollectionDialog />
-          {MOCK_COLLECTIONS.map((collection) => (
-            <button
-              key={collection.id}
-              type="button"
-              className={cn(
-                "flex items-center gap-2.5 px-4 py-2 text-xs transition-colors font-mono",
-                activeId === collection.id
-                  ? "text-primary"
-                  : "text-muted2 hover:bg-surface2 hover:text-text2",
-              )}
-              onClick={() =>
-                setActiveId((prev) =>
-                  prev === collection.id ? null : collection.id,
-                )
-              }
-            >
-              <span
-                className="h-2 w-2 shrink-0 rounded-full dot-glow"
-                style={{ backgroundColor: getCollectionColor(collection.colorId)?.value, color: getCollectionColor(collection.colorId)?.value }}
-              />
-              {collection.name}
-            </button>
-          ))}
+          {MOCK_COLLECTIONS.map((item) => {
+            const isActive = collection === item.slug;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={cn(
+                  "flex items-center gap-2.5 px-4 py-2 text-xs transition-colors font-mono",
+                  isActive
+                    ? "text-primary"
+                    : "text-muted2 hover:bg-surface2 hover:text-text2",
+                )}
+                onClick={() =>
+                  urlState.set({ collection: isActive ? null : item.slug })
+                }
+              >
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full dot-glow"
+                  style={{ backgroundColor: getCollectionColor(item.colorId)?.value, color: getCollectionColor(item.colorId)?.value }}
+                />
+                {item.name}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
