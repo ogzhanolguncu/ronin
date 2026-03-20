@@ -19,7 +19,18 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	store, err := NewStore("./safha.db")
+	devMode := os.Getenv("DEV") == "1"
+
+	passphrase := os.Getenv("PASSPHRASE")
+	if passphrase == "" && !devMode {
+		slog.Error("PASSPHRASE environment variable must be set")
+		os.Exit(1)
+	}
+	if devMode {
+		slog.Warn("DEV MODE ENABLED — auth bypassed, do not use in production")
+	}
+
+	store, err := NewStore("./ronin.db")
 	if err != nil {
 		slog.Error("failed to init store", "err", err)
 		os.Exit(1)
@@ -36,7 +47,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	srv := NewHTTP(store)
+	var passphraseBytes []byte
+	if passphrase != "" {
+		passphraseBytes = []byte(passphrase)
+	}
+	secureCookie := os.Getenv("INSECURE_COOKIE") != "1"
+	srv := NewHTTP(store, passphraseBytes, devMode, secureCookie)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

@@ -1,9 +1,10 @@
-module github.com/ogzhanolguncu/safha
+module github.com/ogzhanolguncu/ronin
 
 go 1.25.1
 
 require (
 	github.com/jmoiron/sqlx v1.4.0
+	golang.org/x/net v0.51.0
 	modernc.org/sqlite v1.46.1
 )
 
@@ -14,8 +15,7 @@ require (
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/net v0.51.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
 	modernc.org/libc v1.67.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

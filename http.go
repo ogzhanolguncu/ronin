@@ -11,11 +11,14 @@ import (
 )
 
 type handler struct {
-	store *sqlx.DB
+	store        *sqlx.DB
+	passphrase   []byte
+	devMode      bool
+	secureCookie bool
 }
 
-func NewHTTP(store *Store) *http.Server {
-	h := &handler{store: store.db}
+func NewHTTP(store *Store, passphrase []byte, devMode bool, secureCookie bool) *http.Server {
+	h := &handler{store: store.db, passphrase: passphrase, devMode: devMode, secureCookie: secureCookie}
 	srv := &http.Server{
 		Addr:         ":8080",
 		Handler:      newRouter(h),
@@ -41,6 +44,10 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("GET /api/v1/healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
+
+	mux.HandleFunc("POST   /api/v1/auth/login", h.authLogin)
+	mux.HandleFunc("POST   /api/v1/auth/logout", h.authLogout)
+
 	mux.HandleFunc("GET    /api/v1/bookmarks/search", h.searchBookmarks)
 	mux.HandleFunc("GET    /api/v1/bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET    /api/v1/bookmarks/{id}", h.getBookmark)
@@ -53,8 +60,11 @@ func newRouter(h *handler) http.Handler {
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 
+	mux.Handle("/", h.frontendHandler())
+
 	return applyMiddleware(mux,
 		corsMiddleware,
+		h.authMiddleware,
 		recoveryMiddleware,
 		loggingMiddleware,
 	)

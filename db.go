@@ -99,6 +99,12 @@ func migrate(db *sqlx.DB) error {
 		`CREATE VIRTUAL TABLE IF NOT EXISTS bookmark_fts USING fts5(
 			title, description, notes, url, tags
 		)`,
+
+		`CREATE TABLE IF NOT EXISTS session (
+			token      TEXT    PRIMARY KEY,
+			expires_at INTEGER NOT NULL
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_session_expires_at ON session(expires_at)`,
 	}
 
 	for _, stmt := range stmts {
