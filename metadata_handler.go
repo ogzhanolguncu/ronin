@@ -3,24 +3,20 @@ package main
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
-	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"golang.org/x/net/html"
+	"github.com/PuerkitoBio/goquery"
 )
 
 const (
-	maxHeadBytes    = 5 * 1024 * 1024 // 5MB absolute limit
-	chunkSize       = 50 * 1024       // 50KB read chunks
-	maxFaviconBytes = 10 * 1024       // 10KB favicon limit
-	faviconMaxAge   = 24 * time.Hour
+	maxHeadBytes = 5 * 1024 * 1024 // 5MB absolute limit
+	chunkSize    = 50 * 1024       // 50KB read chunks
 )
 
 var defaultHeaders = map[string]string{
@@ -122,11 +118,10 @@ func (h *handler) fetchMetadata(ctx context.Context, rawURL string) (*MetadataRe
 
 	// Streaming read with early </head> termination
 	body := readUntilHeadClose(resp.Body)
-	meta := parseHTML(bytes.NewReader(body), parsed)
+	meta, iconURL := parseHTML(bytes.NewReader(body), parsed)
 	meta.URL = rawURL
 	meta.Favicon = "/api/v1/favicons/" + domain
 
-	iconURL := parseFaviconFromHTML(body, parsed)
 	go h.fetchAndStoreFavicon(domain, baseOrigin, iconURL)
 
 	return &meta, nil
@@ -136,14 +131,15 @@ func (h *handler) fetchMetadata(ctx context.Context, rawURL string) (*MetadataRe
 func readUntilHeadClose(r io.Reader) []byte {
 	var buf bytes.Buffer
 	chunk := make([]byte, chunkSize)
+	closingTag := []byte("</head>")
 
 	for buf.Len() < maxHeadBytes {
 		n, err := r.Read(chunk)
 		if n > 0 {
 			buf.Write(chunk[:n])
-			// Check if we've seen </head> in accumulated bytes
-			if idx := bytes.Index(bytes.ToLower(buf.Bytes()), []byte("</head>")); idx != -1 {
-				return buf.Bytes()[:idx+len("</head>")]
+			searchFrom := max(0, buf.Len()-n-len(closingTag)+1)
+			if idx := bytes.Index(bytes.ToLower(buf.Bytes()[searchFrom:]), closingTag); idx != -1 {
+				return buf.Bytes()[:searchFrom+idx+len(closingTag)]
 			}
 		}
 		if err != nil {
@@ -154,225 +150,43 @@ func readUntilHeadClose(r io.Reader) []byte {
 	return buf.Bytes()
 }
 
-// parseFaviconFromHTML extracts <link rel="icon"> href from raw HTML bytes.
-func parseFaviconFromHTML(body []byte, baseURL *url.URL) string {
-	tokenizer := html.NewTokenizer(bytes.NewReader(body))
-	for {
-		tt := tokenizer.Next()
-		switch tt {
-		case html.ErrorToken:
-			return ""
-		case html.StartTagToken, html.SelfClosingTagToken:
-			tn, hasAttr := tokenizer.TagName()
-			if string(tn) == "link" && hasAttr {
-				attrs := collectAttrs(tokenizer)
-				rel := strings.ToLower(attrs["rel"])
-				if rel == "icon" || rel == "shortcut icon" {
-					if href := attrs["href"]; href != "" {
-						return resolveURL(baseURL, href)
-					}
-				}
-			}
-		}
-	}
-}
-
-// fetchAndStoreFavicon downloads a favicon and stores it in the database.
-// It tries iconURL first (from <link rel="icon">), then falls back to /favicon.ico.
-func (h *handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
-	// Check if we already have a fresh favicon
-	var fetchedAt int64
-	err := h.store.QueryRowContext(context.Background(),
-		"SELECT fetched_at FROM favicon WHERE domain = ?", domain,
-	).Scan(&fetchedAt)
-	if err == nil && time.Since(time.Unix(fetchedAt, 0)) < faviconMaxAge {
-		return
-	}
-
-	client := newHTTPClient()
-
-	var tryURLs []string
-	if iconURL != "" {
-		tryURLs = append(tryURLs, iconURL)
-	}
-	tryURLs = append(tryURLs, baseOrigin+"/favicon.ico")
-
-	for _, faviconURL := range tryURLs {
-		req, err := newMetadataRequest(context.Background(), http.MethodGet, faviconURL)
-		if err != nil {
-			continue
-		}
-
-		resp, err := client.Do(req)
-		if err != nil {
-			continue
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			continue
-		}
-
-		data, err := io.ReadAll(io.LimitReader(resp.Body, maxFaviconBytes))
-		resp.Body.Close()
-		if err != nil || len(data) == 0 {
-			continue
-		}
-
-		contentType := resp.Header.Get("Content-Type")
-		if contentType == "" {
-			contentType = "image/x-icon"
-		}
-
-		_, err = h.store.ExecContext(context.Background(),
-			`INSERT INTO favicon (domain, data, content_type, fetched_at) VALUES (?, ?, ?, unixepoch())
-			 ON CONFLICT(domain) DO UPDATE SET data = excluded.data, content_type = excluded.content_type, fetched_at = excluded.fetched_at`,
-			domain, data, contentType,
-		)
-		if err != nil {
-			slog.Error("failed to store favicon", "domain", domain, "err", err)
-		}
-		return // success
-	}
-}
-
-func (h *handler) getFavicon(w http.ResponseWriter, r *http.Request) {
-	domain := r.PathValue("domain")
-	if domain == "" {
-		writeError(w, http.StatusBadRequest, "missing domain")
-		return
-	}
-
-	var data []byte
-	var contentType string
-	err := h.store.QueryRowContext(r.Context(),
-		"SELECT data, content_type FROM favicon WHERE domain = ?", domain,
-	).Scan(&data, &contentType)
-	if err == sql.ErrNoRows {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		serverError(w, "failed to query favicon", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Cache-Control", "public, max-age=86400")
-	w.Write(data)
-}
-
-func parseHTML(body io.Reader, baseURL *url.URL) MetadataResponse {
+func parseHTML(body io.Reader, baseURL *url.URL) (MetadataResponse, string) {
 	var meta MetadataResponse
-
-	tokenizer := html.NewTokenizer(body)
-
-	var (
-		inTitle  bool
-		titleDone bool
-		ogTitle  string
-		ogDesc   string
-		ogImage  string
-		metaDesc string
-	)
-
-	for {
-		tt := tokenizer.Next()
-		switch tt {
-		case html.ErrorToken:
-			goto done
-
-		case html.StartTagToken, html.SelfClosingTagToken:
-			tn, hasAttr := tokenizer.TagName()
-			tagName := string(tn)
-
-			if tagName == "body" {
-				goto done
-			}
-
-			if tagName == "title" && tt == html.StartTagToken {
-				inTitle = true
-				continue
-			}
-
-			if tagName == "meta" && hasAttr {
-				attrs := collectAttrs(tokenizer)
-				name := strings.ToLower(attrs["name"])
-				property := strings.ToLower(attrs["property"])
-				content := attrs["content"]
-
-				if property == "og:title" {
-					ogTitle = content
-				} else if property == "og:description" {
-					ogDesc = content
-				} else if property == "og:image" && ogImage == "" {
-					ogImage = content
-				} else if name == "description" && metaDesc == "" {
-					metaDesc = content
-				}
-			}
-
-			if tagName == "link" && hasAttr {
-				attrs := collectAttrs(tokenizer)
-				rel := strings.ToLower(attrs["rel"])
-				if rel == "icon" || rel == "shortcut icon" {
-					if href := attrs["href"]; href != "" {
-						meta.Favicon = resolveURL(baseURL, href)
-					}
-				}
-			}
-
-		case html.EndTagToken:
-			tn, _ := tokenizer.TagName()
-			tagName := string(tn)
-
-			if tagName == "head" {
-				goto done
-			}
-
-			if tagName == "title" {
-				inTitle = false
-				titleDone = true
-			}
-
-		case html.TextToken:
-			if inTitle && !titleDone {
-				meta.Title = strings.TrimSpace(string(tokenizer.Text()))
-			}
-		}
+	doc, err := goquery.NewDocumentFromReader(body)
+	if err != nil {
+		return meta, ""
 	}
 
-done:
+	ogTitle, _ := doc.Find(`meta[property="og:title"]`).Attr("content")
+	ogDesc, _ := doc.Find(`meta[property="og:description"]`).Attr("content")
+	ogImage, _ := doc.Find(`meta[property="og:image"]`).First().Attr("content")
+	metaDesc, _ := doc.Find(`meta[name="description"]`).First().Attr("content")
+	titleText := strings.TrimSpace(doc.Find("title").First().Text())
+
+	var iconHref string
+	doc.Find(`link[rel="icon"], link[rel="shortcut icon"]`).EachWithBreak(func(_ int, s *goquery.Selection) bool {
+		if href, exists := s.Attr("href"); exists && href != "" {
+			iconHref = resolveURL(baseURL, href)
+			return false
+		}
+		return true
+	})
+
 	if ogTitle != "" {
 		meta.Title = ogTitle
+	} else {
+		meta.Title = titleText
 	}
 	if ogDesc != "" {
 		meta.Description = ogDesc
-	} else if metaDesc != "" {
+	} else {
 		meta.Description = metaDesc
 	}
-
 	if ogImage != "" && baseURL != nil {
 		meta.PreviewImage = resolveURL(baseURL, ogImage)
 	}
 
-	if meta.Favicon == "" && baseURL != nil {
-		meta.Favicon = resolveURL(baseURL, "/favicon.ico")
-	}
-
-	return meta
-}
-
-func collectAttrs(z *html.Tokenizer) map[string]string {
-	attrs := make(map[string]string)
-	for {
-		key, val, more := z.TagAttr()
-		attrs[string(key)] = string(val)
-		if !more {
-			break
-		}
-	}
-	return attrs
+	return meta, iconHref
 }
 
 func resolveURL(base *url.URL, ref string) string {
