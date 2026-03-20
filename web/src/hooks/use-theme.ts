@@ -12,7 +12,19 @@ function subscribe(cb: () => void) {
     attributes: true,
     attributeFilter: ["class"],
   });
-  return () => observer.disconnect();
+
+  const mql = window.matchMedia("(prefers-color-scheme: dark)");
+  const handleChange = () => {
+    if (localStorage.getItem("theme")) return;
+    document.documentElement.classList.toggle("dark", mql.matches);
+  };
+  mql.addEventListener("change", handleChange);
+  handleChange(); // sync current system preference immediately
+
+  return () => {
+    observer.disconnect();
+    mql.removeEventListener("change", handleChange);
+  };
 }
 
 export function useTheme() {
