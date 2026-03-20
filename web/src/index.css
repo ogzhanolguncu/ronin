@@ -237,7 +237,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 210px 1fr;
+  grid-template-columns: 260px 1fr;
   background: var(--background);
   border: 1px solid var(--border);
   box-shadow:

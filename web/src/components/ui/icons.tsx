@@ -17,4 +17,6 @@ export {
   Eye as ViewIcon,
   ExternalLink as ExternalLinkIcon,
   BookOpen as ReaderModeIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";

@@ -6,6 +6,8 @@ import { BookmarkDetailSheet } from "./bookmark-detail-sheet";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import type { Bookmark } from "@/lib/types";
 
+export const ITEMS_PER_PAGE = 10;
+
 const MOCK_BOOKMARKS = [
   {
     id: 0,
@@ -134,9 +136,20 @@ const MOCK_BOOKMARKS = [
 
 const showSkeleton = false;
 
-export function BookmarkList() {
+export const MOCK_BOOKMARKS_COUNT = MOCK_BOOKMARKS.length;
+
+interface BookmarkListProps {
+  currentPage: number;
+}
+
+export function BookmarkList({ currentPage }: BookmarkListProps) {
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  const paginatedBookmarks = MOCK_BOOKMARKS.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
   function handleViewClick(bookmark: Bookmark) {
     setSelectedBookmark(bookmark);
@@ -174,7 +187,7 @@ export function BookmarkList() {
   return (
     <>
       <div>
-        {MOCK_BOOKMARKS.map((bookmark) => (
+        {paginatedBookmarks.map((bookmark) => (
           <BookmarkItem
             key={bookmark.id}
             bookmark={bookmark}
