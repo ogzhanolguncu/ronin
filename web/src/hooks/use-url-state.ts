@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useRef, useCallback } from "react";
+import { useSyncExternalStore, useState, useEffect, useRef, useCallback } from "react";
 import { urlState } from "@/lib/url-state-instance";
 
 type State = ReturnType<typeof urlState.get>;
@@ -33,4 +33,15 @@ export function useUrlState(selector?: (state: State) => unknown) {
 
   if (selector) return snap;
   return [snap, urlState.set];
+}
+
+export function useUrlStateLocal<T>(selector: (state: State) => T) {
+  const synced = useUrlState(selector);
+  const [local, setLocal] = useState(synced);
+
+  useEffect(() => {
+    setLocal(synced);
+  }, [synced]);
+
+  return [local, setLocal] as const;
 }
