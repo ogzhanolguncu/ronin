@@ -145,6 +145,10 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "URL cannot be longer than 2048")
 		return
 	}
+	if req.Title == "" {
+		writeError(w, http.StatusUnprocessableEntity, "title is required")
+		return
+	}
 
 	var bmID int64
 	err := WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
@@ -193,12 +197,18 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
+	id, err := pathParamInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid bookmark id: %s", err.Error()))
+		return
+	}
+
 	req, ok := decode[UpdateBookmarkRequest](r, w)
 	if !ok {
 		return
 	}
 
-	err := WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
+	err = WithTx(r.Context(), h.store.DB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
 			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ? WHERE id = ?`,
@@ -206,7 +216,7 @@ func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 			req.Title,
 			req.Description,
 			req.Notes,
-			req.ID,
+			id,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to update bookmark: %w", err)
@@ -219,19 +229,19 @@ func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 			return ErrNotFound
 		}
 
-		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", req.ID); err != nil {
+		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", id); err != nil {
 			return fmt.Errorf("failed to delete bookmark tags: %w", err)
 		}
 
-		if err = upsertTagsAndLink(r.Context(), tx, int64(req.ID), req.Tags); err != nil {
+		if err = upsertTagsAndLink(r.Context(), tx, id, req.Tags); err != nil {
 			return err
 		}
 
-		if err = deleteFTS(r.Context(), tx, int64(req.ID)); err != nil {
+		if err = deleteFTS(r.Context(), tx, id); err != nil {
 			return err
 		}
 
-		return insertFTS(r.Context(), tx, int64(req.ID), req.Title, req.Description, req.Notes, req.URL, req.Tags)
+		return insertFTS(r.Context(), tx, id, req.Title, req.Description, req.Notes, req.URL, req.Tags)
 	})
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
@@ -242,7 +252,7 @@ func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
@@ -269,10 +279,6 @@ func (h *handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 			return ErrNotFound
 		}
 
-		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", id); err != nil {
-			return fmt.Errorf("failed to delete bookmark tags: %w", err)
-		}
-
 		return nil
 	})
 	if err != nil {
@@ -284,7 +290,7 @@ func (h *handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
@@ -299,11 +305,8 @@ func (h *handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		}
-		if err := BulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
+		if err := bulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
 			return fmt.Errorf("failed to delete bookmarks: %w", err)
-		}
-		if err := BulkDelete(r.Context(), tx, "bookmark_tag", "bookmark_id", req.IDs); err != nil {
-			return fmt.Errorf("failed to delete bookmark tags: %w", err)
 		}
 		return nil
 	})
@@ -312,7 +315,7 @@ func (h *handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) archiveBookmarks(w http.ResponseWriter, r *http.Request) {
@@ -330,12 +333,12 @@ func (h *handler) archiveBookmarks(w http.ResponseWriter, r *http.Request) {
 		entries[i] = BulkCaseEntry{ID: e.ID, Value: e.Archived}
 	}
 
-	if err := BulkCaseUpdate(r.Context(), h.store, "bookmark", "archived", entries); err != nil {
+	if err := bulkCaseUpdate(r.Context(), h.store, "bookmark", "archived", entries); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to archive bookmarks")
 		return
 	}
 
-	writeJSON(w, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
@@ -353,10 +356,10 @@ func (h *handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
 		entries[i] = BulkCaseEntry{ID: e.ID, Value: e.Read}
 	}
 
-	if err := BulkCaseUpdate(r.Context(), h.store, "bookmark", "read", entries); err != nil {
+	if err := bulkCaseUpdate(r.Context(), h.store, "bookmark", "read", entries); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to read bookmarks")
 		return
 	}
 
-	writeJSON(w, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }

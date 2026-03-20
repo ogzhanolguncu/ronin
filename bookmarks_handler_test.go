@@ -42,7 +42,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	}
 	defer store.Close()
 
-	h := &handler{store: store.db}
+	h := &handler{store: store.db, devMode: true}
 	srv := httptest.NewServer(newRouter(h))
 	defer srv.Close()
 
@@ -179,8 +179,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("UpdateBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks", UpdateBookmarkRequest{
-			ID:          int(createdID),
+		resp := doRequest(t, srv, http.MethodPut, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), UpdateBookmarkRequest{
 			URL:         "https://example.com/updated",
 			Title:       "Updated Example",
 			Description: "Updated description",
@@ -213,8 +212,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("UpdateBookmark_NotFound", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks", UpdateBookmarkRequest{
-			ID:    9999,
+		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks/9999", UpdateBookmarkRequest{
 			URL:   "https://nonexistent.com",
 			Title: "Nonexistent",
 		})

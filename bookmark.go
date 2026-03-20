@@ -57,7 +57,6 @@ type CreateBookmarkRequest struct {
 }
 
 type UpdateBookmarkRequest struct {
-	ID          int    `json:"id"`
 	URL         string `json:"url"`
 	Title       string `json:"title"`
 	Description string `json:"description"`

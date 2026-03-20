@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"time"
 	"net/url"
 	"strings"
 
@@ -31,6 +33,11 @@ func (h *handler) getMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := rejectPrivateHost(parsed.Hostname()); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	meta, err := fetchMetadata(r.Context(), rawURL)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "failed to fetch URL")
@@ -42,7 +49,7 @@ func (h *handler) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 func fetchMetadata(ctx context.Context, rawURL string) (*MetadataResponse, error) {
 	client := &http.Client{
-		Timeout: 10_000_000_000, // 10s
+		Timeout: 10 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 5 {
 				return fmt.Errorf("too many redirects")
@@ -189,5 +196,23 @@ func resolveURL(base *url.URL, ref string) string {
 		return ref
 	}
 	return base.ResolveReference(parsed).String()
+}
+
+// rejectPrivateHost resolves the hostname and rejects private/loopback IP ranges to prevent SSRF.
+func rejectPrivateHost(hostname string) error {
+	ips, err := net.LookupHost(hostname)
+	if err != nil {
+		return fmt.Errorf("cannot resolve hostname: %s", hostname)
+	}
+	for _, ipStr := range ips {
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			continue
+		}
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
+			return fmt.Errorf("requests to private/internal addresses are not allowed")
+		}
+	}
+	return nil
 }
 

@@ -52,7 +52,7 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("GET    /api/v1/bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET    /api/v1/bookmarks/{id}", h.getBookmark)
 	mux.HandleFunc("POST   /api/v1/bookmarks", h.createBookmark)
-	mux.HandleFunc("PUT    /api/v1/bookmarks", h.updateBookmark)
+	mux.HandleFunc("PUT    /api/v1/bookmarks/{id}", h.updateBookmark)
 	mux.HandleFunc("DELETE /api/v1/bookmarks/{id}", h.deleteBookmark)
 	mux.HandleFunc("DELETE /api/v1/bookmarks", h.deleteBookmarks)
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/archive", h.archiveBookmarks)
@@ -103,9 +103,14 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+		}
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

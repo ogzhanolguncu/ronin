@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
@@ -73,23 +74,22 @@ func (h *handler) authMiddleware(next http.Handler) http.Handler {
 		}
 
 		cookie, err := r.Cookie("session")
-		if err != nil {
-			writeError(w, http.StatusUnauthorized, "unauthorized")
-			return
-		}
-
-		var exists int
-		err = h.store.QueryRowContext(r.Context(),
-			"SELECT COUNT(*) FROM session WHERE token = ? AND expires_at > ?",
-			cookie.Value, time.Now().Unix(),
-		).Scan(&exists)
-		if err != nil || exists == 0 {
+		if err != nil || !h.isValidSession(r.Context(), cookie.Value) {
 			writeError(w, http.StatusUnauthorized, "unauthorized")
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (h *handler) isValidSession(ctx context.Context, token string) bool {
+	var exists int
+	err := h.store.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM session WHERE token = ? AND expires_at > ?",
+		token, time.Now().Unix(),
+	).Scan(&exists)
+	return err == nil && exists > 0
 }
 
 func (h *handler) createSession(r *http.Request) (string, error) {

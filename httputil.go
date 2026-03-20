@@ -13,7 +13,10 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+const maxRequestBodySize = 1 << 20 // 1MB
+
 func readJSON(r *http.Request, v any) error {
+	r.Body = http.MaxBytesReader(nil, r.Body, maxRequestBodySize)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {

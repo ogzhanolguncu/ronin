@@ -167,8 +167,8 @@ type BulkCaseEntry struct {
 	Value any
 }
 
-// BulkCaseUpdate builds and executes: UPDATE <table> SET <column> = CASE id WHEN ? THEN ? ... END WHERE id IN (...)
-func BulkCaseUpdate(ctx context.Context, db DBTX, table, column string, entries []BulkCaseEntry) error {
+// bulkCaseUpdate builds and executes: UPDATE <table> SET <column> = CASE id WHEN ? THEN ? ... END WHERE id IN (...)
+func bulkCaseUpdate(ctx context.Context, db DBTX, table, column string, entries []BulkCaseEntry) error {
 	if len(entries) == 0 {
 		return nil
 	}
@@ -194,7 +194,7 @@ func BulkCaseUpdate(ctx context.Context, db DBTX, table, column string, entries 
 	return nil
 }
 
-func BulkDelete(ctx context.Context, db DBTX, table, column string, ids []int) error {
+func bulkDelete(ctx context.Context, db DBTX, table, column string, ids []int) error {
 	if len(ids) == 0 {
 		return nil
 	}

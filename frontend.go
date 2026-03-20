@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
-	"time"
 )
 
 //go:embed web/dist/*
@@ -61,16 +60,7 @@ func (h *handler) resolveAuthStatus(r *http.Request) string {
 	}
 
 	cookie, err := r.Cookie("session")
-	if err != nil {
-		return "login"
-	}
-
-	var exists int
-	err = h.store.QueryRowContext(r.Context(),
-		"SELECT COUNT(*) FROM session WHERE token = ? AND expires_at > ?",
-		cookie.Value, time.Now().Unix(),
-	).Scan(&exists)
-	if err != nil || exists == 0 {
+	if err != nil || !h.isValidSession(r.Context(), cookie.Value) {
 		return "login"
 	}
 
