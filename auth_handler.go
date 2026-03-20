@@ -68,7 +68,7 @@ func (h *handler) authMiddleware(next http.Handler) http.Handler {
 
 		path := r.URL.Path
 
-		if !strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/api/v1/auth/") || path == "/api/v1/healthz" {
+		if !strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/api/v1/auth/") || path == "/api/v1/healthz" || strings.HasPrefix(path, "/api/v1/favicons/") {
 			next.ServeHTTP(w, r)
 			return
 		}

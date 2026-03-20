@@ -105,6 +105,13 @@ func migrate(db *sqlx.DB) error {
 			expires_at INTEGER NOT NULL
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_session_expires_at ON session(expires_at)`,
+
+		`CREATE TABLE IF NOT EXISTS favicon (
+			domain       TEXT PRIMARY KEY,
+			data         BLOB NOT NULL,
+			content_type TEXT NOT NULL DEFAULT 'image/x-icon',
+			fetched_at   INTEGER NOT NULL DEFAULT (unixepoch())
+		)`,
 	}
 
 	for _, stmt := range stmts {

@@ -8,17 +8,25 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	gocache "github.com/patrickmn/go-cache"
 )
 
 type handler struct {
-	store        *sqlx.DB
-	passphrase   []byte
-	devMode      bool
-	secureCookie bool
+	store         *sqlx.DB
+	passphrase    []byte
+	devMode       bool
+	secureCookie  bool
+	metadataCache *gocache.Cache
 }
 
 func NewHTTP(store *Store, passphrase []byte, devMode bool, secureCookie bool) *http.Server {
-	h := &handler{store: store.db, passphrase: passphrase, devMode: devMode, secureCookie: secureCookie}
+	h := &handler{
+		store:         store.db,
+		passphrase:    passphrase,
+		devMode:       devMode,
+		secureCookie:  secureCookie,
+		metadataCache: gocache.New(10*time.Minute, 15*time.Minute),
+	}
 	srv := &http.Server{
 		Addr:         ":8080",
 		Handler:      newRouter(h),
@@ -59,6 +67,7 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/read", h.readBookmarks)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
+	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)
 
 	mux.Handle("/", h.frontendHandler())
 

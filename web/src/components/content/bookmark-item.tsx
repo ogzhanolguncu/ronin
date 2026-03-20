@@ -118,7 +118,7 @@ export function BookmarkItem({
       {/* Row 1: Favicon + Title */}
       <div className="flex items-center gap-2 min-w-0 pr-28">
         <img
-          src={`https://www.google.com/s2/favicons?domain=${bookmark.hostname}&sz=32`}
+          src={`/api/v1/favicons/${bookmark.hostname}`}
           alt=""
           className="w-4 h-4 rounded-sm shrink-0"
         />

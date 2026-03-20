@@ -16,7 +16,7 @@ import { FormTagInput } from "@/components/ui/tag-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
 import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 
 const bookmarkSchema = z.object({
   url: z.url("Please enter a valid URL"),
@@ -44,6 +44,7 @@ const bookmarkSchema = z.object({
 export function AddBookmarkDialog() {
   const [open, setOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [fetchingMeta, setFetchingMeta] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -66,6 +67,32 @@ export function AddBookmarkDialog() {
       setOpen(false);
     },
   });
+
+  async function handleUrlBlur(url: string) {
+    try {
+      new URL(url);
+    } catch {
+      return;
+    }
+    if (form.getFieldValue("title")) return;
+
+    setFetchingMeta(true);
+    try {
+      const res = await fetch(`/api/v1/metadata?url=${encodeURIComponent(url)}`);
+      if (!res.ok) return;
+      const meta = await res.json();
+      if (meta.title && !form.getFieldValue("title")) {
+        form.setFieldValue("title", meta.title);
+      }
+      if (meta.description && !form.getFieldValue("description")) {
+        form.setFieldValue("description", meta.description);
+      }
+    } catch {
+      // silently ignore — user can still fill manually
+    } finally {
+      setFetchingMeta(false);
+    }
+  }
 
   function handleClose(nextOpen: boolean) {
     if (!nextOpen) {
@@ -111,10 +138,14 @@ export function AddBookmarkDialog() {
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
-                  onBlur={field.handleBlur}
+                  onBlur={() => {
+                    field.handleBlur();
+                    handleUrlBlur(field.state.value);
+                  }}
                   onChange={(e) => field.handleChange(e.target.value)}
                   placeholder="https://brandur.org/interfaces"
                   error={field.state.meta.errors[0]?.message}
+                  rightIcon={fetchingMeta ? <Loader2 className="animate-spin text-muted2/40" /> : undefined}
                   autoFocus
                 />
               )}

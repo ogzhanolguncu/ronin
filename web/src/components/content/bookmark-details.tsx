@@ -10,7 +10,7 @@ export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
       {/* Header: favicon + title + url + archive link */}
       <div className="flex items-start gap-3">
         <img
-          src={`https://www.google.com/s2/favicons?domain=${bookmark.hostname}&sz=64`}
+          src={`/api/v1/favicons/${bookmark.hostname}`}
           alt=""
           className="w-7 h-7 rounded-sm shrink-0 mt-px"
         />
