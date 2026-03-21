@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"io/fs"
 	"net/http"
 	"strings"
@@ -43,10 +44,15 @@ func (h *handler) frontendHandler() http.Handler {
 			}
 		}
 
-		// For all other routes, serve index.html with auth state injected
+		// For all other routes, serve index.html with auth state and tags injected
 		status := h.resolveAuthStatus(r)
 		page := strings.Replace(indexHTML, "<!--AUTH-->",
 			`<script>window.__AUTH__="`+status+`"</script>`, 1)
+
+		tags, _ := h.loadTagNames(r.Context())
+		tagsJSON, _ := json.Marshal(tags)
+		page = strings.Replace(page, "<!--TAGS-->",
+			`<script>window.__TAGS__=`+string(tagsJSON)+`</script>`, 1)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")

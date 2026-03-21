@@ -70,7 +70,7 @@ func newRouter(h *handler) http.Handler {
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/archive", h.archiveBookmarks)
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/read", h.readBookmarks)
 
-	mux.HandleFunc("GET    /api/v1/tags/search", h.searchTags)
+	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)

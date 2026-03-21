@@ -1,5 +1,4 @@
 import * as React from "react"
-import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { inputVariants, type InputProps } from "@/components/ui/input"
 
@@ -24,6 +23,19 @@ function commitTag(input: string, existing: string[]): string | null {
   return tag
 }
 
+function filterTags(query: string, selected: string[]): string[] {
+  const allTags = window.__TAGS__ ?? []
+  if (!query) return []
+  const prefix = query.toLowerCase()
+  return allTags
+    .filter(
+      (t) =>
+        t.toLowerCase().startsWith(prefix) &&
+        !selected.some((s) => s.toLowerCase() === t.toLowerCase()),
+    )
+    .slice(0, 10)
+}
+
 function TagInput({
   value,
   onChange,
@@ -38,47 +50,7 @@ function TagInput({
   const [suggestions, setSuggestions] = React.useState<string[]>([])
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1)
   const [showDropdown, setShowDropdown] = React.useState(false)
-  const [loading, setLoading] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
-  const abortRef = React.useRef<AbortController | undefined>(undefined)
-
-  React.useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      abortRef.current?.abort()
-    }
-  }, [])
-
-  async function fetchSuggestions(query: string) {
-    if (query.length === 0) {
-      setSuggestions([])
-      setShowDropdown(false)
-      setLoading(false)
-      return
-    }
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/v1/tags/search?q=${encodeURIComponent(query)}`, {
-        signal: controller.signal,
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      const filtered = (data.tags as string[]).filter(
-        (t) => !value.some((v) => v.toLowerCase() === t.toLowerCase()),
-      )
-      setSuggestions(filtered)
-      setHighlightedIndex(-1)
-      setShowDropdown(filtered.length > 0)
-    } catch {
-      // silently ignore — user can still type tags manually
-    } finally {
-      setLoading(false)
-    }
-  }
 
   function addTags(raw: string) {
     const parts = raw.split(",")
@@ -146,10 +118,11 @@ function TagInput({
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
     setInput(val)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(val.trim().replace(/^#/, ""))
-    }, 150)
+    const query = val.trim().replace(/^#/, "")
+    const filtered = filterTags(query, value)
+    setSuggestions(filtered)
+    setHighlightedIndex(-1)
+    setShowDropdown(filtered.length > 0)
   }
 
   return (
@@ -202,9 +175,6 @@ function TagInput({
         }}
         placeholder={value.length === 0 ? placeholder : undefined}
       />
-      {loading && input.length > 0 && (
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted2/40 shrink-0" />
-      )}
       {showDropdown && suggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-sm border border-border-soft bg-background shadow-sm overflow-hidden">
           {suggestions.map((tag, i) => (
