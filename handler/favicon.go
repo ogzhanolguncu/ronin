@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/ogzhanolguncu/ronin/httputil"
+	"github.com/ogzhanolguncu/ronin/metadata"
 )
 
 const (
@@ -14,16 +17,16 @@ const (
 	faviconMaxAge   = 24 * time.Hour
 )
 
-func (h *handler) getFavicon(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 	domain := r.PathValue("domain")
 	if domain == "" {
-		writeError(w, http.StatusBadRequest, "missing domain")
+		httputil.WriteError(w, http.StatusBadRequest, "missing domain")
 		return
 	}
 
 	var data []byte
 	var contentType string
-	err := h.store.QueryRowContext(r.Context(),
+	err := h.store.DB.QueryRowContext(r.Context(),
 		"SELECT data, content_type FROM favicon WHERE domain = ?", domain,
 	).Scan(&data, &contentType)
 	if err == sql.ErrNoRows {
@@ -31,7 +34,7 @@ func (h *handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		serverError(w, "failed to query favicon", err)
+		httputil.ServerError(w, "failed to query favicon", err)
 		return
 	}
 
@@ -42,17 +45,17 @@ func (h *handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 
 // fetchAndStoreFavicon downloads a favicon and stores it in the database.
 // It tries iconURL first (from <link rel="icon">), then falls back to /favicon.ico.
-func (h *handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
+func (h *Handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
 	// Check if we already have a fresh favicon
 	var fetchedAt int64
-	err := h.store.QueryRowContext(context.Background(),
+	err := h.store.DB.QueryRowContext(context.Background(),
 		"SELECT fetched_at FROM favicon WHERE domain = ?", domain,
 	).Scan(&fetchedAt)
 	if err == nil && time.Since(time.Unix(fetchedAt, 0)) < faviconMaxAge {
 		return
 	}
 
-	client := newHTTPClient()
+	client := metadata.NewHTTPClient()
 
 	var tryURLs []string
 	if iconURL != "" {
@@ -61,7 +64,7 @@ func (h *handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
 	tryURLs = append(tryURLs, baseOrigin+"/favicon.ico")
 
 	for _, faviconURL := range tryURLs {
-		req, err := newMetadataRequest(context.Background(), http.MethodGet, faviconURL)
+		req, err := metadata.NewRequest(context.Background(), http.MethodGet, faviconURL)
 		if err != nil {
 			continue
 		}
@@ -87,7 +90,7 @@ func (h *handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
 			contentType = "image/x-icon"
 		}
 
-		_, err = h.store.ExecContext(context.Background(),
+		_, err = h.store.DB.ExecContext(context.Background(),
 			`INSERT INTO favicon (domain, data, content_type, fetched_at) VALUES (?, ?, ?, unixepoch())
 			 ON CONFLICT(domain) DO UPDATE SET data = excluded.data, content_type = excluded.content_type, fetched_at = excluded.fetched_at`,
 			domain, data, contentType,

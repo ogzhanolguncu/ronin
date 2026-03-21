@@ -440,3 +440,9 @@ body {
     background-position: 200% 0;
   }
 }
+
+/* Ink breathe — calm pulsing for loading states (Seijaku) */
+@keyframes ink-breathe {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.7; }
+}

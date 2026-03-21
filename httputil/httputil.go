@@ -1,4 +1,4 @@
-package main
+package httputil
 
 import (
 	"bytes"
@@ -9,14 +9,14 @@ import (
 	"strconv"
 )
 
-type errorResponse struct {
+type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-const maxRequestBodySize = 1 << 20 // 1MB
+const MaxRequestBodySize = 1 << 20 // 1MB
 
-func readJSON(r *http.Request, v any) error {
-	r.Body = http.MaxBytesReader(nil, r.Body, maxRequestBodySize)
+func ReadJSON(r *http.Request, v any) error {
+	r.Body = http.MaxBytesReader(nil, r.Body, MaxRequestBodySize)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
@@ -25,7 +25,7 @@ func readJSON(r *http.Request, v any) error {
 	return nil
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
+func WriteJSON(w http.ResponseWriter, status int, v any) {
 	buf := &bytes.Buffer{}
 	if err := json.NewEncoder(buf).Encode(v); err != nil {
 		slog.Error("encode response", "err", err)
@@ -37,16 +37,16 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	_, _ = buf.WriteTo(w)
 }
 
-func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, errorResponse{Error: msg})
+func WriteError(w http.ResponseWriter, status int, msg string) {
+	WriteJSON(w, status, ErrorResponse{Error: msg})
 }
 
-func serverError(w http.ResponseWriter, msg string, err error, attrs ...any) {
+func ServerError(w http.ResponseWriter, msg string, err error, attrs ...any) {
 	slog.Error(msg, append([]any{"error", err}, attrs...)...)
-	writeError(w, http.StatusInternalServerError, msg)
+	WriteError(w, http.StatusInternalServerError, msg)
 }
 
-func pathParamInt(r *http.Request, key string) (int64, error) {
+func PathParamInt(r *http.Request, key string) (int64, error) {
 	raw := r.PathValue(key)
 	v, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
@@ -55,7 +55,7 @@ func pathParamInt(r *http.Request, key string) (int64, error) {
 	return v, nil
 }
 
-func queryParam[T string | int | bool](r *http.Request, key string, defaultVal T) (T, error) {
+func QueryParam[T string | int | bool](r *http.Request, key string, defaultVal T) (T, error) {
 	raw := r.URL.Query().Get(key)
 	if raw == "" {
 		return defaultVal, nil
@@ -81,10 +81,10 @@ func queryParam[T string | int | bool](r *http.Request, key string, defaultVal T
 	return result.(T), nil
 }
 
-func decode[T any](r *http.Request, w http.ResponseWriter) (T, bool) {
+func Decode[T any](r *http.Request, w http.ResponseWriter) (T, bool) {
 	var v T
-	if err := readJSON(r, &v); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+	if err := ReadJSON(r, &v); err != nil {
+		WriteError(w, http.StatusBadRequest, err.Error())
 		return v, false
 	}
 	return v, true

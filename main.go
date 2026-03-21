@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"log/slog"
 	"os"
@@ -9,8 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ogzhanolguncu/ronin/handler"
+	"github.com/ogzhanolguncu/ronin/store"
 	_ "modernc.org/sqlite"
 )
+
+//go:embed web/dist/*
+var distFS embed.FS
 
 func main() {
 	seed := flag.Int("seed", 0, "seed the database with N test bookmarks and exit")
@@ -30,7 +36,7 @@ func main() {
 		slog.Warn("DEV MODE ENABLED — auth bypassed, do not use in production")
 	}
 
-	store, err := NewStore("./ronin.db")
+	s, err := store.NewStore("./ronin.db")
 	if err != nil {
 		slog.Error("failed to init store", "err", err)
 		os.Exit(1)
@@ -38,12 +44,12 @@ func main() {
 
 	if *seed > 0 {
 		ctx := context.Background()
-		if err := seedBookmarks(ctx, store, *seed); err != nil {
+		if err := seedBookmarks(ctx, s, *seed); err != nil {
 			slog.Error("seed failed", "err", err)
 			os.Exit(1)
 		}
 		slog.Info("seeding complete", "count", *seed)
-		store.Close()
+		s.Close()
 		os.Exit(0)
 	}
 
@@ -52,7 +58,7 @@ func main() {
 		passphraseBytes = []byte(passphrase)
 	}
 	secureCookie := os.Getenv("INSECURE_COOKIE") != "1"
-	srv := NewHTTP(store, passphraseBytes, devMode, secureCookie)
+	srv := handler.New(s, distFS, passphraseBytes, devMode, secureCookie)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -66,7 +72,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("shutdown error", "err", err)
 	}
-	if err := store.Close(); err != nil {
+	if err := s.Close(); err != nil {
 		slog.Error("failed to close store", "err", err)
 	}
 }

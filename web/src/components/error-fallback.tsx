@@ -7,16 +7,22 @@ export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
   return (
     <div
-      className="flex flex-col items-center justify-center gap-4 p-8 text-center"
+      className="flex flex-col items-center justify-center gap-5 p-12 text-center"
       role="alert"
     >
-      <p className="text-sm font-medium text-destructive">
+      <p className="text-xs font-mono tracking-wide text-muted2">
         {is401 ? "Session expired" : "Something went wrong"}
       </p>
-      <p className="max-w-sm text-xs text-muted-foreground">
+      <div className="h-px w-12 bg-gradient-to-r from-transparent via-border to-transparent" />
+      <p className="max-w-xs text-xs text-muted2 font-light leading-relaxed">
         {error instanceof Error ? error.message : "An unexpected error occurred"}
       </p>
-      <Button variant="ghost" size="sm" onClick={resetErrorBoundary}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={resetErrorBoundary}
+        className="font-mono text-xs tracking-wide"
+      >
         Try again
       </Button>
     </div>

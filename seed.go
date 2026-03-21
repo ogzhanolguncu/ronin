@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/url"
+
+	"github.com/ogzhanolguncu/ronin/store"
 )
 
 type bookmarkTemplate struct {
@@ -66,11 +68,11 @@ var seedTemplates = []bookmarkTemplate{
 	{"https://the-algorithms.com", "The Algorithms", "Open source algorithm implementations", "", "data-structures algorithms learning"},
 }
 
-func seedBookmarks(ctx context.Context, store *Store, count int) error {
+func seedBookmarks(ctx context.Context, s *store.Store, count int) error {
 	rng := rand.New(rand.NewSource(42))
 	n := len(seedTemplates)
 
-	return WithTx(ctx, store.db.DB, func(tx *sql.Tx) error {
+	return store.WithTx(ctx, s.DB.DB, func(tx *sql.Tx) error {
 		for i := range count {
 			t := seedTemplates[i%n]
 
@@ -100,12 +102,12 @@ func seedBookmarks(ctx context.Context, store *Store, count int) error {
 			}
 
 			if t.tags != "" {
-				if err := upsertTagsAndLink(ctx, tx, bookmarkID, t.tags); err != nil {
+				if err := store.UpsertTagsAndLink(ctx, tx, bookmarkID, t.tags); err != nil {
 					return fmt.Errorf("tags for bookmark %d: %w", i, err)
 				}
 			}
 
-			if err := insertFTS(ctx, tx, bookmarkID, t.title, t.description, t.notes, url, t.tags); err != nil {
+			if err := store.InsertFTS(ctx, tx, bookmarkID, t.title, t.description, t.notes, url, t.tags); err != nil {
 				return fmt.Errorf("FTS for bookmark %d: %w", i, err)
 			}
 

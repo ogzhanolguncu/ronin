@@ -1,30 +1,34 @@
-package main
+package store
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"modernc.org/sqlite"
 )
 
-type DBTX interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+type Store struct {
+	DB *sqlx.DB
 }
 
-const (
-	sqliteConstraintUnique     = 2067 // SQLITE_CONSTRAINT_UNIQUE — duplicate unique field
-	sqliteConstraintNotNull    = 1299 // SQLITE_CONSTRAINT_NOTNULL — null on not null column
-	sqliteConstraintForeignKey = 787  // SQLITE_CONSTRAINT_FOREIGNKEY — references non-existent row
-)
+func NewStore(path string) (*Store, error) {
+	db, err := openDB(path)
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
 
-type Store struct {
-	db *sqlx.DB
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
+
+	return &Store{DB: db}, nil
+}
+
+func (s *Store) Close() error {
+	return s.DB.Close()
 }
 
 func openDB(path string) (*sqlx.DB, error) {
@@ -133,23 +137,11 @@ func migrate(db *sqlx.DB) error {
 	return nil
 }
 
-func NewStore(path string) (*Store, error) {
-	db, err := openDB(path)
-	if err != nil {
-		return nil, fmt.Errorf("open db: %w", err)
-	}
-
-	if err := migrate(db); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("migrate: %w", err)
-	}
-
-	return &Store{db: db}, nil
-}
-
-func (s *Store) Close() error {
-	return s.db.Close()
-}
+const (
+	sqliteConstraintUnique     = 2067
+	sqliteConstraintNotNull    = 1299
+	sqliteConstraintForeignKey = 787
+)
 
 func IsUniqueConstraintErr(err error) bool {
 	var sqliteErr *sqlite.Error
@@ -164,67 +156,4 @@ func IsNotNullConstraintErr(err error) bool {
 func IsForeignKeyConstraintErr(err error) bool {
 	var sqliteErr *sqlite.Error
 	return errors.As(err, &sqliteErr) && sqliteErr.Code() == sqliteConstraintForeignKey
-}
-
-func WithTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if err := fn(tx); err != nil {
-		return err
-	}
-
-	return tx.Commit()
-}
-
-type BulkCaseEntry struct {
-	ID    int64
-	Value any
-}
-
-// bulkCaseUpdate builds and executes: UPDATE <table> SET <column> = CASE id WHEN ? THEN ? ... END WHERE id IN (...)
-func bulkCaseUpdate(ctx context.Context, db DBTX, table, column string, entries []BulkCaseEntry) error {
-	if len(entries) == 0 {
-		return nil
-	}
-	caseClauses := make([]string, len(entries))
-	ids := make([]any, len(entries))
-	args := make([]any, 0, len(entries)*3)
-
-	for i, e := range entries {
-		caseClauses[i] = "WHEN ? THEN ?"
-		args = append(args, e.ID, e.Value)
-		ids[i] = e.ID
-	}
-
-	query := "UPDATE " + table + " SET " + column + " = CASE id " +
-		strings.Join(caseClauses, " ") +
-		" END WHERE id IN (?" + strings.Repeat(",?", len(entries)-1) + ")"
-
-	args = append(args, ids...)
-
-	if _, err := db.ExecContext(ctx, query, args...); err != nil {
-		return fmt.Errorf("bulk case update %s.%s: %w", table, column, err)
-	}
-	return nil
-}
-
-func bulkDelete(ctx context.Context, db DBTX, table, column string, ids []int) error {
-	if len(ids) == 0 {
-		return nil
-	}
-	placeholders := make([]string, len(ids))
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		placeholders[i] = "?"
-		args[i] = id
-	}
-	query := "DELETE FROM " + table + " WHERE " + column + " IN (" + strings.Join(placeholders, ",") + ")"
-	if _, err := db.ExecContext(ctx, query, args...); err != nil {
-		return fmt.Errorf("bulk delete from %s: %w", table, err)
-	}
-	return nil
 }

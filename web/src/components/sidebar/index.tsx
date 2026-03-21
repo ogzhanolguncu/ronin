@@ -25,7 +25,7 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
       <Header onLogout={onLogout} />
       <SidebarSection items={VIEW_ITEMS} />
       <Collections />
-      <QueryBoundary loadingFallback={null}>
+      <QueryBoundary>
         <Tags />
       </QueryBoundary>
       <div className="shrink-0 border-t border-border-soft px-4 py-4">

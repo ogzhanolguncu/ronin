@@ -1,12 +1,17 @@
-package main
+package handler
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ogzhanolguncu/ronin/model"
+	"github.com/ogzhanolguncu/ronin/store"
+	gocache "github.com/patrickmn/go-cache"
 )
 
 func doRequest(t *testing.T, srv *httptest.Server, method, path string, body any) *http.Response {
@@ -36,20 +41,27 @@ func doRequest(t *testing.T, srv *httptest.Server, method, path string, body any
 }
 
 func TestBookmarkHandlers(t *testing.T) {
-	store, err := NewStore(":memory:")
+	s, err := store.NewStore(":memory:")
 	if err != nil {
 		t.Fatalf("create store: %v", err)
 	}
-	defer store.Close()
+	defer s.Close()
 
-	h := &handler{store: store.db, devMode: true}
+	h := &Handler{
+		store:         s,
+		devMode:       true,
+		distFS:        embed.FS{},
+		metadataCache: gocache.New(gocache.NoExpiration, 0),
+		tagCache:      gocache.New(gocache.NoExpiration, 0),
+		sessionCache:  gocache.New(gocache.NoExpiration, 0),
+	}
 	srv := httptest.NewServer(newRouter(h))
 	defer srv.Close()
 
 	var createdID int64
 
 	t.Run("CreateBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
 			URL:         "https://example.com",
 			Title:       "Example",
 			Description: "An example site",
@@ -73,7 +85,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("CreateBookmark_DuplicateURL", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
 			URL:   "https://example.com",
 			Title: "Duplicate",
 		})
@@ -85,7 +97,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("CreateBookmark_MissingURL", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
 			Title: "No URL",
 		})
 		defer resp.Body.Close()
@@ -103,7 +115,7 @@ func TestBookmarkHandlers(t *testing.T) {
 			t.Fatalf("expected 200, got %d", resp.StatusCode)
 		}
 
-		var bm Bookmark
+		var bm model.Bookmark
 		if err := json.NewDecoder(resp.Body).Decode(&bm); err != nil {
 			t.Fatalf("decode response: %v", err)
 		}
@@ -135,7 +147,7 @@ func TestBookmarkHandlers(t *testing.T) {
 			t.Fatalf("expected 200, got %d", resp.StatusCode)
 		}
 
-		var list ListBookmarksResponse
+		var list model.ListBookmarksResponse
 		if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 			t.Fatalf("decode response: %v", err)
 		}
@@ -146,7 +158,7 @@ func TestBookmarkHandlers(t *testing.T) {
 
 	t.Run("ListBookmarks_Pagination", func(t *testing.T) {
 		// Create a second bookmark so we have 2 total
-		createResp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
+		createResp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
 			URL:   "https://example2.com",
 			Title: "Example 2",
 			Tags:  "pagination",
@@ -163,7 +175,7 @@ func TestBookmarkHandlers(t *testing.T) {
 			t.Fatalf("expected 200, got %d", resp.StatusCode)
 		}
 
-		var list ListBookmarksResponse
+		var list model.ListBookmarksResponse
 		if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 			t.Fatalf("decode response: %v", err)
 		}
@@ -179,7 +191,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("UpdateBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPut, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), UpdateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPut, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), model.UpdateBookmarkRequest{
 			URL:         "https://example.com/updated",
 			Title:       "Updated Example",
 			Description: "Updated description",
@@ -196,7 +208,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
-		var bm Bookmark
+		var bm model.Bookmark
 		if err := json.NewDecoder(getResp.Body).Decode(&bm); err != nil {
 			t.Fatalf("decode response: %v", err)
 		}
@@ -212,7 +224,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("UpdateBookmark_NotFound", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks/9999", UpdateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPut, "/api/v1/bookmarks/9999", model.UpdateBookmarkRequest{
 			URL:   "https://nonexistent.com",
 			Title: "Nonexistent",
 		})
@@ -224,8 +236,8 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("ArchiveBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPatch, "/api/v1/bookmarks/archive", ArchiveBookmarkRequest{
-			IDs: []ArchiveEntry{{ID: createdID, Archived: true}},
+		resp := doRequest(t, srv, http.MethodPatch, "/api/v1/bookmarks/archive", model.ArchiveBookmarkRequest{
+			IDs: []model.ArchiveEntry{{ID: createdID, Archived: true}},
 		})
 		defer resp.Body.Close()
 
@@ -237,7 +249,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
-		var bm Bookmark
+		var bm model.Bookmark
 		json.NewDecoder(getResp.Body).Decode(&bm)
 		if !bm.Archived {
 			t.Fatal("expected bookmark to be archived")
@@ -245,8 +257,8 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("ReadBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPatch, "/api/v1/bookmarks/read", ReadBookmarkRequest{
-			IDs: []ReadEntry{{ID: createdID, Read: true}},
+		resp := doRequest(t, srv, http.MethodPatch, "/api/v1/bookmarks/read", model.ReadBookmarkRequest{
+			IDs: []model.ReadEntry{{ID: createdID, Read: true}},
 		})
 		defer resp.Body.Close()
 
@@ -258,7 +270,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		getResp := doRequest(t, srv, http.MethodGet, fmt.Sprintf("/api/v1/bookmarks/%d", createdID), nil)
 		defer getResp.Body.Close()
 
-		var bm Bookmark
+		var bm model.Bookmark
 		json.NewDecoder(getResp.Body).Decode(&bm)
 		if !bm.Read {
 			t.Fatal("expected bookmark to be read")
@@ -268,7 +280,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	var secondID int64
 
 	t.Run("CreateSecondBookmark", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", CreateBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
 			URL:   "https://second.com",
 			Title: "Second",
 			Tags:  "second",
@@ -302,7 +314,7 @@ func TestBookmarkHandlers(t *testing.T) {
 	})
 
 	t.Run("DeleteBookmarks", func(t *testing.T) {
-		resp := doRequest(t, srv, http.MethodDelete, "/api/v1/bookmarks", DeleteBookmarkRequest{
+		resp := doRequest(t, srv, http.MethodDelete, "/api/v1/bookmarks", model.DeleteBookmarkRequest{
 			IDs: []int{int(secondID)},
 		})
 		defer resp.Body.Close()
@@ -315,7 +327,7 @@ func TestBookmarkHandlers(t *testing.T) {
 		listResp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks", nil)
 		defer listResp.Body.Close()
 
-		var list ListBookmarksResponse
+		var list model.ListBookmarksResponse
 		json.NewDecoder(listResp.Body).Decode(&list)
 		if len(list.Bookmarks) != 0 {
 			t.Fatalf("expected 0 bookmarks, got %d", len(list.Bookmarks))

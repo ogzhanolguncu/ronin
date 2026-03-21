@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/ogzhanolguncu/ronin/httputil"
 )
 
 const sessionDuration = 7 * 24 * time.Hour
@@ -16,35 +18,35 @@ type loginRequest struct {
 	Passphrase string `json:"passphrase"`
 }
 
-func (h *handler) authLogin(w http.ResponseWriter, r *http.Request) {
-	req, ok := decode[loginRequest](r, w)
+func (h *Handler) authLogin(w http.ResponseWriter, r *http.Request) {
+	req, ok := httputil.Decode[loginRequest](r, w)
 	if !ok {
 		return
 	}
 
 	if subtle.ConstantTimeCompare([]byte(req.Passphrase), h.passphrase) != 1 {
-		writeError(w, http.StatusUnauthorized, "invalid passphrase")
+		httputil.WriteError(w, http.StatusUnauthorized, "invalid passphrase")
 		return
 	}
 
 	// Clean expired sessions
-	h.store.ExecContext(r.Context(), "DELETE FROM session WHERE expires_at < ?", time.Now().Unix())
+	h.store.DB.ExecContext(r.Context(), "DELETE FROM session WHERE expires_at < ?", time.Now().Unix())
 
 	token, err := h.createSession(r)
 	if err != nil {
-		serverError(w, "failed to create session", err)
+		httputil.ServerError(w, "failed to create session", err)
 		return
 	}
 
 	h.setSessionCookie(w, token)
-	writeJSON(w, http.StatusOK, map[string]bool{"authenticated": true})
+	httputil.WriteJSON(w, http.StatusOK, map[string]bool{"authenticated": true})
 }
 
-func (h *handler) authLogout(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) authLogout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	if err == nil {
 		h.sessionCache.Delete(cookie.Value)
-		h.store.ExecContext(r.Context(), "DELETE FROM session WHERE token = ?", cookie.Value)
+		h.store.DB.ExecContext(r.Context(), "DELETE FROM session WHERE token = ?", cookie.Value)
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -57,10 +59,10 @@ func (h *handler) authLogout(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	writeJSON(w, http.StatusOK, map[string]bool{"authenticated": false})
+	httputil.WriteJSON(w, http.StatusOK, map[string]bool{"authenticated": false})
 }
 
-func (h *handler) authMiddleware(next http.Handler) http.Handler {
+func (h *Handler) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.devMode {
 			next.ServeHTTP(w, r)
@@ -76,7 +78,7 @@ func (h *handler) authMiddleware(next http.Handler) http.Handler {
 
 		cookie, err := r.Cookie("session")
 		if err != nil || !h.isValidSession(r.Context(), cookie.Value) {
-			writeError(w, http.StatusUnauthorized, "unauthorized")
+			httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
 			return
 		}
 
@@ -84,12 +86,12 @@ func (h *handler) authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (h *handler) isValidSession(ctx context.Context, token string) bool {
+func (h *Handler) isValidSession(ctx context.Context, token string) bool {
 	if _, ok := h.sessionCache.Get(token); ok {
 		return true
 	}
 	var exists int
-	err := h.store.QueryRowContext(ctx,
+	err := h.store.DB.QueryRowContext(ctx,
 		"SELECT COUNT(*) FROM session WHERE token = ? AND expires_at > ?",
 		token, time.Now().Unix(),
 	).Scan(&exists)
@@ -100,7 +102,7 @@ func (h *handler) isValidSession(ctx context.Context, token string) bool {
 	return true
 }
 
-func (h *handler) createSession(r *http.Request) (string, error) {
+func (h *Handler) createSession(r *http.Request) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -108,14 +110,14 @@ func (h *handler) createSession(r *http.Request) (string, error) {
 	token := hex.EncodeToString(b)
 	expiresAt := time.Now().Add(sessionDuration).Unix()
 
-	if _, err := h.store.ExecContext(r.Context(), "INSERT INTO session (token, expires_at) VALUES (?, ?)", token, expiresAt); err != nil {
+	if _, err := h.store.DB.ExecContext(r.Context(), "INSERT INTO session (token, expires_at) VALUES (?, ?)", token, expiresAt); err != nil {
 		return "", err
 	}
 
 	return token, nil
 }
 
-func (h *handler) setSessionCookie(w http.ResponseWriter, token string) {
+func (h *Handler) setSessionCookie(w http.ResponseWriter, token string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    token,

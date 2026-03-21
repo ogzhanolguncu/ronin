@@ -1,7 +1,6 @@
-package main
+package handler
 
 import (
-	"embed"
 	"encoding/json"
 	"io/fs"
 	"log/slog"
@@ -9,20 +8,14 @@ import (
 	"strings"
 )
 
-//go:embed web/dist/*
-var distFS embed.FS
-
-func (h *handler) frontendHandler() http.Handler {
+func (h *Handler) frontendHandler() http.Handler {
 	if h.devMode {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "dev mode: frontend served by Vite", http.StatusNotFound)
 		})
 	}
 
-	sub, err := fs.Sub(distFS, "web/dist")
-	if err != nil {
-		panic(err)
-	}
+	sub := h.sub()
 
 	indexBytes, err := fs.ReadFile(sub, "index.html")
 	if err != nil {
@@ -62,7 +55,7 @@ func (h *handler) frontendHandler() http.Handler {
 	})
 }
 
-func (h *handler) resolveAuthStatus(r *http.Request) string {
+func (h *Handler) resolveAuthStatus(r *http.Request) string {
 	if h.devMode {
 		return "authenticated"
 	}
