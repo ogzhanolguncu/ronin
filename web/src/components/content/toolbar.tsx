@@ -1,10 +1,10 @@
 import { useRef } from "react";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { useUrlState, useUrlStateLocal } from "@/hooks/use-url-state";
 import { cn } from "@/lib/utils";
-import { urlState } from "@/lib/url-state-instance";
-import { parseSearchQuery } from "@/lib/search-parser";
+import { urlState } from "@/lib/query-manager/url-state-instance";
+import { parseSearchQuery } from "@/lib/query-manager/search-parser";
 import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
+import { useUrlState, useUrlStateLocal } from "@/lib/query-manager/use-url-state";
 
 const VIEW_LABELS: Record<string, string> = {
   all: "All bookmarks",

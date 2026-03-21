@@ -2,8 +2,8 @@ import { useRef } from "react";
 import { BookmarkList, ITEMS_PER_PAGE, MOCK_BOOKMARKS_COUNT } from "./bookmark-list";
 import { Pagination } from "./pagination";
 import { ContentToolbar } from "./toolbar";
-import { useUrlState } from "@/hooks/use-url-state";
-import { urlState } from "@/lib/url-state-instance";
+import { urlState } from "@/lib/query-manager/url-state-instance";
+import { useUrlState } from "@/lib/query-manager/use-url-state";
 
 export function Content() {
   const page = useUrlState((s) => s.page);

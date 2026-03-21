@@ -1,5 +1,5 @@
 import type { FallbackProps } from "react-error-boundary"
-import { ApiError } from "@/lib/query-client"
+import { ApiError } from "@/lib/queries/query-client"
 import { Button } from "@/components/ui/button"
 
 export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {

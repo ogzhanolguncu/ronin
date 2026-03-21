@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import { requester } from "./requester"
+import { requester } from "../requester"
 import { queryClient } from "./query-client"
 
 export type Tag = {

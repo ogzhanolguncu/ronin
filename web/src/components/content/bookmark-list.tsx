@@ -4,7 +4,7 @@ import { BookmarkItem } from "./bookmark-item";
 import { BookmarkSkeleton } from "./bookmark-skeleton";
 import { BookmarkDetails } from "./bookmark-details";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
-import { urlState } from "@/lib/url-state-instance";
+import { urlState } from "@/lib/query-manager/url-state-instance";
 import type { Bookmark } from "@/lib/types";
 
 export const ITEMS_PER_PAGE = 10;

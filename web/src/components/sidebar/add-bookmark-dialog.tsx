@@ -19,7 +19,7 @@ import { PlusIcon } from "@/components/ui/icons";
 import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { tagsQueryOptions } from "@/lib/tags";
+import { tagsQueryOptions } from "@/lib/queries/tags";
 
 const bookmarkSchema = z.object({
   url: z.url("Please enter a valid URL"),

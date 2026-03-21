@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { getCollectionColor } from "@/lib/colors";
-import { useUrlState } from "@/hooks/use-url-state";
-import { urlState } from "@/lib/url-state-instance";
 import { AddCollectionDialog } from "@/components/sidebar/add-collection-dialog";
+import { urlState } from "@/lib/query-manager/url-state-instance";
+import { useUrlState } from "@/lib/query-manager/use-url-state";
 
 export const MOCK_COLLECTIONS = [
   { id: 1, name: "Reading list", slug: "reading-list", colorId: 1 },

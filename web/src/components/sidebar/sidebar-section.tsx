@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
-import { useUrlState } from "@/hooks/use-url-state";
-import { urlState } from "@/lib/url-state-instance";
 import type { NavItem } from "./types";
+import { urlState } from "@/lib/query-manager/url-state-instance";
+import { useUrlState } from "@/lib/query-manager/use-url-state";
 
 export function SidebarSection({
   items,

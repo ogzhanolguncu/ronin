@@ -1,8 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { useUrlState } from "@/hooks/use-url-state";
-import { urlState } from "@/lib/url-state-instance";
-import { tagsQueryOptions } from "@/lib/tags";
+import { tagsQueryOptions } from "@/lib/queries/tags";
+import { urlState } from "@/lib/query-manager/url-state-instance";
+import { useUrlState } from "@/lib/query-manager/use-url-state";
 
 export const Tags = () => {
   const { data: tags } = useSuspenseQuery(tagsQueryOptions());

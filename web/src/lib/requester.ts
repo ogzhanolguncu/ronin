@@ -1,4 +1,4 @@
-import { ApiError } from "./query-client"
+import { ApiError } from "./queries/query-client"
 
 export async function requester<T>(
   input: RequestInfo | URL,
