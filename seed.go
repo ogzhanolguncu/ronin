@@ -54,6 +54,16 @@ var seedTemplates = []bookmarkTemplate{
 	{"https://github.com/golang-migrate/migrate", "golang-migrate", "Database migrations in Go", "Supports many databases", "go database tools"},
 	{"https://blog.pragmaticengineer.com/system-design-interview", "System Design Interview Guide", "Pragmatic Engineer on system design interviews", "", "architecture career"},
 	{"https://wizardzines.com/zines/dns", "How DNS Works - Wizard Zines", "Visual guide to DNS", "Great for quick reference", "networking reference"},
+	{"https://refactoring.guru/design-patterns", "Design Patterns - Refactoring Guru", "Illustrated design patterns catalog", "Good Gang of Four refresher", "design patterns architecture"},
+	{"https://lawsofux.com", "Laws of UX", "Collection of UX design principles", "", "design ux frontend"},
+	{"https://designsystems.com", "Design Systems Handbook", "Guide to building design systems", "", "design-systems frontend"},
+	{"https://github.com/donnemartin/system-design-primer", "System Design Primer", "Learn how to design large-scale systems", "", "design distributed-systems architecture"},
+	{"https://github.com/practical-tutorials/project-based-learning", "Project Based Learning", "Curated list of project-based tutorials", "", "developer-tools learning"},
+	{"https://devenv.sh", "devenv - Developer Environments", "Fast reproducible developer environments", "", "developer-tools devops nix"},
+	{"https://devdocs.io", "DevDocs API Documentation", "Unified API documentation browser", "", "developer-tools reference documentation"},
+	{"https://datasette.io", "Datasette", "Explore and publish data with SQLite", "Great for data exploration", "data sqlite tools"},
+	{"https://github.com/apache/arrow", "Apache Arrow", "Cross-language columnar data format", "", "data data-structures"},
+	{"https://the-algorithms.com", "The Algorithms", "Open source algorithm implementations", "", "data-structures algorithms learning"},
 }
 
 func seedBookmarks(ctx context.Context, store *Store, count int) error {

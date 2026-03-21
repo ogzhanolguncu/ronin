@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { inputVariants, type InputProps } from "@/components/ui/input"
 
@@ -34,7 +35,50 @@ function TagInput({
   name,
 }: TagInputProps) {
   const [input, setInput] = React.useState("")
+  const [suggestions, setSuggestions] = React.useState<string[]>([])
+  const [highlightedIndex, setHighlightedIndex] = React.useState(-1)
+  const [showDropdown, setShowDropdown] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+  const abortRef = React.useRef<AbortController | undefined>(undefined)
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  async function fetchSuggestions(query: string) {
+    if (query.length === 0) {
+      setSuggestions([])
+      setShowDropdown(false)
+      setLoading(false)
+      return
+    }
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/v1/tags/search?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal,
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      const filtered = (data.tags as string[]).filter(
+        (t) => !value.some((v) => v.toLowerCase() === t.toLowerCase()),
+      )
+      setSuggestions(filtered)
+      setHighlightedIndex(-1)
+      setShowDropdown(filtered.length > 0)
+    } catch {
+      // silently ignore — user can still type tags manually
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function addTags(raw: string) {
     const parts = raw.split(",")
@@ -46,11 +90,42 @@ function TagInput({
     if (next.length !== value.length) onChange(next)
   }
 
+  function pickSuggestion(tag: string) {
+    onChange([...value, tag])
+    setInput("")
+    setSuggestions([])
+    setShowDropdown(false)
+    inputRef.current?.focus()
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (showDropdown && suggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setHighlightedIndex((i) => (i + 1) % suggestions.length)
+        return
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setHighlightedIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
+        return
+      }
+      if (e.key === "Enter" && highlightedIndex >= 0) {
+        e.preventDefault()
+        pickSuggestion(suggestions[highlightedIndex])
+        return
+      }
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setShowDropdown(false)
+        return
+      }
+    }
     if (e.key === "Enter" || e.key === "," || e.key === " ") {
       e.preventDefault()
       addTags(input)
       setInput("")
+      setShowDropdown(false)
     } else if (e.key === "Backspace" && input === "" && value.length > 0) {
       onChange(value.slice(0, -1))
     }
@@ -61,17 +136,27 @@ function TagInput({
     const text = e.clipboardData.getData("text")
     addTags(text)
     setInput("")
+    setShowDropdown(false)
   }
 
   function removeTag(index: number) {
     onChange(value.filter((_, i) => i !== index))
   }
 
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    setInput(val)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchSuggestions(val.trim().replace(/^#/, ""))
+    }, 150)
+  }
+
   return (
     <div
       className={cn(
         inputVariants({ variant }),
-        "flex flex-wrap items-center gap-1.5 cursor-text focus-within:border-ring",
+        "relative flex flex-wrap items-center gap-1.5 cursor-text focus-within:border-ring",
         className,
       )}
       onClick={() => inputRef.current?.focus()}
@@ -79,7 +164,7 @@ function TagInput({
       {value.map((tag, i) => (
         <span
           key={tag}
-          className="inline-flex items-center gap-1 font-mono text-xs text-primary px-1.5 py-0.5"
+          className="inline-flex items-center gap-1 font-mono text-xs text-primary px-1.5 py-0.5 bg-surface2/50 rounded-sm"
         >
           #{tag}
           <button
@@ -102,18 +187,46 @@ function TagInput({
         type="text"
         className="min-w-[60px] flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         onBlur={() => {
-          if (input.trim()) {
-            addTags(input)
-            setInput("")
-          }
-          onBlur?.()
+          setTimeout(() => {
+            if (input.trim()) {
+              addTags(input)
+              setInput("")
+            }
+            setShowDropdown(false)
+            onBlur?.()
+          }, 150)
         }}
         placeholder={value.length === 0 ? placeholder : undefined}
       />
+      {loading && input.length > 0 && (
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted2/40 shrink-0" />
+      )}
+      {showDropdown && suggestions.length > 0 && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-sm border border-border-soft bg-background shadow-sm overflow-hidden">
+          {suggestions.map((tag, i) => (
+            <button
+              key={tag}
+              type="button"
+              className={cn(
+                "w-full text-left px-2.5 py-1.5 text-xs font-mono transition-colors",
+                i === highlightedIndex
+                  ? "bg-surface2 text-primary"
+                  : "text-foreground hover:bg-surface2",
+              )}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                pickSuggestion(tag)
+              }}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

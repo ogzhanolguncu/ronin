@@ -17,3 +17,5 @@ preview:
 	sleep 1 && open http://localhost:8080 &
 	set -a && . ./.env && set +a && go run .
 
+seed:
+	DEV=1 go run . -seed 200
