@@ -1,15 +1,33 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 )
 
-var likeEscaper = strings.NewReplacer(`%`, `\%`, `_`, `\_`)
-
 type SearchTagsResponse struct {
 	Tags []string `json:"tags"`
+}
+
+const tagCacheKey = "tags"
+
+func (h *handler) loadTagNames(ctx context.Context) ([]string, error) {
+	if cached, ok := h.tagCache.Get(tagCacheKey); ok {
+		return cached.([]string), nil
+	}
+	var names []string
+	if err := h.store.SelectContext(ctx, &names, "SELECT name FROM tag ORDER BY name"); err != nil {
+		return nil, err
+	}
+	h.tagCache.Set(tagCacheKey, names, 0)
+	return names, nil
+}
+
+func (h *handler) invalidateTagCache() {
+	h.tagCache.Delete(tagCacheKey)
 }
 
 func (h *handler) searchTags(w http.ResponseWriter, r *http.Request) {
@@ -28,20 +46,22 @@ func (h *handler) searchTags(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 
-	escaped := likeEscaper.Replace(q)
-
-	var tags []string
-	err = h.store.SelectContext(r.Context(), &tags,
-		"SELECT name FROM tag WHERE name LIKE ? ESCAPE '\\' ORDER BY name LIMIT ?",
-		escaped+"%", limit,
-	)
+	names, err := h.loadTagNames(r.Context())
 	if err != nil {
-		serverError(w, "failed to search tags", err)
+		serverError(w, "failed to load tags", err)
 		return
 	}
 
-	if tags == nil {
-		tags = []string{}
+	prefix := strings.ToLower(q)
+	start := sort.SearchStrings(names, prefix)
+
+	tags := make([]string, 0, limit)
+	for i := start; i < len(names) && len(tags) < limit; i++ {
+		if strings.HasPrefix(names[i], prefix) {
+			tags = append(tags, names[i])
+		} else {
+			break
+		}
 	}
 
 	writeJSON(w, http.StatusOK, SearchTagsResponse{Tags: tags})

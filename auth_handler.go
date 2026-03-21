@@ -43,6 +43,7 @@ func (h *handler) authLogin(w http.ResponseWriter, r *http.Request) {
 func (h *handler) authLogout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	if err == nil {
+		h.sessionCache.Delete(cookie.Value)
 		h.store.ExecContext(r.Context(), "DELETE FROM session WHERE token = ?", cookie.Value)
 	}
 
@@ -84,12 +85,19 @@ func (h *handler) authMiddleware(next http.Handler) http.Handler {
 }
 
 func (h *handler) isValidSession(ctx context.Context, token string) bool {
+	if _, ok := h.sessionCache.Get(token); ok {
+		return true
+	}
 	var exists int
 	err := h.store.QueryRowContext(ctx,
 		"SELECT COUNT(*) FROM session WHERE token = ? AND expires_at > ?",
 		token, time.Now().Unix(),
 	).Scan(&exists)
-	return err == nil && exists > 0
+	if err != nil || exists == 0 {
+		return false
+	}
+	h.sessionCache.Set(token, true, 0)
+	return true
 }
 
 func (h *handler) createSession(r *http.Request) (string, error) {

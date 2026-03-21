@@ -193,6 +193,7 @@ func (h *handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.invalidateTagCache()
 	writeJSON(w, http.StatusCreated, map[string]int64{"id": bmID})
 }
 
@@ -252,6 +253,7 @@ func (h *handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.invalidateTagCache()
 	w.WriteHeader(http.StatusNoContent)
 }
 

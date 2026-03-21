@@ -17,6 +17,8 @@ type handler struct {
 	devMode       bool
 	secureCookie  bool
 	metadataCache *gocache.Cache
+	tagCache      *gocache.Cache
+	sessionCache  *gocache.Cache
 }
 
 func NewHTTP(store *Store, passphrase []byte, devMode bool, secureCookie bool) *http.Server {
@@ -26,6 +28,8 @@ func NewHTTP(store *Store, passphrase []byte, devMode bool, secureCookie bool) *
 		devMode:       devMode,
 		secureCookie:  secureCookie,
 		metadataCache: gocache.New(10*time.Minute, 15*time.Minute),
+		tagCache:      gocache.New(gocache.NoExpiration, 0),
+		sessionCache:  gocache.New(30*time.Second, 1*time.Minute),
 	}
 	srv := &http.Server{
 		Addr:         ":8080",
