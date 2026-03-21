@@ -10,6 +10,7 @@ import { Tags } from "./tags";
 import type { NavItem } from "./types";
 import { SidebarSection } from "./sidebar-section";
 import { AddBookmarkDialog } from "./add-bookmark-dialog";
+import { QueryBoundary } from "../query-boundary";
 
 const VIEW_ITEMS: NavItem[] = [
   { id: "all", label: "All bookmarks", icon: <GridIcon />, count: 50 },
@@ -24,7 +25,9 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
       <Header onLogout={onLogout} />
       <SidebarSection items={VIEW_ITEMS} />
       <Collections />
-      <Tags />
+      <QueryBoundary loadingFallback={null}>
+        <Tags />
+      </QueryBoundary>
       <div className="shrink-0 border-t border-border-soft px-4 py-4">
         <AddBookmarkDialog />
       </div>

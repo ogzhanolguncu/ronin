@@ -1,22 +1,24 @@
+import { queryOptions } from "@tanstack/react-query"
+import { requester } from "./requester"
 import { queryClient } from "./query-client"
 
-export const tagKeys = { all: ["tags"] as const }
+export type Tag = {
+  name: string
+  count: number
+}
 
-export function getTagsQueryOptions() {
-  return {
-    queryKey: tagKeys.all,
-    queryFn: async (): Promise<string[]> => {
-      const res = await fetch("/api/v1/tags")
-      if (!res.ok) throw new Error("Failed to fetch tags")
-      const data = await res.json()
-      window.__TAGS__ = data.tags
-      return data.tags
-    },
-    initialData: () => window.__TAGS__,
+type TagsResponse = {
+  tags: Tag[]
+}
+
+export function tagsQueryOptions() {
+  return queryOptions({
+    queryKey: ["tags"] as const,
+    queryFn: () => requester<TagsResponse>("/api/v1/tags").then((r) => r.tags),
     staleTime: Infinity,
-  }
+  })
 }
 
 export function invalidateTags() {
-  return queryClient.invalidateQueries({ queryKey: tagKeys.all })
+  return queryClient.invalidateQueries({ queryKey: tagsQueryOptions().queryKey })
 }

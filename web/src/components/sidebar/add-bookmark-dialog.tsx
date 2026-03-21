@@ -18,6 +18,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
 import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
 import { ChevronRight, Loader2 } from "lucide-react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { tagsQueryOptions } from "@/lib/tags";
 
 const bookmarkSchema = z.object({
   url: z.url("Please enter a valid URL"),
@@ -45,6 +47,7 @@ const bookmarkSchema = z.object({
 type BookmarkFormValues = z.infer<typeof bookmarkSchema>;
 
 export function AddBookmarkDialog() {
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions())
   const [open, setOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [fetchingMeta, setFetchingMeta] = useState(false);
@@ -164,6 +167,7 @@ export function AddBookmarkDialog() {
                   label="Tags"
                   id="tags"
                   name={field.name}
+                  allTags={tags.map(t => t.name)}
                   value={field.value}
                   onBlur={field.onBlur}
                   onChange={(tags) => field.onChange(tags)}

@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -49,8 +50,9 @@ func (h *handler) frontendHandler() http.Handler {
 		page := strings.Replace(indexHTML, "<!--AUTH-->",
 			`<script>window.__AUTH__="`+status+`"</script>`, 1)
 
-		tags, _ := h.loadTagNames(r.Context())
+		tags, _ := h.loadTags(r.Context())
 		tagsJSON, _ := json.Marshal(tags)
+		slog.Info("injecting tags into client", "count", len(tags))
 		page = strings.Replace(page, "<!--TAGS-->",
 			`<script>window.__TAGS__=`+string(tagsJSON)+`</script>`, 1)
 

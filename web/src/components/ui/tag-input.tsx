@@ -14,6 +14,7 @@ type TagInputProps = {
   hint?: React.ReactNode
   id?: string
   name?: string
+  allTags?: string[]
 }
 
 function commitTag(input: string, existing: string[]): string | null {
@@ -23,8 +24,7 @@ function commitTag(input: string, existing: string[]): string | null {
   return tag
 }
 
-function filterTags(query: string, selected: string[]): string[] {
-  const allTags = window.__TAGS__ ?? []
+function filterTags(query: string, selected: string[], allTags: string[]): string[] {
   if (!query) return []
   const prefix = query.toLowerCase()
   return allTags
@@ -45,6 +45,7 @@ function TagInput({
   className,
   id,
   name,
+  allTags = [],
 }: TagInputProps) {
   const [input, setInput] = React.useState("")
   const [suggestions, setSuggestions] = React.useState<string[]>([])
@@ -119,7 +120,7 @@ function TagInput({
     const val = e.target.value
     setInput(val)
     const query = val.trim().replace(/^#/, "")
-    const filtered = filterTags(query, value)
+    const filtered = filterTags(query, value, allTags)
     setSuggestions(filtered)
     setHighlightedIndex(-1)
     setShowDropdown(filtered.length > 0)

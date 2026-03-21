@@ -14,9 +14,18 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.2.1
         version: 4.2.2(vite@8.0.1(@types/node@24.12.0)(jiti@2.6.1))
+      '@tanstack/query-async-storage-persister':
+        specifier: ^5.90.27
+        version: 5.90.27
       '@tanstack/react-query':
         specifier: ^5.91.3
         version: 5.91.3(react@19.2.4)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.91.3
+        version: 5.91.3(@tanstack/react-query@5.91.3(react@19.2.4))(react@19.2.4)
+      '@tanstack/react-query-persist-client':
+        specifier: ^5.90.27
+        version: 5.90.27(@tanstack/react-query@5.91.3(react@19.2.4))(react@19.2.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -35,6 +44,9 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-error-boundary:
+        specifier: ^6.1.1
+        version: 6.1.1(react@19.2.4)
       react-hook-form:
         specifier: ^7.71.2
         version: 7.71.2(react@19.2.4)
@@ -1188,8 +1200,29 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/query-async-storage-persister@5.90.27':
+    resolution: {integrity: sha512-2HzWjJL3RIEUR331+bvm7jK/c4fbqF8WY1Giwn4QUUVPaEyTvX4RY1GfqVclAaF+hf19xS7VLSet8BYH3anboQ==}
+
   '@tanstack/query-core@5.91.2':
     resolution: {integrity: sha512-Uz2pTgPC1mhqrrSGg18RKCWT/pkduAYtxbcyIyKBhw7dTWjXZIzqmpzO2lBkyWr4hlImQgpu1m1pei3UnkFRWw==}
+
+  '@tanstack/query-devtools@5.93.0':
+    resolution: {integrity: sha512-+kpsx1NQnOFTZsw6HAFCW3HkKg0+2cepGtAWXjiiSOJJ1CtQpt72EE2nyZb+AjAbLRPoeRmPJ8MtQd8r8gsPdg==}
+
+  '@tanstack/query-persist-client-core@5.92.4':
+    resolution: {integrity: sha512-VKppfuXFJbm8ToFC9waMIb9bpjeyb3+H52Y6jNAQ/fnRs0PvFTPQX1lXuw6yMd43CKQZ9+s04zzvGTg6q4JBtA==}
+
+  '@tanstack/react-query-devtools@5.91.3':
+    resolution: {integrity: sha512-nlahjMtd/J1h7IzOOfqeyDh5LNfG0eULwlltPEonYy0QL+nqrBB+nyzJfULV+moL7sZyxc2sHdNJki+vLA9BSA==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.90.20
+      react: ^18 || ^19
+
+  '@tanstack/react-query-persist-client@5.90.27':
+    resolution: {integrity: sha512-rKiCZ2C0kzmyDoLfrPHz2UdEDKHo/oXkKVRbhgtHya/bWH6jWDFX5cSFc1SLB33FDrgR8uOG1MwVohBrI4+F8A==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.91.2
+      react: ^18 || ^19
 
   '@tanstack/react-query@5.91.3':
     resolution: {integrity: sha512-D8jsCexxS5crZxAeiH6VlLHOUzmHOxeW5c11y8rZu0c34u/cy18hUKQXA/gn1Ila3ZIFzP+Pzv76YnliC0EtZQ==}
@@ -1848,6 +1881,11 @@ packages:
     resolution: {integrity: sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ==}
     peerDependencies:
       react: ^19.2.4
+
+  react-error-boundary@6.1.1:
+    resolution: {integrity: sha512-BrYwPOdXi5mqkk5lw+Uvt0ThHx32rCt3BkukS4X23A2AIWDPSGX6iaWTc0y9TU/mHDA/6qOSGel+B2ERkOvD1w==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
 
   react-hook-form@7.71.2:
     resolution: {integrity: sha512-1CHvcDYzuRUNOflt4MOq3ZM46AronNJtQ1S7tnX6YN4y72qhgiUItpacZUAQ0TyWYci3yz1X+rXaSxiuEm86PA==}
@@ -3178,7 +3216,30 @@ snapshots:
       tailwindcss: 4.2.2
       vite: 8.0.1(@types/node@24.12.0)(jiti@2.6.1)
 
+  '@tanstack/query-async-storage-persister@5.90.27':
+    dependencies:
+      '@tanstack/query-core': 5.91.2
+      '@tanstack/query-persist-client-core': 5.92.4
+
   '@tanstack/query-core@5.91.2': {}
+
+  '@tanstack/query-devtools@5.93.0': {}
+
+  '@tanstack/query-persist-client-core@5.92.4':
+    dependencies:
+      '@tanstack/query-core': 5.91.2
+
+  '@tanstack/react-query-devtools@5.91.3(@tanstack/react-query@5.91.3(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@tanstack/query-devtools': 5.93.0
+      '@tanstack/react-query': 5.91.3(react@19.2.4)
+      react: 19.2.4
+
+  '@tanstack/react-query-persist-client@5.90.27(@tanstack/react-query@5.91.3(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@tanstack/query-persist-client-core': 5.92.4
+      '@tanstack/react-query': 5.91.3(react@19.2.4)
+      react: 19.2.4
 
   '@tanstack/react-query@5.91.3(react@19.2.4)':
     dependencies:
@@ -3807,6 +3868,10 @@ snapshots:
     dependencies:
       react: 19.2.4
       scheduler: 0.27.0
+
+  react-error-boundary@6.1.1(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   react-hook-form@7.71.2(react@19.2.4):
     dependencies:

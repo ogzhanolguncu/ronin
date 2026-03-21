@@ -5,22 +5,27 @@ import (
 	"net/http"
 )
 
+type Tag struct {
+	Name  string `db:"name" json:"name"`
+	Count int    `db:"count" json:"count"`
+}
+
 type TagsResponse struct {
-	Tags []string `json:"tags"`
+	Tags []Tag `json:"tags"`
 }
 
 const tagCacheKey = "tags"
 
-func (h *handler) loadTagNames(ctx context.Context) ([]string, error) {
+func (h *handler) loadTags(ctx context.Context) ([]Tag, error) {
 	if cached, ok := h.tagCache.Get(tagCacheKey); ok {
-		return cached.([]string), nil
+		return cached.([]Tag), nil
 	}
-	var names []string
-	if err := h.store.SelectContext(ctx, &names, "SELECT name FROM tag ORDER BY name"); err != nil {
+	var tags []Tag
+	if err := h.store.SelectContext(ctx, &tags, "SELECT name, count FROM tag ORDER BY name"); err != nil {
 		return nil, err
 	}
-	h.tagCache.Set(tagCacheKey, names, 0)
-	return names, nil
+	h.tagCache.Set(tagCacheKey, tags, 0)
+	return tags, nil
 }
 
 func (h *handler) invalidateTagCache() {
@@ -28,15 +33,15 @@ func (h *handler) invalidateTagCache() {
 }
 
 func (h *handler) getTags(w http.ResponseWriter, r *http.Request) {
-	names, err := h.loadTagNames(r.Context())
+	tags, err := h.loadTags(r.Context())
 	if err != nil {
 		serverError(w, "failed to load tags", err)
 		return
 	}
 
-	if names == nil {
-		names = []string{}
+	if tags == nil {
+		tags = []Tag{}
 	}
 
-	writeJSON(w, http.StatusOK, TagsResponse{Tags: names})
+	writeJSON(w, http.StatusOK, TagsResponse{Tags: tags})
 }

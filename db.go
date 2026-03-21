@@ -71,9 +71,10 @@ func migrate(db *sqlx.DB) error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS tag (
 			id         INTEGER  PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL UNIQUE CHECK(length(name) >= 1 AND length(name) <= 64),
-			created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+			name       TEXT    NOT NULL UNIQUE CHECK(length(name) >= 1 AND length(name) <= 64),
+			count      INTEGER NOT NULL DEFAULT 0,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+			updated_at INTEGER NOT NULL DEFAULT (unixepoch())
 		)`,
 		`CREATE TABLE IF NOT EXISTS bookmark_tag (
 			bookmark_id INTEGER NOT NULL REFERENCES bookmark(id) ON DELETE CASCADE,
@@ -93,6 +94,16 @@ func migrate(db *sqlx.DB) error {
 		AFTER UPDATE ON tag
 		BEGIN
 			UPDATE tag SET updated_at = unixepoch() WHERE id = NEW.id;
+		END`,
+
+		`CREATE TRIGGER IF NOT EXISTS inc_tag_count AFTER INSERT ON bookmark_tag
+		BEGIN
+			UPDATE tag SET count = count + 1 WHERE id = NEW.tag_id;
+		END`,
+
+		`CREATE TRIGGER IF NOT EXISTS dec_tag_count AFTER DELETE ON bookmark_tag
+		BEGIN
+			UPDATE tag SET count = count - 1 WHERE id = OLD.tag_id;
 		END`,
 
 		// Standalone FTS5 table with tags column, managed in Go code

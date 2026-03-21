@@ -1,36 +1,11 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useUrlState } from "@/hooks/use-url-state";
 import { urlState } from "@/lib/url-state-instance";
-
-const tags = [
-  { name: "design", count: 14 },
-  { name: "dev", count: 38 },
-  { name: "inspiration", count: 7 },
-  { name: "reading", count: 23 },
-  { name: "tools", count: 11 },
-  { name: "reference", count: 5 },
-  { name: "later", count: 19 },
-  { name: "work", count: 42 },
-  { name: "personal", count: 9 },
-  { name: "research", count: 16 },
-  { name: "bookmarks", count: 31 },
-  { name: "archive", count: 8 },
-  { name: "tutorials", count: 12 },
-  { name: "photography", count: 6 },
-  { name: "music", count: 15 },
-  { name: "recipes", count: 21 },
-  { name: "travel", count: 4 },
-  { name: "finance", count: 17 },
-  { name: "health", count: 10 },
-  { name: "writing", count: 13 },
-  { name: "videos", count: 27 },
-  { name: "podcasts", count: 8 },
-  { name: "quotes", count: 34 },
-  { name: "freelance", count: 3 },
-  { name: "ux", count: 20 },
-];
+import { tagsQueryOptions } from "@/lib/tags";
 
 export const Tags = () => {
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions());
   const activeTags = useUrlState((s) => s.tags);
 
   const handleTagClick = (tagName: string) => {
