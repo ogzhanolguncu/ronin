@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { revalidateLogic, useForm } from "@tanstack/react-form";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/mini";
 import {
   Dialog,
@@ -24,31 +25,37 @@ const collectionSchema = z.object({
   colorId: z.number().check(z.refine((v) => v >= 1, "Please pick a color")),
 });
 
+type CollectionFormValues = z.infer<typeof collectionSchema>;
+
 export function AddCollectionDialog() {
   const [open, setOpen] = useState(false);
 
-  const form = useForm({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<CollectionFormValues>({
+    resolver: zodResolver(collectionSchema),
     defaultValues: {
       name: "",
       colorId: COLLECTION_COLORS[0].id as number,
-    },
-    validationLogic: revalidateLogic(),
-    validators: {
-      onDynamic: collectionSchema,
-    },
-    onSubmit: async ({ value }) => {
-      const slug = slugify(value.name);
-      console.log({ ...value, slug });
-      form.reset();
-      setOpen(false);
     },
   });
 
   function handleClose(nextOpen: boolean) {
     if (!nextOpen) {
-      form.reset();
+      reset();
     }
     setOpen(nextOpen);
+  }
+
+  function onSubmit(value: CollectionFormValues) {
+    const slug = slugify(value.name);
+    console.log({ ...value, slug });
+    reset();
+    setOpen(false);
   }
 
   return (
@@ -77,32 +84,22 @@ export function AddCollectionDialog() {
           </DialogHeader>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="px-6 py-4 flex flex-col gap-6">
-            <form.Field name="name">
-              {(field) => (
-                <FormInput
-                  label="Name"
-                  required
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Design inspiration"
-                  error={field.state.meta.errors[0]?.message}
-                  autoFocus
-                />
-              )}
-            </form.Field>
+            <FormInput
+              label="Name"
+              required
+              id="name"
+              placeholder="Design inspiration"
+              error={errors.name?.message}
+              autoFocus
+              {...register("name")}
+            />
 
-            <form.Field name="colorId">
-              {(field) => (
+            <Controller
+              control={control}
+              name="colorId"
+              render={({ field }) => (
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-foreground/80">
                     Color
@@ -114,18 +111,18 @@ export function AddCollectionDialog() {
                         type="button"
                         className={cn(
                           "size-5 rounded-full cursor-pointer transition-shadow",
-                          field.state.value === color.id &&
+                          field.value === color.id &&
                           "ring-2 ring-offset-2 ring-foreground/40",
                         )}
                         style={{ backgroundColor: color.value }}
-                        onClick={() => field.handleChange(color.id)}
+                        onClick={() => field.onChange(color.id)}
                         aria-label={color.key}
                       />
                     ))}
                   </div>
                 </div>
               )}
-            </form.Field>
+            />
           </div>
 
           <div className="flex justify-end gap-2 p-6 pb-7">

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { revalidateLogic, useForm } from "@tanstack/react-form";
+import { useRef, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/mini";
 import {
   Dialog,
@@ -41,30 +42,32 @@ const bookmarkSchema = z.object({
   unread: z.boolean(),
 });
 
+type BookmarkFormValues = z.infer<typeof bookmarkSchema>;
+
 export function AddBookmarkDialog() {
   const [open, setOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [fetchingMeta, setFetchingMeta] = useState(false);
+  const fetchingMetaRef = useRef(false);
 
-  const form = useForm({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm<BookmarkFormValues>({
+    resolver: zodResolver(bookmarkSchema),
     defaultValues: {
       url: "",
       collectionId: "",
       title: "",
       description: "",
       notes: "",
-      tags: [] as string[],
+      tags: [],
       unread: false,
-    },
-    validationLogic: revalidateLogic(),
-    validators: {
-      onDynamic: bookmarkSchema,
-    },
-    onSubmit: async ({ value }) => {
-      console.log({ tags: value.tags, collectionId: value.collectionId });
-      form.reset();
-      setNotesOpen(false);
-      setOpen(false);
     },
   });
 
@@ -74,33 +77,45 @@ export function AddBookmarkDialog() {
     } catch {
       return;
     }
-    if (form.getFieldValue("title")) return;
+    if (getValues("title")) return;
+    if (fetchingMetaRef.current) return;
 
+    fetchingMetaRef.current = true;
     setFetchingMeta(true);
     try {
       const res = await fetch(`/api/v1/metadata?url=${encodeURIComponent(url)}`);
       if (!res.ok) return;
       const meta = await res.json();
-      if (meta.title && !form.getFieldValue("title")) {
-        form.setFieldValue("title", meta.title);
+      if (meta.title && !getValues("title")) {
+        setValue("title", meta.title);
       }
-      if (meta.description && !form.getFieldValue("description")) {
-        form.setFieldValue("description", meta.description);
+      if (meta.description && !getValues("description")) {
+        setValue("description", meta.description);
       }
     } catch {
       // silently ignore — user can still fill manually
     } finally {
+      fetchingMetaRef.current = false;
       setFetchingMeta(false);
     }
   }
 
   function handleClose(nextOpen: boolean) {
     if (!nextOpen) {
-      form.reset();
+      reset();
       setNotesOpen(false);
     }
     setOpen(nextOpen);
   }
+
+  function onSubmit(value: BookmarkFormValues) {
+    console.log({ tags: value.tags, collectionId: value.collectionId });
+    reset();
+    setNotesOpen(false);
+    setOpen(false);
+  }
+
+  const urlRegistration = register("url");
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -123,102 +138,81 @@ export function AddBookmarkDialog() {
           </DialogHeader>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="px-6 py-4 flex flex-col gap-6">
-            <form.Field name="url">
-              {(field) => (
-                <FormInput
-                  label="URL"
-                  required
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={() => {
-                    field.handleBlur();
-                    handleUrlBlur(field.state.value);
-                  }}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="https://brandur.org/interfaces"
-                  error={field.state.meta.errors[0]?.message}
-                  rightIcon={fetchingMeta ? <Loader2 className="animate-spin text-muted2/40" /> : undefined}
-                  autoFocus
-                />
-              )}
-            </form.Field>
+            <FormInput
+              label="URL"
+              required
+              id="url"
+              placeholder="https://brandur.org/interfaces"
+              error={errors.url?.message}
+              rightIcon={fetchingMeta ? <Loader2 className="animate-spin text-muted2/40" /> : undefined}
+              autoFocus
+              {...urlRegistration}
+              onBlur={(e) => {
+                urlRegistration.onBlur(e);
+                handleUrlBlur(e.currentTarget.value);
+              }}
+            />
 
-            <form.Field name="tags">
-              {(field) => (
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
                 <FormTagInput
                   className="h-auto min-h-8"
                   label="Tags"
-                  id={field.name}
+                  id="tags"
                   name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(tags) => field.handleChange(tags)}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(tags) => field.onChange(tags)}
                   placeholder="#engineering, #api-design"
                   hint={<>Enter any number of tags separated by space and <span className="text-muted-foreground font-medium">without</span> the hash (#). If a tag does not exist it will be automatically created.</>}
                 />
               )}
-            </form.Field>
+            />
 
-            <form.Field name="collectionId">
-              {(field) => (
-                <FormSelect
-                  label="Collection"
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  hint="Manage collections from the sidebar."
-                  options={MOCK_COLLECTIONS.map((c) => ({
-                    value: String(c.id),
-                    label: c.name,
-                  }))}
-                />
-              )}
-            </form.Field>
+            <FormSelect
+              label="Collection"
+              id="collectionId"
+              hint="Manage collections from the sidebar."
+              options={MOCK_COLLECTIONS.map((c) => ({
+                value: String(c.id),
+                label: c.name,
+              }))}
+              {...register("collectionId")}
+            />
 
+            <FormInput
+              label="Title"
+              id="title"
+              placeholder="In Praise of Interfaces"
+              {...register("title")}
+            />
 
-            <form.Field name="title">
-              {(field) => (
-                <FormInput
-                  label="Title"
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="In Praise of Interfaces"
-                />
-              )}
-            </form.Field>
-
-            <form.Field name="description">
-              {(field) => (
+            <Controller
+              control={control}
+              name="description"
+              render={({ field }) => (
                 <FormTextarea
                   label="Description"
-                  id={field.name}
+                  id="description"
                   name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
                   placeholder="Why good APIs feel invisible"
                   maxLength={500}
-                  currentLength={field.state.value.length}
+                  currentLength={field.value.length}
                 />
               )}
-            </form.Field>
+            />
 
-
-            <form.Field name="notes">
-              {(field) => (
+            <Controller
+              control={control}
+              name="notes"
+              render={({ field }) => (
                 <div>
                   <button
                     type="button"
@@ -232,32 +226,34 @@ export function AddBookmarkDialog() {
                     <div className="pt-2 animate-in fade-in slide-in-from-top-1 duration-150">
                       <FormTextarea
                         hint="Supports Markdown"
-                        id={field.name}
+                        id="notes"
                         name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
+                        value={field.value}
+                        onBlur={field.onBlur}
+                        onChange={field.onChange}
                         placeholder="Revisit the section on composability"
                         maxLength={2000}
-                        currentLength={field.state.value.length}
+                        currentLength={field.value.length}
                       />
                     </div>
                   )}
                 </div>
               )}
-            </form.Field>
+            />
 
-            <form.Field name="unread">
-              {(field) => (
+            <Controller
+              control={control}
+              name="unread"
+              render={({ field }) => (
                 <Checkbox
                   label="Mark as unread"
                   hint="Unread bookmarks can be filtered for, and marked as read later."
                   className="font-medium"
-                  checked={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.checked)}
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
                 />
               )}
-            </form.Field>
+            />
           </div>
           <div className="flex justify-end gap-2 p-6 pb-7">
             <DialogClose asChild>
