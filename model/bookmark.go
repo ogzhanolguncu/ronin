@@ -10,10 +10,8 @@ var ErrNotFound = errors.New("not found")
 const BookmarkBaseQuery = `
 	SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
 	       bm.archived, bm.read, bm.created_at, bm.updated_at,
-	       COALESCE(GROUP_CONCAT(t.name, ', '), '') AS tags
-	FROM bookmark bm
-	LEFT JOIN bookmark_tag bt ON bt.bookmark_id = bm.id
-	LEFT JOIN tag t ON t.id = bt.tag_id`
+	       bm.tags
+	FROM bookmark bm`
 
 type Bookmark struct {
 	ID          int64    `db:"id"          json:"id"`
@@ -33,7 +31,7 @@ func (b *Bookmark) ParseTags() {
 	if b.Tags == "" {
 		b.ParsedTags = []string{}
 	} else {
-		b.ParsedTags = strings.Split(b.Tags, ", ")
+		b.ParsedTags = strings.Fields(b.Tags)
 	}
 }
 

@@ -70,6 +70,7 @@ func migrate(db *sqlx.DB) error {
 			notes       TEXT NOT NULL DEFAULT '' CHECK(length(notes) <= 8192),
 			archived    INTEGER  NOT NULL DEFAULT 0,
 			read        INTEGER  NOT NULL DEFAULT 0,
+			tags        TEXT     NOT NULL DEFAULT '',
 			created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
 			updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
 		)`,
@@ -110,10 +111,57 @@ func migrate(db *sqlx.DB) error {
 			UPDATE tag SET count = count - 1 WHERE id = OLD.tag_id;
 		END`,
 
-		// Standalone FTS5 table with tags column, managed in Go code
+		// FTS5 table for full-text search
 		`CREATE VIRTUAL TABLE IF NOT EXISTS bookmark_fts USING fts5(
 			title, description, notes, url, tags
 		)`,
+
+		// FTS triggers on bookmark
+		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_insert
+		AFTER INSERT ON bookmark
+		BEGIN
+			INSERT INTO bookmark_fts(rowid, title, description, notes, url, tags)
+			VALUES (NEW.id, NEW.title, NEW.description, NEW.notes, NEW.url, NEW.tags);
+		END`,
+
+		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_update
+		AFTER UPDATE ON bookmark
+		BEGIN
+			DELETE FROM bookmark_fts WHERE rowid = OLD.id;
+			INSERT INTO bookmark_fts(rowid, title, description, notes, url, tags)
+			VALUES (NEW.id, NEW.title, NEW.description, NEW.notes, NEW.url, NEW.tags);
+		END`,
+
+		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_delete
+		AFTER DELETE ON bookmark
+		BEGIN
+			DELETE FROM bookmark_fts WHERE rowid = OLD.id;
+		END`,
+
+		// Sync bookmark.tags from bookmark_tag join
+		`CREATE TRIGGER IF NOT EXISTS sync_bookmark_tags_insert
+		AFTER INSERT ON bookmark_tag
+		BEGIN
+			UPDATE bookmark SET tags = COALESCE(
+				(SELECT GROUP_CONCAT(t.name, ' ')
+				 FROM bookmark_tag bt
+				 JOIN tag t ON t.id = bt.tag_id
+				 WHERE bt.bookmark_id = NEW.bookmark_id),
+				''
+			) WHERE id = NEW.bookmark_id;
+		END`,
+
+		`CREATE TRIGGER IF NOT EXISTS sync_bookmark_tags_delete
+		AFTER DELETE ON bookmark_tag
+		BEGIN
+			UPDATE bookmark SET tags = COALESCE(
+				(SELECT GROUP_CONCAT(t.name, ' ')
+				 FROM bookmark_tag bt
+				 JOIN tag t ON t.id = bt.tag_id
+				 WHERE bt.bookmark_id = OLD.bookmark_id),
+				''
+			) WHERE id = OLD.bookmark_id;
+		END`,
 
 		`CREATE TABLE IF NOT EXISTS session (
 			token      TEXT    PRIMARY KEY,

@@ -107,10 +107,6 @@ func seedBookmarks(ctx context.Context, s *store.Store, count int) error {
 				}
 			}
 
-			if err := store.InsertFTS(ctx, tx, bookmarkID, t.title, t.description, t.notes, url, t.tags); err != nil {
-				return fmt.Errorf("FTS for bookmark %d: %w", i, err)
-			}
-
 			if (i+1)%100 == 0 {
 				slog.Info("seed progress", "inserted", i+1, "total", count)
 			}

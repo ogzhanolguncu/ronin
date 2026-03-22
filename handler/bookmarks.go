@@ -49,7 +49,7 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		args = append(args, read)
 	}
 
-	query += " GROUP BY bm.id ORDER BY bm.id ASC LIMIT ?"
+	query += " ORDER BY bm.id ASC LIMIT ?"
 	args = append(args, limit+1)
 
 	var response model.ListBookmarksResponse
@@ -87,11 +87,9 @@ func (h *Handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 	var response model.ListBookmarksResponse
 	err = h.store.DB.SelectContext(r.Context(), &response.Bookmarks,
 		model.BookmarkBaseQuery+`
-		WHERE bm.id IN (
-			SELECT rowid FROM bookmark_fts WHERE bookmark_fts MATCH ?
-		)
-		GROUP BY bm.id
-		ORDER BY bm.id DESC
+		JOIN bookmark_fts fts ON fts.rowid = bm.id
+		WHERE bookmark_fts MATCH ?
+		ORDER BY fts.rank
 		LIMIT ?`,
 		q, limit,
 	)
@@ -117,8 +115,7 @@ func (h *Handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 	var response model.Bookmark
 	err = h.store.DB.GetContext(r.Context(), &response,
 		model.BookmarkBaseQuery+`
-		WHERE bm.id = ?
-		GROUP BY bm.id`,
+		WHERE bm.id = ?`,
 		id,
 	)
 	if err != nil {
@@ -173,20 +170,7 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 			return fmt.Errorf("failed to get last inserted bookmark id: %w", err)
 		}
 
-		if err := store.UpsertTagsAndLink(r.Context(), tx, bmID, req.Tags); err != nil {
-			return err
-		}
-
-		return store.InsertFTS(
-			r.Context(),
-			tx,
-			bmID,
-			req.Title,
-			req.Description,
-			req.Notes,
-			req.URL,
-			req.Tags,
-		)
+		return store.UpsertTagsAndLink(r.Context(), tx, bmID, req.Tags)
 	})
 	if err != nil {
 		if store.IsUniqueConstraintErr(err) {
@@ -238,15 +222,7 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 			return fmt.Errorf("failed to delete bookmark tags: %w", err)
 		}
 
-		if err = store.UpsertTagsAndLink(r.Context(), tx, id, req.Tags); err != nil {
-			return err
-		}
-
-		if err = store.DeleteFTS(r.Context(), tx, id); err != nil {
-			return err
-		}
-
-		return store.InsertFTS(r.Context(), tx, id, req.Title, req.Description, req.Notes, req.URL, req.Tags)
+		return store.UpsertTagsAndLink(r.Context(), tx, id, req.Tags)
 	})
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
@@ -269,10 +245,6 @@ func (h *Handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
-		if err := store.DeleteFTS(r.Context(), tx, int64(id)); err != nil {
-			return err
-		}
-
 		result, err := tx.ExecContext(r.Context(), "DELETE FROM bookmark WHERE id = ?", id)
 		if err != nil {
 			return fmt.Errorf("failed to delete bookmark: %w", err)
@@ -307,11 +279,6 @@ func (h *Handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
-		for _, id := range req.IDs {
-			if err := store.DeleteFTS(r.Context(), tx, int64(id)); err != nil {
-				return err
-			}
-		}
 		if err := store.BulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
 			return fmt.Errorf("failed to delete bookmarks: %w", err)
 		}
