@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/mini";
+import { requester } from "@/lib/requester";
 import {
   Dialog,
   DialogClose,
@@ -87,9 +88,9 @@ export function AddBookmarkDialog() {
     fetchingMetaRef.current = true;
     setFetchingMeta(true);
     try {
-      const res = await fetch(`/api/v1/metadata?url=${encodeURIComponent(url)}`);
-      if (!res.ok) return;
-      const meta = await res.json();
+      const meta = await requester<{ title?: string; description?: string }>("/api/v1/metadata", {
+        params: { url },
+      });
       if (meta.title && !getValues("title")) {
         setValue("title", meta.title);
       }

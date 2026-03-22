@@ -57,8 +57,7 @@ export function AddCollectionDialog() {
     const slug = slugify(value.name);
     await requester("/api/v1/collections", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: value.name, slug, color_id: value.colorId }),
+      body: { name: value.name, slug, color_id: value.colorId },
     });
     await invalidateCollections();
     reset();

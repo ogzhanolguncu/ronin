@@ -117,11 +117,7 @@ export function BookmarkItem({
 
       {/* Row 1: Favicon + Title */}
       <div className="flex items-center gap-2 min-w-0 pr-28">
-        <img
-          src={`/api/v1/favicons/${getHostname(bookmark.url)}`}
-          alt=""
-          className="w-4 h-4 rounded-sm shrink-0"
-        />
+        <Favicon url={bookmark.url} />
         <a
           href={bookmark.url}
           target="_blank"
@@ -182,6 +178,33 @@ export function BookmarkItem({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Favicon({ url }: { url: string }) {
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const hostname = getHostname(url);
+
+  return (
+    <div className="w-4 h-4 shrink-0 relative">
+      {status === "loading" && (
+        <div className="absolute inset-0 rounded-sm bg-border-soft animate-pulse" />
+      )}
+      {status === "error" && (
+        <div className="absolute inset-0 rounded-sm bg-surface2 flex items-center justify-center">
+          <span className="text-[8px] font-medium text-muted2 uppercase leading-none">
+            {hostname.charAt(0)}
+          </span>
+        </div>
+      )}
+      <img
+        src={`/api/v1/favicons/${hostname}`}
+        alt=""
+        className={cn("w-4 h-4 rounded-sm", status !== "loaded" && "invisible")}
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("error")}
+      />
     </div>
   );
 }

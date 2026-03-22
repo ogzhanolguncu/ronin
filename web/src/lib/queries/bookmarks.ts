@@ -15,7 +15,7 @@ export type BookmarkFilters = {
   page: number
 }
 
-function buildSearchParams(filters: BookmarkFilters): string {
+function buildSearchParams(filters: BookmarkFilters): URLSearchParams {
   const params = new URLSearchParams()
   params.set("page", String(filters.page))
   params.set("limit", String(ITEMS_PER_PAGE))
@@ -28,12 +28,12 @@ function buildSearchParams(filters: BookmarkFilters): string {
   if (filters.tags.length) params.set("tags", filters.tags.join(","))
   if (filters.domains.length) params.set("domains", filters.domains.join(","))
 
-  return params.toString()
+  return params
 }
 
 export function bookmarksQueryOptions(filters: BookmarkFilters) {
   const isSearch = filters.q !== ""
-  const params = new URLSearchParams(buildSearchParams(filters))
+  const params = buildSearchParams(filters)
 
   if (isSearch) {
     params.set("q", filters.q)
@@ -44,7 +44,7 @@ export function bookmarksQueryOptions(filters: BookmarkFilters) {
   return queryOptions({
     queryKey: ["bookmarks", filters] as const,
     queryFn: () =>
-      requester<ListBookmarksResponse>(`${endpoint}?${params.toString()}`),
+      requester<ListBookmarksResponse>(endpoint, { params }),
   })
 }
 

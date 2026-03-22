@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "./ui/input";
+import { requester } from "@/lib/requester";
 
 
 
@@ -24,16 +25,11 @@ export function PassphraseGate({ onUnlock }: { onUnlock: () => void }) {
     }
     setIsLoading(true);
     try {
-      const res = await fetch("/api/v1/auth/login", {
+      await requester("/api/v1/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passphrase }),
+        body: { passphrase },
       });
-      if (res.ok) {
-        onUnlock();
-      } else {
-        triggerError();
-      }
+      onUnlock();
     } catch {
       triggerError();
     } finally {
