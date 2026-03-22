@@ -9,6 +9,7 @@ import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
 import { bookmarksQueryOptions, type BookmarkFilters } from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
+import { Interlude } from "@/components/interlude";
 
 function useBookmarkFilters(): BookmarkFilters {
   const [s] = useUrlState();
@@ -44,12 +45,11 @@ export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDiv
 
   if (bookmarks.length === 0 && meta.page === 1) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-sm text-muted2 font-medium">Nothing here yet</p>
-        <p className="text-xs text-muted2/60 font-light mt-1">
-          Add your first bookmark to begin
+      <Interlude title="The path is clear">
+        <p className="text-sm text-muted2 font-mono font-light">
+          Save your first bookmark to leave a mark
         </p>
-      </div>
+      </Interlude>
     );
   }
 

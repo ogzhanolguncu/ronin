@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { BookmarkList } from "./bookmark-list";
 import { ContentToolbar } from "./toolbar";
 import { QueryBoundary } from "../query-boundary";
-import { BookmarkListSkeleton } from "./bookmark-skeleton";
 
 export function Content() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -11,10 +10,10 @@ export function Content() {
     <main className="flex h-full flex-col overflow-hidden">
       <ContentToolbar />
       <div ref={scrollRef} className="flex-1 overflow-y-auto thin-scrollbar content-scroll-mist">
-        <QueryBoundary loadingFallback={<BookmarkListSkeleton />}>
+        <QueryBoundary >
           <BookmarkList scrollRef={scrollRef} />
         </QueryBoundary>
       </div>
-    </main>
+    </main >
   );
 }

@@ -82,6 +82,15 @@ func (h *Handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusUnprocessableEntity, "q parameter is required")
 		return
 	}
+
+	terms := strings.Fields(q)
+	for i, t := range terms {
+		if !strings.HasSuffix(t, "*") {
+			terms[i] = t + "*"
+		}
+	}
+	q = strings.Join(terms, " ")
+
 	limit, err := httputil.QueryParam(r, "limit", 50)
 	if err != nil {
 		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid limit: %s", err.Error()))
@@ -104,15 +113,17 @@ func (h *Handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
 		       bm.archived, bm.read, bm.favorite, bm.collection_id,
 		       bm.created_at, bm.updated_at, bm.tags,
-		       COUNT(*) OVER() AS total_count,
+		       (SELECT COUNT(*) FROM bookmark_fts JOIN bookmark bm ON bm.id = bookmark_fts.rowid WHERE bookmark_fts MATCH ?` + f.where + `) AS total_count,
 		       snippet(bookmark_fts, 0, '<mark>', '</mark>', '…', 32) AS title_snippet,
 		       snippet(bookmark_fts, 1, '<mark>', '</mark>', '…', 32) AS description_snippet
-		FROM bookmark bm
-		JOIN bookmark_fts fts ON fts.rowid = bm.id
+		FROM bookmark_fts
+		JOIN bookmark bm ON bm.id = bookmark_fts.rowid
 		WHERE bookmark_fts MATCH ?` + f.where + `
-		ORDER BY fts.rank
+		ORDER BY bookmark_fts.rank
 		LIMIT ? OFFSET ?`
 	args := append([]any{q}, f.args...)
+	args = append(args, q)
+	args = append(args, f.args...)
 	args = append(args, limit, offset)
 
 	var response model.SearchBookmarksResponse
