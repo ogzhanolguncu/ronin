@@ -8,6 +8,7 @@ type QueryBoundaryProps = {
   loadingFallback?: ReactNode
   errorFallback?: (props: FallbackProps) => ReactNode
   resetKeys?: unknown[]
+  onReset?: () => void
 }
 
 export function QueryBoundary({
@@ -15,10 +16,11 @@ export function QueryBoundary({
   loadingFallback,
   errorFallback,
   resetKeys,
+  onReset,
 }: QueryBoundaryProps) {
   const errorBoundaryProps = errorFallback
-    ? { fallbackRender: errorFallback, resetKeys }
-    : { FallbackComponent: ErrorFallback, resetKeys }
+    ? { fallbackRender: errorFallback, resetKeys, onReset }
+    : { FallbackComponent: ErrorFallback, resetKeys, onReset }
 
   return (
     <ErrorBoundary {...errorBoundaryProps}>

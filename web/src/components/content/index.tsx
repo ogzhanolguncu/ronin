@@ -3,6 +3,7 @@ import { BookmarkList, ITEMS_PER_PAGE, MOCK_BOOKMARKS_COUNT } from "./bookmark-l
 import { Pagination } from "./pagination";
 import { ContentToolbar } from "./toolbar";
 import { QueryBoundary } from "../query-boundary";
+import { BookmarkListSkeleton } from "./bookmark-skeleton";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
 
@@ -21,7 +22,7 @@ export function Content() {
     <main className="flex h-full flex-col overflow-hidden">
       <ContentToolbar />
       <div ref={scrollRef} className="flex-1 overflow-y-auto thin-scrollbar content-scroll-mist">
-        <QueryBoundary>
+        <QueryBoundary loadingFallback={<BookmarkListSkeleton />}>
           <BookmarkList currentPage={page} />
         </QueryBoundary>
       </div>

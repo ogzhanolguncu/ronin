@@ -14,7 +14,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
         {is401 ? "Session expired" : "Something went wrong"}
       </p>
       <div className="h-px w-12 bg-gradient-to-r from-transparent via-border to-transparent" />
-      <p className="max-w-xs text-xs text-muted2 font-light leading-relaxed">
+      <p className="max-w-xs text-xs text-muted2/60 font-mono font-light leading-relaxed">
         {error instanceof Error ? error.message : "An unexpected error occurred"}
       </p>
       <Button
@@ -23,7 +23,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
         onClick={resetErrorBoundary}
         className="font-mono text-xs tracking-wide"
       >
-        Try again
+        {is401 ? "Sign in" : "Try again"}
       </Button>
     </div>
   )

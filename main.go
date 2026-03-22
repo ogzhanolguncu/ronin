@@ -5,6 +5,7 @@ import (
 	"embed"
 	"flag"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,23 +19,16 @@ import (
 //go:embed web/dist/*
 var distFS embed.FS
 
+type config struct {
+	seed         int
+	passphrase   []byte
+	devMode      bool
+	secureCookie bool
+}
+
 func main() {
-	seed := flag.Int("seed", 0, "seed the database with N test bookmarks and exit")
-	flag.Parse()
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
-
-	devMode := os.Getenv("DEV") == "1"
-
-	passphrase := os.Getenv("PASSPHRASE")
-	if passphrase == "" && !devMode {
-		slog.Error("PASSPHRASE environment variable must be set")
-		os.Exit(1)
-	}
-	if devMode {
-		slog.Warn("DEV MODE ENABLED — auth bypassed, do not use in production")
-	}
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	cfg := loadConfig()
 
 	s, err := store.NewStore("./ronin.db")
 	if err != nil {
@@ -42,24 +36,44 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *seed > 0 {
-		ctx := context.Background()
-		if err := seedBookmarks(ctx, s, *seed); err != nil {
+	if cfg.seed > 0 {
+		if err := seedBookmarks(context.Background(), s, cfg.seed); err != nil {
 			slog.Error("seed failed", "err", err)
 			os.Exit(1)
 		}
-		slog.Info("seeding complete", "count", *seed)
+		slog.Info("seeding complete", "count", cfg.seed)
 		s.Close()
 		os.Exit(0)
 	}
 
-	var passphraseBytes []byte
-	if passphrase != "" {
-		passphraseBytes = []byte(passphrase)
-	}
-	secureCookie := os.Getenv("INSECURE_COOKIE") != "1"
-	srv := handler.New(s, distFS, passphraseBytes, devMode, secureCookie)
+	srv := handler.New(s, distFS, cfg.passphrase, cfg.devMode, cfg.secureCookie)
+	waitForShutdown(srv, s)
+}
 
+func loadConfig() config {
+	seed := flag.Int("seed", 0, "seed the database with N test bookmarks and exit")
+	flag.Parse()
+
+	devMode := os.Getenv("DEV") == "1"
+	if devMode {
+		slog.Warn("DEV MODE ENABLED — auth bypassed, do not use in production")
+	}
+
+	passphrase := os.Getenv("PASSPHRASE")
+	if passphrase == "" && !devMode {
+		slog.Error("PASSPHRASE environment variable must be set")
+		os.Exit(1)
+	}
+
+	return config{
+		seed:         *seed,
+		passphrase:   []byte(passphrase),
+		devMode:      devMode,
+		secureCookie: os.Getenv("INSECURE_COOKIE") != "1",
+	}
+}
+
+func waitForShutdown(srv *http.Server, s *store.Store) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
