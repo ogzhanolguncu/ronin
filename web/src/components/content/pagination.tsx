@@ -33,7 +33,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   const isLast = currentPage === totalPages;
 
   return (
-    <div className="pb-6 pt-0">
+    <div className="sticky bottom-0 bg-background pb-6 pt-0">
       <div className="mx-6 h-px bg-gradient-to-r from-transparent via-foreground/8 to-transparent" />
       <nav className="flex items-center justify-center gap-1 font-mono text-xs pt-5 tracking-wide">
         <button

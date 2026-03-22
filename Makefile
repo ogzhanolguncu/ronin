@@ -23,4 +23,4 @@ prod:
 	set -a && . ./.env && set +a && ./ronin
 
 seed:
-	DEV=1 go run . -seed 200
+	DEV=1 go run . -seed 100
