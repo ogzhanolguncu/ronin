@@ -19,13 +19,18 @@ export const MOCK_COLLECTIONS = [
 
 export function Collections() {
   const collection = useUrlState((s) => s.collection);
+  const collections = MOCK_COLLECTIONS;
+  const isEmpty = collections.length === 0;
 
   return (
-    <div className="shrink-0 max-h-[350px] min-h-0 flex flex-col border-t border-border-soft/30">
+    <div className={cn(
+      "shrink-0 min-h-0 flex flex-col border-t border-border-soft/30 transition-[max-height] duration-500 ease-in-out",
+      isEmpty ? "max-h-[52px]" : "max-h-[350px]",
+    )}>
       <div className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
         <div className="flex flex-col">
           <AddCollectionDialog />
-          {MOCK_COLLECTIONS.map((item) => {
+          {collections.map((item) => {
             const isActive = collection === item.slug;
             return (
               <button

@@ -1,156 +1,29 @@
 import { useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { BookmarkItem } from "./bookmark-item";
-import { BookmarkSkeleton } from "./bookmark-skeleton";
 import { BookmarkDetails } from "./bookmark-details";
+import { Pagination } from "./pagination";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import { urlState } from "@/lib/query-manager/url-state-instance";
+import { useUrlState } from "@/lib/query-manager/use-url-state";
+import { bookmarksQueryOptions, type BookmarkFilters } from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
 
-export const ITEMS_PER_PAGE = 10;
-
-const MOCK_BOOKMARKS = [
-  {
-    id: 0,
-    url: "https://www.are.na/block/example",
-    title: "Everything-filled test bookmark — all fields visible",
-    hostname: "are.na",
-    description:
-      "A long description to verify line-height and readability at leading-[1.8]. The text should feel spacious and comfortable — not cramped, not floating. Japanese aesthetics mandate generous leading for body copy.",
-    notes:
-      "A personal note that goes with this bookmark. Notes should be readable at 12px with enough contrast. If this feels hard to read, bump the opacity.",
-    tags: ["design", "reference", "typography", "react", "computer", "science", "dark", "japanese", "design", "productivity"],
-    date: 1774051200000,
-    is_unread: true,
-    is_archived: true,
-    reader_mode_url: "#",
-    web_archive_url: "#",
-    assets: [
-      { id: 1, name: "HTML snapshot from 21.03.2026", url: "#", size: "84.2 KB" },
-      { id: 2, name: "Screenshot 2026-03-21.png", url: "#", size: "1.2 MB" },
-    ],
-  },
-  {
-    id: 1,
-    url: "https://rauno.me",
-    title: "Rauno Freiberg",
-    hostname: "rauno.me",
-    description: "Interface design and engineering.",
-    tags: ["design", "inspiration"],
-    date: 1773964800000,
-    notes: "",
-  },
-  {
-    id: 2,
-    url: "https://linear.app",
-    title: "Linear — Plan and build products",
-    hostname: "linear.app",
-    description:
-      "Linear is a better way to build products. Streamline issues, projects, and product roadmaps.",
-    tags: ["tools", "productivity"],
-    date: 1773878400000,
-    notes: "Great example of keyboard-first UX design.",
-    is_unread: true,
-    web_archive_url: "https://web.archive.org/web/20260319/https://linear.app",
-    reader_mode_url: "#",
-  },
-  {
-    id: 3,
-    url: "https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/",
-    title: "What Is ChatGPT Doing … and Why Does It Work?",
-    hostname: "writings.stephenwolfram.com",
-    description: "",
-    tags: ["ai", "research"],
-    date: 1773792000000,
-    notes: "",
-  },
-  {
-    id: 4,
-    url: "https://www.robinsloan.com/lab/new-fonts/",
-    title: "New fonts for the lab",
-    hostname: "robinsloan.com",
-    description:
-      "Exploring typefaces that feel right for long-form reading on screens.",
-    tags: ["typography"],
-    date: 1773705600000,
-    notes:
-      "The serif choices here pair well with the kinari background aesthetic we use.",
-    is_archived: true,
-    assets: [{ id: 4, name: "HTML snapshot from 17.03.2026", url: "#", size: "42.1 KB" }],
-  },
-  {
-    id: 5,
-    url: "https://tailwindcss.com/docs",
-    title: "Tailwind CSS Documentation",
-    hostname: "tailwindcss.com",
-    description: "",
-    tags: ["css", "reference"],
-    date: 1773100800000,
-    notes: "",
-  },
-  {
-    id: 6,
-    url: "https://paco.me",
-    title: "Paco Coursey",
-    hostname: "paco.me",
-    description: "Design engineer building interfaces and tools.",
-    tags: ["design", "engineering"],
-    date: 1772841600000,
-    notes: "",
-  },
-  {
-    id: 7,
-    url: "https://worrydream.com/refs/Tufte_-_Envisioning_Information.pdf",
-    title: "Envisioning Information — Edward Tufte",
-    hostname: "worrydream.com",
-    description:
-      "Classic text on information design, visual explanations, and data density.",
-    tags: ["design", "data-viz", "books"],
-    date: 1771632000000,
-    notes:
-      "Chapter 3 on layering and separation is directly relevant to our card layout decisions.",
-    web_archive_url: "https://web.archive.org/web/20260221/https://worrydream.com/refs/Tufte_-_Envisioning_Information.pdf",
-    reader_mode_url: "#",
-    assets: [{ id: 7, name: "PDF snapshot from 21.02.2026", url: "#", size: "128 KB" }],
-  },
-  {
-    id: 8,
-    url: "https://www.figma.com",
-    title: "Figma — Collaborative design tool",
-    hostname: "figma.com",
-    description: "The collaborative interface design tool. Build products, design systems, and collaborate on anything.",
-    tags: ["design", "tools"],
-    date: 1768953600000,
-    notes: "Essential for design handoff and component documentation.",
-  },
-  {
-    id: 9,
-    url: "https://github.com",
-    title: "GitHub — Where the world builds software",
-    hostname: "github.com",
-    description: "GitHub is where over 100 million developers shape the future of software.",
-    tags: ["development", "version-control"],
-    date: 1766275200000,
-    notes: "",
-  },
-];
-
-const showSkeleton = false;
-
-export const MOCK_BOOKMARKS_COUNT = MOCK_BOOKMARKS.length;
-
-interface BookmarkListProps {
-  currentPage: number;
+function useBookmarkFilters(): BookmarkFilters {
+  const [s] = useUrlState();
+  return { q: s.q, tags: s.tags, domains: s.domains, view: s.view, sort: s.sort, collection: s.collection, page: s.page };
 }
 
-export function BookmarkList({ currentPage }: BookmarkListProps) {
+export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
+  const filters = useBookmarkFilters();
+  const { data } = useSuspenseQuery(bookmarksQueryOptions(filters));
+
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const paginatedBookmarks = MOCK_BOOKMARKS.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
+  const bookmarks = data.bookmarks ?? [];
+  const meta = data.meta;
 
   function handleViewClick(bookmark: Bookmark) {
     setSelectedBookmark(bookmark);
@@ -164,17 +37,12 @@ export function BookmarkList({ currentPage }: BookmarkListProps) {
     }
   }
 
-  if (showSkeleton) {
-    return (
-      <div>
-        {Array.from({ length: 7 }, (_, i) => (
-          <BookmarkSkeleton key={i} delay={i * 0.08} />
-        ))}
-      </div>
-    );
+  function handlePageChange(n: number) {
+    urlState.set({ page: n }, { replace: true });
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (MOCK_BOOKMARKS.length === 0) {
+  if (bookmarks.length === 0 && meta.page === 1) {
     return (
       <div className="py-20 text-center">
         <p className="text-sm text-muted2 font-medium">Nothing here yet</p>
@@ -188,7 +56,7 @@ export function BookmarkList({ currentPage }: BookmarkListProps) {
   return (
     <>
       <div>
-        {paginatedBookmarks.map((bookmark) => (
+        {bookmarks.map((bookmark) => (
           <BookmarkItem
             key={bookmark.id}
             bookmark={bookmark}
@@ -202,6 +70,11 @@ export function BookmarkList({ currentPage }: BookmarkListProps) {
           />
         ))}
       </div>
+      <Pagination
+        currentPage={meta.page}
+        totalPages={meta.total_pages}
+        onPageChange={handlePageChange}
+      />
       <DialogPrimitive.Root open={detailOpen} onOpenChange={handleDetailOpenChange}>
         <DialogPortal>
           <DialogOverlay />

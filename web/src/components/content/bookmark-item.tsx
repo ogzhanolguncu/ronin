@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArchiveIcon, DeleteIcon, NotesIcon, ViewIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
-import type { Bookmark } from "@/lib/types";
+import { type Bookmark, getHostname } from "@/lib/types";
 import { formatRelativeTime } from "@/lib/format-time";
 
 export function BookmarkItem({
@@ -118,7 +118,7 @@ export function BookmarkItem({
       {/* Row 1: Favicon + Title */}
       <div className="flex items-center gap-2 min-w-0 pr-28">
         <img
-          src={`/api/v1/favicons/${bookmark.hostname}`}
+          src={`/api/v1/favicons/${getHostname(bookmark.url)}`}
           alt=""
           className="w-4 h-4 rounded-sm shrink-0"
         />
@@ -134,7 +134,7 @@ export function BookmarkItem({
 
       {/* Row 2: Hostname */}
       <p className="font-mono text-[11px] text-muted2 mt-1 truncate">
-        {bookmark.hostname}
+        {getHostname(bookmark.url)}
       </p>
 
       {/* Row 3: Description */}
@@ -159,7 +159,7 @@ export function BookmarkItem({
         {bookmark.tags.length > 6 && (
           <span className="text-muted2/70 font-medium tabular-nums font-mono select-none">+{bookmark.tags.length - 6}</span>
         )}
-        <span className="ml-auto">{formatRelativeTime(bookmark.date)}</span>
+        <span className="ml-auto">{formatRelativeTime(bookmark.created_at)}</span>
       </div>
 
       {/* Notes expansion */}
