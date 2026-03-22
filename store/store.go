@@ -62,18 +62,27 @@ func openDB(path string) (*sqlx.DB, error) {
 
 func migrate(db *sqlx.DB) error {
 	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS collection (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			name       TEXT    NOT NULL CHECK(length(name) >= 1 AND length(name) <= 50),
+			slug       TEXT    NOT NULL UNIQUE CHECK(length(slug) >= 1 AND length(slug) <= 64),
+			color_id   INTEGER NOT NULL DEFAULT 1 CHECK(color_id >= 1 AND color_id <= 10),
+			created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+			updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+		)`,
 		`CREATE TABLE IF NOT EXISTS bookmark (
-			id          INTEGER  PRIMARY KEY AUTOINCREMENT,
-			url         TEXT NOT NULL UNIQUE CHECK(length(url) >= 1   AND length(url) <= 2048),
-			title       TEXT NOT NULL        CHECK(length(title) >= 1 AND length(title) <= 512),
-			description TEXT NOT NULL DEFAULT '' CHECK(length(description) <= 1024),
-			notes       TEXT NOT NULL DEFAULT '' CHECK(length(notes) <= 8192),
-			archived    INTEGER  NOT NULL DEFAULT 0,
-			read        INTEGER  NOT NULL DEFAULT 0,
-			favorite    INTEGER  NOT NULL DEFAULT 0,
-			tags        TEXT     NOT NULL DEFAULT '',
-			created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+			id            INTEGER  PRIMARY KEY AUTOINCREMENT,
+			url           TEXT NOT NULL UNIQUE CHECK(length(url) >= 1   AND length(url) <= 2048),
+			title         TEXT NOT NULL        CHECK(length(title) >= 1 AND length(title) <= 512),
+			description   TEXT NOT NULL DEFAULT '' CHECK(length(description) <= 1024),
+			notes         TEXT NOT NULL DEFAULT '' CHECK(length(notes) <= 8192),
+			archived      INTEGER  NOT NULL DEFAULT 0,
+			read          INTEGER  NOT NULL DEFAULT 0,
+			favorite      INTEGER  NOT NULL DEFAULT 0,
+			collection_id INTEGER REFERENCES collection(id) ON DELETE SET NULL,
+			tags          TEXT     NOT NULL DEFAULT '',
+			created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+			updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
 		)`,
 		`CREATE TABLE IF NOT EXISTS tag (
 			id         INTEGER  PRIMARY KEY AUTOINCREMENT,
@@ -102,6 +111,12 @@ func migrate(db *sqlx.DB) error {
 		BEGIN
 			UPDATE tag SET updated_at = unixepoch() WHERE id = NEW.id;
 		END`,
+		`CREATE TRIGGER IF NOT EXISTS collection_updated_at
+		AFTER UPDATE ON collection
+		BEGIN
+			UPDATE collection SET updated_at = unixepoch() WHERE id = NEW.id;
+		END`,
+		`CREATE INDEX IF NOT EXISTS idx_bookmark_collection_id ON bookmark(collection_id)`,
 
 		`CREATE TRIGGER IF NOT EXISTS inc_tag_count AFTER INSERT ON bookmark_tag
 		BEGIN

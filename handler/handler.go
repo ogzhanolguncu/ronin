@@ -79,6 +79,12 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/read", h.readBookmarks)
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/favorite", h.favoriteBookmarks)
 
+	mux.HandleFunc("GET    /api/v1/collections", h.getCollections)
+	mux.HandleFunc("GET    /api/v1/collections/{id}", h.getCollection)
+	mux.HandleFunc("POST   /api/v1/collections", h.createCollection)
+	mux.HandleFunc("PUT    /api/v1/collections/{id}", h.updateCollection)
+	mux.HandleFunc("DELETE /api/v1/collections/{id}", h.deleteCollection)
+
 	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)

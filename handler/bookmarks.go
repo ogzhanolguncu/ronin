@@ -50,8 +50,9 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	query := `
 		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
-		       bm.archived, bm.read, bm.favorite, bm.created_at, bm.updated_at,
-		       bm.tags, COUNT(*) OVER() AS total_count
+		       bm.archived, bm.read, bm.favorite, bm.collection_id,
+		       bm.created_at, bm.updated_at, bm.tags,
+		       COUNT(*) OVER() AS total_count
 		FROM bookmark bm
 		WHERE 1=1` + f.where + orderBy + ` LIMIT ? OFFSET ?`
 	args := append(f.args, limit, offset)
@@ -101,8 +102,9 @@ func (h *Handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	query := `
 		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
-		       bm.archived, bm.read, bm.favorite, bm.created_at, bm.updated_at,
-		       bm.tags, COUNT(*) OVER() AS total_count,
+		       bm.archived, bm.read, bm.favorite, bm.collection_id,
+		       bm.created_at, bm.updated_at, bm.tags,
+		       COUNT(*) OVER() AS total_count,
 		       snippet(bookmark_fts, 0, '<mark>', '</mark>', '…', 32) AS title_snippet,
 		       snippet(bookmark_fts, 1, '<mark>', '</mark>', '…', 32) AS description_snippet
 		FROM bookmark bm
@@ -182,12 +184,13 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	err := store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
-			`INSERT INTO bookmark (url, title, description, notes, favorite) VALUES (?, ?, ?, ?, ?)`,
+			`INSERT INTO bookmark (url, title, description, notes, favorite, collection_id) VALUES (?, ?, ?, ?, ?, ?)`,
 			req.URL,
 			req.Title,
 			req.Description,
 			req.Notes,
 			req.Favorite,
+			req.CollectionID,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create bookmark: %w", err)
@@ -228,12 +231,13 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 	err = store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
-			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ?, favorite = ? WHERE id = ?`,
+			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ?, favorite = ?, collection_id = ? WHERE id = ?`,
 			req.URL,
 			req.Title,
 			req.Description,
 			req.Notes,
 			req.Favorite,
+			req.CollectionID,
 			id,
 		)
 		if err != nil {
@@ -402,9 +406,14 @@ func parseBookmarkFilters(r *http.Request) bookmarkFilters {
 	favorite, _ := httputil.QueryParam(r, "favorite", -1)
 	archived, _ := httputil.QueryParam(r, "archived", -1)
 	unread, _ := httputil.QueryParam(r, "unread", -1)
+	collection, _ := httputil.QueryParam(r, "collection", -1)
 	tagsParam, _ := httputil.QueryParam(r, "tags", "")
 	domainsParam, _ := httputil.QueryParam(r, "domains", "")
 
+	if collection != -1 {
+		f.where += " AND bm.collection_id = ?"
+		f.args = append(f.args, collection)
+	}
 	if favorite != -1 {
 		f.where += " AND bm.favorite = ?"
 		f.args = append(f.args, favorite)

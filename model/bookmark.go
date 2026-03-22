@@ -9,8 +9,8 @@ var ErrNotFound = errors.New("not found")
 
 const BookmarkBaseQuery = `
 	SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
-	       bm.archived, bm.read, bm.favorite, bm.created_at, bm.updated_at,
-	       bm.tags
+	       bm.archived, bm.read, bm.favorite, bm.collection_id,
+	       bm.created_at, bm.updated_at, bm.tags
 	FROM bookmark bm`
 
 type Bookmark struct {
@@ -21,8 +21,9 @@ type Bookmark struct {
 	Description string   `db:"description" json:"description"`
 	Archived    bool     `db:"archived"    json:"archived"`
 	Read        bool     `db:"read"        json:"read"`
-	Favorite    bool     `db:"favorite"    json:"favorite"`
-	Tags        string   `db:"tags"        json:"-"`
+	Favorite     bool     `db:"favorite"      json:"favorite"`
+	CollectionID *int64  `db:"collection_id" json:"collection_id"`
+	Tags         string  `db:"tags"          json:"-"`
 	ParsedTags  []string `db:"-"           json:"tags"`
 	CreatedAt   uint64   `db:"created_at"  json:"created_at"`
 	UpdatedAt   uint64   `db:"updated_at"  json:"updated_at"`
@@ -69,21 +70,23 @@ type SearchBookmarksResponse struct {
 }
 
 type CreateBookmarkRequest struct {
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Notes       string `json:"notes"`
-	Tags        string `json:"tags"`
-	Favorite    bool   `json:"favorite"`
+	URL          string `json:"url"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	Notes        string `json:"notes"`
+	Tags         string `json:"tags"`
+	Favorite     bool   `json:"favorite"`
+	CollectionID *int64 `json:"collection_id"`
 }
 
 type UpdateBookmarkRequest struct {
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Notes       string `json:"notes"`
-	Tags        string `json:"tags"`
-	Favorite    bool   `json:"favorite"`
+	URL          string `json:"url"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	Notes        string `json:"notes"`
+	Tags         string `json:"tags"`
+	Favorite     bool   `json:"favorite"`
+	CollectionID *int64 `json:"collection_id"`
 }
 
 type DeleteBookmarkRequest struct {
