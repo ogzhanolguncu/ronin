@@ -1,22 +1,44 @@
-export interface Asset {
-  id: number;
-  name: string;
-  url: string;
-  size?: string;
+export interface Bookmark {
+  id: number
+  url: string
+  title: string
+  description: string
+  notes: string
+  archived: boolean
+  read: boolean
+  favorite: boolean
+  collection_id: number | null
+  tags: string[]
+  created_at: number
+  updated_at: number
 }
 
-export interface Bookmark {
-  id: number;
-  url: string;
-  title: string;
-  hostname: string;
-  description?: string;
-  tags: string[];
-  date: number;
-  notes?: string;
-  is_archived?: boolean;
-  is_unread?: boolean;
-  web_archive_url?: string;
-  reader_mode_url?: string;
-  assets?: Asset[];
+export interface PaginationMeta {
+  page: number
+  total_pages: number
+  total_count: number
+  has_more: boolean
+}
+
+export interface ListBookmarksResponse {
+  bookmarks: Bookmark[]
+  meta: PaginationMeta
+}
+
+export interface SearchBookmark extends Bookmark {
+  title_snippet: string
+  description_snippet: string
+}
+
+export interface SearchBookmarksResponse {
+  bookmarks: SearchBookmark[]
+  meta: PaginationMeta
+}
+
+export function getHostname(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url
+  }
 }
