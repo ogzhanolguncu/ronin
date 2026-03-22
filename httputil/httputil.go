@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ogzhanolguncu/ronin/model"
 )
 
 type ErrorResponse struct {
@@ -88,4 +90,14 @@ func Decode[T any](r *http.Request, w http.ResponseWriter) (T, bool) {
 		return v, false
 	}
 	return v, true
+}
+
+func PaginationMeta(totalCount, page, limit int) model.PaginationMeta {
+	totalPages := max((totalCount+limit-1)/limit, 1)
+	return model.PaginationMeta{
+		Page:       page,
+		TotalPages: totalPages,
+		TotalCount: totalCount,
+		HasMore:    page < totalPages,
+	}
 }

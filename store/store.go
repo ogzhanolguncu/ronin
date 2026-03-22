@@ -70,6 +70,7 @@ func migrate(db *sqlx.DB) error {
 			notes       TEXT NOT NULL DEFAULT '' CHECK(length(notes) <= 8192),
 			archived    INTEGER  NOT NULL DEFAULT 0,
 			read        INTEGER  NOT NULL DEFAULT 0,
+			favorite    INTEGER  NOT NULL DEFAULT 0,
 			tags        TEXT     NOT NULL DEFAULT '',
 			created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
 			updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
@@ -88,6 +89,7 @@ func migrate(db *sqlx.DB) error {
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_archived ON bookmark(archived)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_read ON bookmark(read)`,
+		`CREATE INDEX IF NOT EXISTS idx_bookmark_favorite ON bookmark(favorite)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_archived_read_id ON bookmark(archived, read, id)`,
 		`CREATE INDEX IF NOT EXISTS idx_bookmark_tag_tag_id ON bookmark_tag(tag_id)`,
 		`CREATE TRIGGER IF NOT EXISTS bookmark_updated_at

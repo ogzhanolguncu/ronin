@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
@@ -76,6 +77,7 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("DELETE /api/v1/bookmarks", h.deleteBookmarks)
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/archive", h.archiveBookmarks)
 	mux.HandleFunc("PATCH  /api/v1/bookmarks/read", h.readBookmarks)
+	mux.HandleFunc("PATCH  /api/v1/bookmarks/favorite", h.favoriteBookmarks)
 
 	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
 
@@ -93,8 +95,8 @@ func newRouter(h *Handler) http.Handler {
 }
 
 func applyMiddleware(h http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		h = middlewares[i](h)
+	for _, mw := range slices.Backward(middlewares) {
+		h = mw(h)
 	}
 	return h
 }

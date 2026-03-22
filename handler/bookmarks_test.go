@@ -182,8 +182,11 @@ func TestBookmarkHandlers(t *testing.T) {
 		if len(list.Bookmarks) != 1 {
 			t.Fatalf("expected 1 bookmark, got %d", len(list.Bookmarks))
 		}
-		if list.Meta.Cursor == nil {
-			t.Fatal("expected cursor in meta")
+		if list.Meta.TotalCount < 2 {
+			t.Fatalf("expected total_count >= 2, got %d", list.Meta.TotalCount)
+		}
+		if list.Meta.TotalPages < 2 {
+			t.Fatalf("expected total_pages >= 2, got %d", list.Meta.TotalPages)
 		}
 
 		// Clean up: delete the second bookmark

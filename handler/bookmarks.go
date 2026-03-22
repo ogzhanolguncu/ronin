@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
 	"github.com/ogzhanolguncu/ronin/model"
@@ -17,58 +18,60 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid limit: %s", err.Error()))
 		return
 	}
-	cursor, err := httputil.QueryParam(r, "cursor", 0)
+	page, err := httputil.QueryParam(r, "page", 1)
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid cursor: %s", err.Error()))
+		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid page: %s", err.Error()))
 		return
 	}
-	archived, err := httputil.QueryParam(r, "archived", -1)
-	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid archived: %s", err.Error()))
-		return
+	if page < 1 {
+		page = 1
 	}
-	read, err := httputil.QueryParam(r, "read", -1)
+	sortParam, err := httputil.QueryParam(r, "sort", "newest")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid read: %s", err.Error()))
+		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid sort: %s", err.Error()))
 		return
 	}
 
-	query := model.BookmarkBaseQuery + " WHERE 1=1"
-	var args []any
+	f := parseBookmarkFilters(r)
 
-	if cursor > 0 {
-		query += " AND bm.id > ?"
-		args = append(args, cursor)
-	}
-	if archived != -1 {
-		query += " AND bm.archived = ?"
-		args = append(args, archived)
-	}
-	if read != -1 {
-		query += " AND bm.read = ?"
-		args = append(args, read)
+	var orderBy string
+	switch sortParam {
+	case "oldest":
+		orderBy = " ORDER BY bm.created_at ASC"
+	case "az":
+		orderBy = " ORDER BY bm.title ASC"
+	case "za":
+		orderBy = " ORDER BY bm.title DESC"
+	default:
+		orderBy = " ORDER BY bm.created_at DESC"
 	}
 
-	query += " ORDER BY bm.id ASC LIMIT ?"
-	args = append(args, limit+1)
+	offset := (page - 1) * limit
+
+	query := `
+		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
+		       bm.archived, bm.read, bm.favorite, bm.created_at, bm.updated_at,
+		       bm.tags, COUNT(*) OVER() AS total_count
+		FROM bookmark bm
+		WHERE 1=1` + f.where + orderBy + ` LIMIT ? OFFSET ?`
+	args := append(f.args, limit, offset)
 
 	var response model.ListBookmarksResponse
-	err = h.store.DB.SelectContext(r.Context(), &response.Bookmarks, query, args...)
-	if err != nil {
+	if err := h.store.DB.SelectContext(r.Context(), &response.Bookmarks, query, args...); err != nil {
 		httputil.ServerError(w, "failed to query bookmarks", err)
 		return
+	}
+
+	var totalCount int
+	if len(response.Bookmarks) > 0 {
+		totalCount = response.Bookmarks[0].TotalCount
 	}
 
 	for i := range response.Bookmarks {
 		response.Bookmarks[i].ParseTags()
 	}
 
-	if len(response.Bookmarks) > limit {
-		response.Bookmarks = response.Bookmarks[:limit]
-		nextCursor := response.Bookmarks[limit-1].ID
-		response.Meta.Cursor = &nextCursor
-	}
-
+	response.Meta = httputil.PaginationMeta(totalCount, page, limit)
 	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -83,25 +86,49 @@ func (h *Handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid limit: %s", err.Error()))
 		return
 	}
-
-	var response model.ListBookmarksResponse
-	err = h.store.DB.SelectContext(r.Context(), &response.Bookmarks,
-		model.BookmarkBaseQuery+`
-		JOIN bookmark_fts fts ON fts.rowid = bm.id
-		WHERE bookmark_fts MATCH ?
-		ORDER BY fts.rank
-		LIMIT ?`,
-		q, limit,
-	)
+	page, err := httputil.QueryParam(r, "page", 1)
 	if err != nil {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid page: %s", err.Error()))
+		return
+	}
+	if page < 1 {
+		page = 1
+	}
+
+	f := parseBookmarkFilters(r)
+
+	offset := (page - 1) * limit
+
+	query := `
+		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
+		       bm.archived, bm.read, bm.favorite, bm.created_at, bm.updated_at,
+		       bm.tags, COUNT(*) OVER() AS total_count,
+		       snippet(bookmark_fts, 0, '<mark>', '</mark>', '…', 32) AS title_snippet,
+		       snippet(bookmark_fts, 1, '<mark>', '</mark>', '…', 32) AS description_snippet
+		FROM bookmark bm
+		JOIN bookmark_fts fts ON fts.rowid = bm.id
+		WHERE bookmark_fts MATCH ?` + f.where + `
+		ORDER BY fts.rank
+		LIMIT ? OFFSET ?`
+	args := append([]any{q}, f.args...)
+	args = append(args, limit, offset)
+
+	var response model.SearchBookmarksResponse
+	if err := h.store.DB.SelectContext(r.Context(), &response.Bookmarks, query, args...); err != nil {
 		httputil.ServerError(w, "failed to search bookmarks", err)
 		return
+	}
+
+	var totalCount int
+	if len(response.Bookmarks) > 0 {
+		totalCount = response.Bookmarks[0].TotalCount
 	}
 
 	for i := range response.Bookmarks {
 		response.Bookmarks[i].ParseTags()
 	}
 
+	response.Meta = httputil.PaginationMeta(totalCount, page, limit)
 	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -155,11 +182,12 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	err := store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
-			`INSERT INTO bookmark (url, title, description, notes) VALUES (?, ?, ?, ?)`,
+			`INSERT INTO bookmark (url, title, description, notes, favorite) VALUES (?, ?, ?, ?, ?)`,
 			req.URL,
 			req.Title,
 			req.Description,
 			req.Notes,
+			req.Favorite,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create bookmark: %w", err)
@@ -200,11 +228,12 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 	err = store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
-			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ? WHERE id = ?`,
+			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ?, favorite = ? WHERE id = ?`,
 			req.URL,
 			req.Title,
 			req.Description,
 			req.Notes,
+			req.Favorite,
 			id,
 		)
 		if err != nil {
@@ -337,4 +366,73 @@ func (h *Handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) favoriteBookmarks(w http.ResponseWriter, r *http.Request) {
+	req, ok := httputil.Decode[model.FavoriteBookmarkRequest](r, w)
+	if !ok {
+		return
+	}
+	if len(req.IDs) == 0 {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, "at least 1 favorite entry is required")
+		return
+	}
+
+	entries := make([]store.BulkCaseEntry, len(req.IDs))
+	for i, e := range req.IDs {
+		entries[i] = store.BulkCaseEntry{ID: e.ID, Value: e.Favorite}
+	}
+
+	if err := store.BulkCaseUpdate(r.Context(), h.store.DB, "bookmark", "favorite", entries); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to favorite bookmarks")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type bookmarkFilters struct {
+	where string
+	args  []any
+}
+
+func parseBookmarkFilters(r *http.Request) bookmarkFilters {
+	var f bookmarkFilters
+
+	favorite, _ := httputil.QueryParam(r, "favorite", -1)
+	archived, _ := httputil.QueryParam(r, "archived", -1)
+	unread, _ := httputil.QueryParam(r, "unread", -1)
+	tagsParam, _ := httputil.QueryParam(r, "tags", "")
+	domainsParam, _ := httputil.QueryParam(r, "domains", "")
+
+	if favorite != -1 {
+		f.where += " AND bm.favorite = ?"
+		f.args = append(f.args, favorite)
+	}
+	if archived != -1 {
+		f.where += " AND bm.archived = ?"
+		f.args = append(f.args, archived)
+	}
+	if unread != -1 {
+		f.where += " AND bm.read = ?"
+		f.args = append(f.args, 1-unread) // unread=1 means read=0
+	}
+
+	for tag := range strings.SplitSeq(tagsParam, ",") {
+		tag = strings.TrimSpace(tag)
+		if tag != "" {
+			f.where += " AND bm.tags LIKE ?"
+			f.args = append(f.args, "%"+tag+"%")
+		}
+	}
+
+	for domain := range strings.SplitSeq(domainsParam, ",") {
+		domain = strings.TrimSpace(domain)
+		if domain != "" {
+			f.where += " AND bm.url LIKE ?"
+			f.args = append(f.args, "%"+domain+"%")
+		}
+	}
+
+	return f
 }
