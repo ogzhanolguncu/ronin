@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -11,17 +12,35 @@ import (
 	"github.com/ogzhanolguncu/ronin/store"
 )
 
-func (h *Handler) getCollections(w http.ResponseWriter, r *http.Request) {
+const collectionCacheKey = "collections"
+
+func (h *Handler) loadCollections(ctx context.Context) ([]model.Collection, error) {
+	if cached, ok := h.collectionCache.Get(collectionCacheKey); ok {
+		return cached.([]model.Collection), nil
+	}
 	var collections []model.Collection
-	err := h.store.DB.SelectContext(r.Context(), &collections,
+	err := h.store.DB.SelectContext(ctx, &collections,
 		`SELECT id, name, slug, color_id, created_at, updated_at
 		 FROM collection ORDER BY name ASC`)
 	if err != nil {
-		httputil.ServerError(w, "failed to query collections", err)
-		return
+		return nil, err
 	}
 	if collections == nil {
 		collections = []model.Collection{}
+	}
+	h.collectionCache.Set(collectionCacheKey, collections, 0)
+	return collections, nil
+}
+
+func (h *Handler) invalidateCollectionCache() {
+	h.collectionCache.Delete(collectionCacheKey)
+}
+
+func (h *Handler) getCollections(w http.ResponseWriter, r *http.Request) {
+	collections, err := h.loadCollections(r.Context())
+	if err != nil {
+		httputil.ServerError(w, "failed to query collections", err)
+		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, collections)
 }
@@ -80,6 +99,7 @@ func (h *Handler) createCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.invalidateCollectionCache()
 	id, _ := result.LastInsertId()
 	httputil.WriteJSON(w, http.StatusCreated, map[string]int64{"id": id})
 }
@@ -127,6 +147,7 @@ func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.invalidateCollectionCache()
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -150,5 +171,6 @@ func (h *Handler) deleteCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.invalidateCollectionCache()
 	w.WriteHeader(http.StatusNoContent)
 }

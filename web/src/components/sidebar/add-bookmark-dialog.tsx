@@ -16,7 +16,7 @@ import { FormInput, FormTextarea, FormSelect } from "@/components/ui/form-input"
 import { FormTagInput } from "@/components/ui/tag-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
-import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
+import { collectionsQueryOptions } from "@/lib/queries/collections";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { tagsQueryOptions } from "@/lib/queries/tags";
@@ -48,6 +48,7 @@ type BookmarkFormValues = z.infer<typeof bookmarkSchema>;
 
 export function AddBookmarkDialog() {
   const { data: tags } = useSuspenseQuery(tagsQueryOptions())
+  const { data: collections } = useSuspenseQuery(collectionsQueryOptions())
   const [open, setOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [fetchingMeta, setFetchingMeta] = useState(false);
@@ -181,7 +182,7 @@ export function AddBookmarkDialog() {
               label="Collection"
               id="collectionId"
               hint="Manage collections from the sidebar."
-              options={MOCK_COLLECTIONS.map((c) => ({
+              options={collections.map((c) => ({
                 value: String(c.id),
                 label: c.name,
               }))}

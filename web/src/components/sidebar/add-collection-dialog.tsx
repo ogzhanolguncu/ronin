@@ -16,6 +16,8 @@ import { FormInput } from "@/components/ui/form-input";
 import { PlusIcon } from "@/components/ui/icons";
 import { COLLECTION_COLORS } from "@/lib/colors";
 import { cn, slugify } from "@/lib/utils";
+import { requester } from "@/lib/requester";
+import { invalidateCollections } from "@/lib/queries/collections";
 
 const collectionSchema = z.object({
   name: z
@@ -51,9 +53,14 @@ export function AddCollectionDialog() {
     setOpen(nextOpen);
   }
 
-  function onSubmit(value: CollectionFormValues) {
+  async function onSubmit(value: CollectionFormValues) {
     const slug = slugify(value.name);
-    console.log({ ...value, slug });
+    await requester("/api/v1/collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: value.name, slug, color_id: value.colorId }),
+    });
+    await invalidateCollections();
     reset();
     setOpen(false);
   }

@@ -1,9 +1,10 @@
 import { useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { parseSearchQuery } from "@/lib/query-manager/search-parser";
-import { MOCK_COLLECTIONS } from "@/components/sidebar/collections";
+import { collectionsQueryOptions } from "@/lib/queries/collections";
 import { useUrlState, useUrlStateLocal } from "@/lib/query-manager/use-url-state";
 
 const VIEW_LABELS: Record<string, string> = {
@@ -20,6 +21,7 @@ export function ContentToolbar() {
   const domains = useUrlState((s) => s.domains);
   const collection = useUrlState((s) => s.collection);
 
+  const { data: collections } = useQuery(collectionsQueryOptions());
   const [localQ, setLocalQ] = useUrlStateLocal((s) => s.q);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -69,7 +71,7 @@ export function ContentToolbar() {
   const hasChips = tags.length > 0 || domains.length > 0 || isViewFromSearch;
 
   const heading = collection
-    ? MOCK_COLLECTIONS.find((c) => c.slug === collection)?.name ?? "Collection"
+    ? collections?.find((c) => c.slug === collection)?.name ?? "Collection"
     : VIEW_LABELS[view] ?? "All bookmarks";
 
   const inputRef = useRef<HTMLInputElement>(null);

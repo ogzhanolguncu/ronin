@@ -35,6 +35,15 @@ export interface SearchBookmarksResponse {
   meta: PaginationMeta
 }
 
+export interface Collection {
+  id: number
+  name: string
+  slug: string
+  color_id: number
+  created_at: number
+  updated_at: number
+}
+
 export function getHostname(url: string): string {
   try {
     return new URL(url).hostname

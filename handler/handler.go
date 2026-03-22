@@ -23,9 +23,10 @@ type Handler struct {
 	devMode      bool
 	secureCookie bool
 
-	metadataCache *gocache.Cache
-	tagCache      *gocache.Cache
-	sessionCache  *gocache.Cache
+	metadataCache   *gocache.Cache
+	tagCache        *gocache.Cache
+	collectionCache *gocache.Cache
+	sessionCache    *gocache.Cache
 }
 
 func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool) *http.Server {
@@ -35,9 +36,10 @@ func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCook
 		passphrase:    passphrase,
 		devMode:       devMode,
 		secureCookie:  secureCookie,
-		metadataCache: gocache.New(10*time.Minute, 15*time.Minute),
-		tagCache:      gocache.New(gocache.NoExpiration, 0),
-		sessionCache:  gocache.New(30*time.Second, 1*time.Minute),
+		metadataCache:   gocache.New(10*time.Minute, 15*time.Minute),
+		tagCache:        gocache.New(gocache.NoExpiration, 0),
+		collectionCache: gocache.New(gocache.NoExpiration, 0),
+		sessionCache:    gocache.New(30*time.Second, 1*time.Minute),
 	}
 	srv := &http.Server{
 		Addr:         ":8080",

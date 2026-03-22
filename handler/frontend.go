@@ -49,6 +49,11 @@ func (h *Handler) frontendHandler() http.Handler {
 		page = strings.Replace(page, "<!--TAGS-->",
 			`<script>window.__TAGS__=`+string(tagsJSON)+`</script>`, 1)
 
+		collections, _ := h.loadCollections(r.Context())
+		collectionsJSON, _ := json.Marshal(collections)
+		page = strings.Replace(page, "<!--COLLECTIONS-->",
+			`<script>window.__COLLECTIONS__=`+string(collectionsJSON)+`</script>`, 1)
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Write([]byte(page))
