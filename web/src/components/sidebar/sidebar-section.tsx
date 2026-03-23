@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { formatCount } from "@/lib/format";
 import type { NavItem } from "./types";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
@@ -53,7 +54,7 @@ function NavRow({
             ? "text-primary/60"
             : "text-muted-foreground",
         )}>
-          {item.count}
+          {formatCount(item.count)}
         </span>
       )}
     </button>

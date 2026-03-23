@@ -1,18 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArchiveIcon, DeleteIcon, NotesIcon, ViewIcon } from "@/components/ui/icons";
+import { ArchiveIcon, DeleteIcon, NotesIcon, StarIcon, ViewIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { type Bookmark, getHostname } from "@/lib/types";
-import { formatRelativeTime } from "@/lib/format-time";
+import { formatRelativeTime, formatCount } from "@/lib/format";
 
 export function BookmarkItem({
   bookmark,
   onTagClick,
   onViewClick,
+  onFavoriteClick,
 }: {
   bookmark: Bookmark;
   onTagClick?: (tag: string) => void;
   onViewClick?: (bookmark: Bookmark) => void;
+  onFavoriteClick?: (bookmark: Bookmark) => void;
 }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -65,7 +67,20 @@ export function BookmarkItem({
       )}>
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
+          className={cn(
+            "transition-colors duration-300 ease-out",
+            bookmark.favorite
+              ? "text-kitsune hover:text-kitsune/70"
+              : "text-muted2/60 hover:text-kitsune"
+          )}
+          onClick={() => onFavoriteClick?.(bookmark)}
+        >
+          <StarIcon className={cn(bookmark.favorite && "fill-current")} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
           className="text-muted2/60 hover:text-foreground transition-colors duration-300 ease-out"
           onClick={() => onViewClick?.(bookmark)}
         >
@@ -73,7 +88,7 @@ export function BookmarkItem({
         </Button>
         <Button
           variant="ghost"
-          size={confirmingArchive ? "xs" : "icon-xs"}
+          size={confirmingArchive ? "sm" : "icon-sm"}
           className={cn(
             "transition-all duration-300 ease-out",
             confirmingArchive
@@ -89,7 +104,7 @@ export function BookmarkItem({
         </Button>
         <Button
           variant="ghost"
-          size={confirmingDelete ? "xs" : "icon-xs"}
+          size={confirmingDelete ? "sm" : "icon-sm"}
           className={cn(
             "transition-all duration-300 ease-out",
             confirmingDelete
@@ -106,7 +121,7 @@ export function BookmarkItem({
         {hasNotes && (
           <Button
             variant="ghost"
-            size="icon-xs"
+            size="icon-sm"
             className="text-muted2/60 hover:text-foreground transition-colors duration-300 ease-out"
             onClick={() => setNotesOpen((o) => !o)}
           >
@@ -117,6 +132,9 @@ export function BookmarkItem({
 
       {/* Row 1: Favicon + Title */}
       <div className="flex items-center gap-2 min-w-0 pr-28">
+        {bookmark.favorite && (
+          <span className="size-1 rounded-full bg-kitsune shrink-0" />
+        )}
         <Favicon url={bookmark.url} />
         <a
           href={bookmark.url}
@@ -153,7 +171,7 @@ export function BookmarkItem({
           </button>
         ))}
         {bookmark.tags.length > 6 && (
-          <span className="text-muted2/70 font-medium tabular-nums font-mono select-none">+{bookmark.tags.length - 6}</span>
+          <span className="text-muted2/70 font-medium tabular-nums font-mono select-none">+{formatCount(bookmark.tags.length - 6)}</span>
         )}
         <span className="ml-auto">{formatRelativeTime(bookmark.created_at)}</span>
       </div>

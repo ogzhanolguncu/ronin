@@ -1,6 +1,6 @@
 import { DialogTitle } from "@/components/ui/dialog";
 import { ExternalLinkIcon, ReaderModeIcon, NotesIcon } from "@/components/ui/icons";
-import { formatRelativeTime } from "@/lib/format-time";
+import { formatRelativeTime } from "@/lib/format";
 import type { Bookmark } from "@/lib/types";
 import { cn } from "@/lib/utils";
 

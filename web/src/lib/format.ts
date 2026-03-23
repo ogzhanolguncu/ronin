@@ -18,3 +18,9 @@ export function formatRelativeTime(date: Date | number): string {
   if (Math.abs(diffDays) < 365) return rtf.format(Math.round(diffDays / 30), "month");
   return rtf.format(Math.round(diffDays / 365), "year");
 }
+
+const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+
+export function formatCount(n: number): string {
+  return nf.format(n);
+}

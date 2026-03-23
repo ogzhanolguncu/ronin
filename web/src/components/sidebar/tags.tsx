@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { formatCount } from "@/lib/format";
 import { tagsQueryOptions } from "@/lib/queries/tags";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
@@ -58,7 +59,7 @@ export const Tags = () => {
                     ? "text-primary/60"
                     : "text-muted-foreground",
                 )}>
-                  {tag.count}
+                  {formatCount(tag.count)}
                 </span>
               </button>
             );
