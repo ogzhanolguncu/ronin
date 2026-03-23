@@ -1,4 +1,9 @@
-.PHONY: dev run build web preview prod
+.PHONY: dev run build web preview prod seed
+
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildTime=$(BUILD_TIME)
 
 dev:
 	$(MAKE) -j2 dev-backend dev-frontend
@@ -19,7 +24,7 @@ preview:
 
 prod:
 	cd web && pnpm build
-	CGO_ENABLED=1 go build -o ronin .
+	CGO_ENABLED=1 go build -ldflags "$(LDFLAGS)" -o ronin .
 	set -a && . ./.env && set +a && ./ronin
 
 seed:

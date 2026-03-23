@@ -69,7 +69,7 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 			       bm.created_at, bm.updated_at, bm.tags,
 			       bm.snapshot_status, bm.readable_status,
 			       (SELECT COUNT(*) FROM bookmark_fts JOIN bookmark bm ON bm.id = bookmark_fts.rowid WHERE bookmark_fts MATCH ?` + f.where + `) AS total_count,
-			       snippet(bookmark_fts, 0, '<mark>', '</mark>', '…', 32) AS title_snippet,
+			       highlight(bookmark_fts, 0, '<mark>', '</mark>') AS title_snippet,
 			       snippet(bookmark_fts, 1, '<mark>', '</mark>', '…', 32) AS description_snippet
 			FROM bookmark_fts
 			JOIN bookmark bm ON bm.id = bookmark_fts.rowid

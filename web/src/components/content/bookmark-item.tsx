@@ -141,9 +141,10 @@ export function BookmarkItem({
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm font-medium text-foreground leading-snug tracking-tight truncate transition-colors hover:text-primary"
-        >
-          {bookmark.title}
-        </a>
+          {...(bookmark.title_snippet
+            ? { dangerouslySetInnerHTML: { __html: bookmark.title_snippet } }
+            : { children: bookmark.title })}
+        />
       </div>
 
       {/* Row 2: Hostname */}
@@ -152,10 +153,13 @@ export function BookmarkItem({
       </p>
 
       {/* Row 3: Description */}
-      {bookmark.description && (
-        <p className="text-xs text-muted2 font-light leading-relaxed mt-4 line-clamp-2 max-w-130">
-          {bookmark.description}
-        </p>
+      {(bookmark.description_snippet || bookmark.description) && (
+        <p
+          className="text-xs text-muted2 font-light leading-relaxed mt-4 line-clamp-2 max-w-130"
+          {...(bookmark.description_snippet
+            ? { dangerouslySetInnerHTML: { __html: bookmark.description_snippet } }
+            : { children: bookmark.description })}
+        />
       )}
 
       {/* Row 4: Tags + Date */}

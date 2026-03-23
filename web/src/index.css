@@ -413,6 +413,18 @@ body {
 }
 
 
+/* Search highlight — tamago-iro (卵色) wash on washi */
+mark {
+  background: oklch(0.93 0.07 90 / 0.5);
+  color: inherit;
+  border-radius: 1px;
+  padding-inline: 2px;
+  box-decoration-break: clone;
+}
+.dark mark {
+  background: oklch(0.55 0.10 80 / 0.3);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dark body::after {
     display: none;

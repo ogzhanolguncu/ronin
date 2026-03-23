@@ -20,7 +20,6 @@ export function countsQueryOptions() {
       requester<BookmarkCountsResponse>("/api/v1/bookmarks/counts").then(
         (r) => r.counts,
       ),
-    staleTime: Infinity,
   })
 }
 

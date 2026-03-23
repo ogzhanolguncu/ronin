@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"time"
 
@@ -15,6 +16,12 @@ import (
 	"github.com/ogzhanolguncu/ronin/store"
 	gocache "github.com/patrickmn/go-cache"
 )
+
+type BuildInfo struct {
+	Version   string `json:"version"`
+	Commit    string `json:"commit"`
+	BuildTime string `json:"build_time"`
+}
 
 type Handler struct {
 	store  *store.Store
@@ -24,6 +31,7 @@ type Handler struct {
 	devMode      bool
 	secureCookie bool
 	dataDir      string
+	buildInfo    BuildInfo
 
 	metadataCache   *gocache.Cache
 	tagCache        *gocache.Cache
@@ -31,7 +39,7 @@ type Handler struct {
 	sessionCache    *gocache.Cache
 }
 
-func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string) *http.Server {
+func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string, info BuildInfo) *http.Server {
 	if err := os.MkdirAll(filepath.Join(dataDir, "assets"), 0o755); err != nil {
 		slog.Error("failed to create assets directory", "err", err)
 		os.Exit(1)
@@ -44,6 +52,7 @@ func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCook
 		devMode:       devMode,
 		secureCookie:  secureCookie,
 		dataDir:       dataDir,
+		buildInfo:     info,
 		metadataCache:   gocache.New(10*time.Minute, 15*time.Minute),
 		tagCache:        gocache.New(gocache.NoExpiration, 0),
 		collectionCache: gocache.New(gocache.NoExpiration, 0),
@@ -72,7 +81,13 @@ func newRouter(h *Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/v1/healthz", func(w http.ResponseWriter, r *http.Request) {
-		httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		httputil.WriteJSON(w, http.StatusOK, map[string]any{
+			"status":  "ok",
+			"version": h.buildInfo.Version,
+			"commit":  h.buildInfo.Commit,
+			"built":   h.buildInfo.BuildTime,
+			"go":      runtime.Version(),
+		})
 	})
 
 	mux.HandleFunc("POST   /api/v1/auth/login", h.authLogin)

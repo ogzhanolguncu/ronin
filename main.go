@@ -19,6 +19,13 @@ import (
 //go:embed web/dist/*
 var distFS embed.FS
 
+// Set via -ldflags at build time.
+var (
+	version   = "dev"
+	commit    = "unknown"
+	buildTime = "unknown"
+)
+
 type config struct {
 	seed         int
 	passphrase   []byte
@@ -51,7 +58,11 @@ func main() {
 		dataDir = "./data"
 	}
 
-	srv := handler.New(s, distFS, cfg.passphrase, cfg.devMode, cfg.secureCookie, dataDir)
+	srv := handler.New(s, distFS, cfg.passphrase, cfg.devMode, cfg.secureCookie, dataDir, handler.BuildInfo{
+		Version:   version,
+		Commit:    commit,
+		BuildTime: buildTime,
+	})
 	waitForShutdown(srv, s)
 }
 
