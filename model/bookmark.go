@@ -119,3 +119,14 @@ type FavoriteEntry struct {
 type FavoriteBookmarkRequest struct {
 	IDs []FavoriteEntry `json:"ids_favorite"`
 }
+
+type BookmarkCounts struct {
+	All       int `db:"all_count"       json:"all"`
+	Favorites int `db:"favorites_count" json:"favorites"`
+	Unread    int `db:"unread_count"    json:"unread"`
+	Archived  int `db:"archived_count"  json:"archived"`
+}
+
+type BookmarkCountsResponse struct {
+	Counts BookmarkCounts `json:"counts"`
+}

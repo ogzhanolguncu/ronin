@@ -5,7 +5,6 @@ import { z } from "zod/mini";
 import { requester } from "@/lib/requester";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -43,6 +42,7 @@ const bookmarkSchema = z.object({
     )
     .check(z.refine((v) => v.length <= 20, "Maximum 20 tags")),
   unread: z.boolean(),
+  favorite: z.boolean(),
 });
 
 type BookmarkFormValues = z.infer<typeof bookmarkSchema>;
@@ -73,6 +73,7 @@ export function AddBookmarkDialog() {
       notes: "",
       tags: [],
       unread: false,
+      favorite: false,
     },
   });
 
@@ -133,7 +134,7 @@ export function AddBookmarkDialog() {
           Add bookmark
         </button>
       </DialogTrigger>
-      <DialogContent showCloseButton={false} className="bg-background border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
+      <DialogContent showCloseButton={false} className="bg-surface border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
         <div className="px-6 pt-8 pb-6">
           <DialogHeader>
             <DialogTitle className="text-base font-medium">Add bookmark</DialogTitle>
@@ -160,36 +161,6 @@ export function AddBookmarkDialog() {
               }}
             />
 
-            <Controller
-              control={control}
-              name="tags"
-              render={({ field }) => (
-                <FormTagInput
-                  className="h-auto min-h-8"
-                  label="Tags"
-                  id="tags"
-                  name={field.name}
-                  allTags={tags.map(t => t.name)}
-                  value={field.value}
-                  onBlur={field.onBlur}
-                  onChange={(tags) => field.onChange(tags)}
-                  placeholder="#engineering, #api-design"
-                  hint={<>Enter any number of tags separated by space and <span className="text-muted-foreground font-medium">without</span> the hash (#). If a tag does not exist it will be automatically created.</>}
-                />
-              )}
-            />
-
-            <FormSelect
-              label="Collection"
-              id="collectionId"
-              hint="Manage collections from the sidebar."
-              options={collections.map((c) => ({
-                value: String(c.id),
-                label: c.name,
-              }))}
-              {...register("collectionId")}
-            />
-
             <FormInput
               label="Title"
               id="title"
@@ -211,6 +182,36 @@ export function AddBookmarkDialog() {
                   placeholder="Why good APIs feel invisible"
                   maxLength={500}
                   currentLength={field.value.length}
+                />
+              )}
+            />
+
+            <FormSelect
+              label="Collection"
+              id="collectionId"
+              hint="Manage collections from the sidebar."
+              options={collections.map((c) => ({
+                value: String(c.id),
+                label: c.name,
+              }))}
+              {...register("collectionId")}
+            />
+
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <FormTagInput
+                  className="h-auto min-h-8"
+                  label="Tags"
+                  id="tags"
+                  name={field.name}
+                  allTags={tags.map(t => t.name)}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(tags) => field.onChange(tags)}
+                  placeholder="#engineering, #api-design"
+                  hint={<>Enter any number of tags separated by space and <span className="text-muted-foreground font-medium">without</span> the hash (#). If a tag does not exist it will be automatically created.</>}
                 />
               )}
             />
@@ -247,27 +248,37 @@ export function AddBookmarkDialog() {
               )}
             />
 
-            <Controller
-              control={control}
-              name="unread"
-              render={({ field }) => (
-                <Checkbox
-                  label="Mark as unread"
-                  hint="Unread bookmarks can be filtered for, and marked as read later."
-                  className="font-medium"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                />
-              )}
-            />
+            <div className="flex items-start gap-6">
+              <Controller
+                control={control}
+                name="favorite"
+                render={({ field }) => (
+                  <Checkbox
+                    label="Mark as favorite"
+                    hint="Favorite bookmarks are pinned for quick access."
+                    className="font-medium"
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                )}
+              />
+              <Controller
+                control={control}
+                name="unread"
+                render={({ field }) => (
+                  <Checkbox
+                    label="Mark as unread"
+                    hint="Unread bookmarks can be filtered for, and marked as read later."
+                    className="font-medium"
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                )}
+              />
+            </div>
           </div>
-          <div className="flex justify-end gap-2 p-6 pb-7">
-            <DialogClose asChild>
-              <Button type="button" variant="ghost" size="sm">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit" size="sm">
+          <div className="p-6 pb-7">
+            <Button type="submit" className="w-full h-9">
               Save
             </Button>
           </div>

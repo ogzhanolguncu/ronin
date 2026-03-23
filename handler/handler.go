@@ -71,6 +71,7 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("POST   /api/v1/auth/logout", h.authLogout)
 
 	mux.HandleFunc("GET    /api/v1/bookmarks/search", h.searchBookmarks)
+	mux.HandleFunc("GET    /api/v1/bookmarks/counts", h.getBookmarkCounts)
 	mux.HandleFunc("GET    /api/v1/bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET    /api/v1/bookmarks/{id}", h.getBookmark)
 	mux.HandleFunc("POST   /api/v1/bookmarks", h.createBookmark)

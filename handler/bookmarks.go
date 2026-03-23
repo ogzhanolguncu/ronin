@@ -12,6 +12,22 @@ import (
 	"github.com/ogzhanolguncu/ronin/store"
 )
 
+func (h *Handler) getBookmarkCounts(w http.ResponseWriter, r *http.Request) {
+	var counts model.BookmarkCounts
+	err := h.store.DB.GetContext(r.Context(), &counts, `
+		SELECT
+			COUNT(*)                                       AS all_count,
+			SUM(CASE WHEN favorite = 1 THEN 1 ELSE 0 END) AS favorites_count,
+			SUM(CASE WHEN read = 0 THEN 1 ELSE 0 END)     AS unread_count,
+			SUM(CASE WHEN archived = 1 THEN 1 ELSE 0 END) AS archived_count
+		FROM bookmark`)
+	if err != nil {
+		httputil.ServerError(w, "failed to load bookmark counts", err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, model.BookmarkCountsResponse{Counts: counts})
+}
+
 func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 	limit, err := httputil.QueryParam(r, "limit", 50)
 	if err != nil {
@@ -224,6 +240,7 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+
 	httputil.WriteJSON(w, http.StatusCreated, map[string]int64{"id": bmID})
 }
 
@@ -278,6 +295,7 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -313,6 +331,7 @@ func (h *Handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -334,6 +353,7 @@ func (h *Handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -356,6 +376,7 @@ func (h *Handler) archiveBookmarks(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to archive bookmarks")
 		return
 	}
+
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -380,6 +401,7 @@ func (h *Handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -402,6 +424,7 @@ func (h *Handler) favoriteBookmarks(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to favorite bookmarks")
 		return
 	}
+
 
 	w.WriteHeader(http.StatusNoContent)
 }

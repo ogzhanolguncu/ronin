@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/mini";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -77,7 +76,7 @@ export function AddCollectionDialog() {
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className="bg-background  border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[400px]"
+        className="bg-surface border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[400px]"
       >
         <div className="px-6 pt-8 pb-6">
           <DialogHeader>
@@ -131,13 +130,8 @@ export function AddCollectionDialog() {
             />
           </div>
 
-          <div className="flex justify-end gap-2 p-6 pb-7">
-            <DialogClose asChild>
-              <Button type="button" variant="ghost" size="sm">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit" size="sm">
+          <div className="p-6 pb-7">
+            <Button type="submit" className="w-full h-9">
               Create
             </Button>
           </div>
