@@ -79,10 +79,12 @@ func migrate(db *sqlx.DB) error {
 			archived      INTEGER  NOT NULL DEFAULT 0,
 			read          INTEGER  NOT NULL DEFAULT 0,
 			favorite      INTEGER  NOT NULL DEFAULT 0,
-			collection_id INTEGER REFERENCES collection(id) ON DELETE SET NULL,
-			tags          TEXT     NOT NULL DEFAULT '',
-			created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+			collection_id   INTEGER REFERENCES collection(id) ON DELETE SET NULL,
+			tags            TEXT     NOT NULL DEFAULT '',
+			snapshot_status TEXT     NOT NULL DEFAULT '',
+			readable_status TEXT     NOT NULL DEFAULT '',
+			created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
+			updated_at      INTEGER NOT NULL DEFAULT (unixepoch())
 		)`,
 		`CREATE TABLE IF NOT EXISTS tag (
 			id         INTEGER  PRIMARY KEY AUTOINCREMENT,
@@ -199,6 +201,7 @@ func migrate(db *sqlx.DB) error {
 			return fmt.Errorf("migrate: %w\nstatement: %s", err, stmt)
 		}
 	}
+
 	return nil
 }
 

@@ -46,7 +46,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	srv := handler.New(s, distFS, cfg.passphrase, cfg.devMode, cfg.secureCookie)
+	dataDir := os.Getenv("DATA_DIR")
+	if dataDir == "" {
+		dataDir = "./"
+	}
+
+	srv := handler.New(s, distFS, cfg.passphrase, cfg.devMode, cfg.secureCookie, dataDir)
 	waitForShutdown(srv, s)
 }
 

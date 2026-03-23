@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"slices"
 	"time"
 
@@ -22,6 +23,7 @@ type Handler struct {
 	passphrase   []byte
 	devMode      bool
 	secureCookie bool
+	dataDir      string
 
 	metadataCache   *gocache.Cache
 	tagCache        *gocache.Cache
@@ -29,13 +31,19 @@ type Handler struct {
 	sessionCache    *gocache.Cache
 }
 
-func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool) *http.Server {
+func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string) *http.Server {
+	if err := os.MkdirAll(filepath.Join(dataDir, "assets"), 0o755); err != nil {
+		slog.Error("failed to create assets directory", "err", err)
+		os.Exit(1)
+	}
+
 	h := &Handler{
 		store:         s,
 		distFS:        distFS,
 		passphrase:    passphrase,
 		devMode:       devMode,
 		secureCookie:  secureCookie,
+		dataDir:       dataDir,
 		metadataCache:   gocache.New(10*time.Minute, 15*time.Minute),
 		tagCache:        gocache.New(gocache.NoExpiration, 0),
 		collectionCache: gocache.New(gocache.NoExpiration, 0),
@@ -45,7 +53,7 @@ func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCook
 		Addr:         ":8080",
 		Handler:      newRouter(h),
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
@@ -89,6 +97,10 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("DELETE /api/v1/collections/{id}", h.deleteCollection)
 
 	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
+
+	mux.HandleFunc("GET    /api/v1/assets/{id}", h.getSnapshot)
+	mux.HandleFunc("GET    /api/v1/assets/{id}/read", h.getReadable)
+	mux.HandleFunc("GET    /api/v1/assets/{id}/status", h.getAssetStatus)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)

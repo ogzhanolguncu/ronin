@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
@@ -68,6 +71,7 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
 		       bm.archived, bm.read, bm.favorite, bm.collection_id,
 		       bm.created_at, bm.updated_at, bm.tags,
+		       bm.snapshot_status, bm.readable_status,
 		       COUNT(*) OVER() AS total_count
 		FROM bookmark bm
 		WHERE 1=1` + f.where + orderBy + ` LIMIT ? OFFSET ?`
@@ -129,6 +133,7 @@ func (h *Handler) searchBookmarks(w http.ResponseWriter, r *http.Request) {
 		SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
 		       bm.archived, bm.read, bm.favorite, bm.collection_id,
 		       bm.created_at, bm.updated_at, bm.tags,
+		       bm.snapshot_status, bm.readable_status,
 		       (SELECT COUNT(*) FROM bookmark_fts JOIN bookmark bm ON bm.id = bookmark_fts.rowid WHERE bookmark_fts MATCH ?` + f.where + `) AS total_count,
 		       snippet(bookmark_fts, 0, '<mark>', '</mark>', '…', 32) AS title_snippet,
 		       snippet(bookmark_fts, 1, '<mark>', '</mark>', '…', 32) AS description_snippet
@@ -240,6 +245,7 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+	h.generateAssets(bmID, req.URL)
 
 	httputil.WriteJSON(w, http.StatusCreated, map[string]int64{"id": bmID})
 }
@@ -331,6 +337,7 @@ func (h *Handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+	go os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10)))
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -353,6 +360,11 @@ func (h *Handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+	go func() {
+		for _, id := range req.IDs {
+			os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.Itoa(id)))
+		}
+	}()
 
 	w.WriteHeader(http.StatusNoContent)
 }

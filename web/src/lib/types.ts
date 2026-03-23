@@ -9,6 +9,9 @@ export interface Bookmark {
   favorite: boolean
   collection_id: number | null
   tags: string[]
+  snapshot_status: string
+  readable_status: string
+  wayback_url: string
   created_at: number
   updated_at: number
 }

@@ -10,7 +10,8 @@ var ErrNotFound = errors.New("not found")
 const BookmarkBaseQuery = `
 	SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
 	       bm.archived, bm.read, bm.favorite, bm.collection_id,
-	       bm.created_at, bm.updated_at, bm.tags
+	       bm.created_at, bm.updated_at, bm.tags,
+	       bm.snapshot_status, bm.readable_status
 	FROM bookmark bm`
 
 type Bookmark struct {
@@ -23,11 +24,14 @@ type Bookmark struct {
 	Read        bool     `db:"read"        json:"read"`
 	Favorite     bool     `db:"favorite"      json:"favorite"`
 	CollectionID *int64  `db:"collection_id" json:"collection_id"`
-	Tags         string  `db:"tags"          json:"-"`
-	ParsedTags  []string `db:"-"           json:"tags"`
-	CreatedAt   uint64   `db:"created_at"  json:"created_at"`
-	UpdatedAt   uint64   `db:"updated_at"  json:"updated_at"`
-	TotalCount  int      `db:"total_count" json:"-"`
+	Tags           string   `db:"tags"            json:"-"`
+	ParsedTags     []string `db:"-"               json:"tags"`
+	SnapshotStatus string   `db:"snapshot_status" json:"snapshot_status"`
+	ReadableStatus string   `db:"readable_status" json:"readable_status"`
+	WaybackURL     string   `db:"-"               json:"wayback_url"`
+	CreatedAt      uint64   `db:"created_at"      json:"created_at"`
+	UpdatedAt      uint64   `db:"updated_at"      json:"updated_at"`
+	TotalCount     int      `db:"total_count"     json:"-"`
 }
 
 func (b *Bookmark) ParseTags() {
@@ -36,6 +40,7 @@ func (b *Bookmark) ParseTags() {
 	} else {
 		b.ParsedTags = strings.Fields(b.Tags)
 	}
+	b.WaybackURL = "https://web.archive.org/web/" + b.URL
 }
 
 type PaginationMeta struct {
@@ -62,6 +67,7 @@ func (b *SearchBookmark) ParseTags() {
 	} else {
 		b.ParsedTags = strings.Fields(b.Tags)
 	}
+	b.WaybackURL = "https://web.archive.org/web/" + b.URL
 }
 
 type SearchBookmarksResponse struct {
