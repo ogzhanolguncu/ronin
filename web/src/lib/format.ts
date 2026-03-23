@@ -2,7 +2,7 @@ const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
 export function formatRelativeTime(date: Date | number): string {
   const now = Date.now();
-  const ts = typeof date === "number" ? date : date.getTime();
+  const ts = typeof date === "number" ? date * 1000 : date.getTime();
   const diffMs = ts - now;
   const diffSec = Math.round(diffMs / 1000);
   const diffMin = Math.round(diffSec / 60);

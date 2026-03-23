@@ -17,6 +17,7 @@ import { FormTagInput } from "@/components/ui/tag-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
 import { collectionsQueryOptions } from "@/lib/queries/collections";
+import { useCreateBookmark } from "@/lib/queries/bookmarks";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { tagsQueryOptions } from "@/lib/queries/tags";
@@ -41,7 +42,6 @@ const bookmarkSchema = z.object({
         .check(z.refine((v) => v.length <= 50, "Tag must be 50 characters or less")),
     )
     .check(z.refine((v) => v.length <= 20, "Maximum 20 tags")),
-  unread: z.boolean(),
   favorite: z.boolean(),
 });
 
@@ -53,6 +53,7 @@ export function AddBookmarkDialog() {
   const [open, setOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [fetchingMeta, setFetchingMeta] = useState(false);
+  const createBookmark = useCreateBookmark();
   const fetchingMetaRef = useRef(false);
 
   const {
@@ -72,7 +73,6 @@ export function AddBookmarkDialog() {
       description: "",
       notes: "",
       tags: [],
-      unread: false,
       favorite: false,
     },
   });
@@ -115,10 +115,24 @@ export function AddBookmarkDialog() {
   }
 
   function onSubmit(value: BookmarkFormValues) {
-    console.log({ tags: value.tags, collectionId: value.collectionId });
-    reset();
-    setNotesOpen(false);
-    setOpen(false);
+    createBookmark.mutate(
+      {
+        url: value.url,
+        title: value.title,
+        description: value.description,
+        notes: value.notes,
+        tags: value.tags.join(" "),
+        favorite: value.favorite,
+        collection_id: value.collectionId ? Number(value.collectionId) : null,
+      },
+      {
+        onSuccess: () => {
+          reset();
+          setNotesOpen(false);
+          setOpen(false);
+        },
+      },
+    );
   }
 
   const urlRegistration = register("url");
@@ -262,24 +276,11 @@ export function AddBookmarkDialog() {
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="unread"
-                render={({ field }) => (
-                  <Checkbox
-                    label="Mark as unread"
-                    hint="Unread bookmarks can be filtered for, and marked as read later."
-                    className="font-medium"
-                    checked={field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                )}
-              />
             </div>
           </div>
           <div className="p-6 pb-7">
-            <Button type="submit" className="w-full h-9">
-              Save
+            <Button type="submit" className="w-full h-9" disabled={createBookmark.isPending}>
+              {createBookmark.isPending ? <Loader2 className="animate-spin size-4" /> : "Save"}
             </Button>
           </div>
         </form>

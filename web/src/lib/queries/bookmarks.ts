@@ -1,6 +1,8 @@
-import { queryOptions } from "@tanstack/react-query"
+import { queryOptions, useMutation } from "@tanstack/react-query"
 import { requester } from "../requester"
 import { queryClient } from "./query-client"
+import { countsQueryOptions, type BookmarkCounts } from "./counts"
+import { tagsQueryOptions, type Tag } from "./tags"
 import type { ListBookmarksResponse } from "../types"
 
 export const ITEMS_PER_PAGE = 20
@@ -50,4 +52,66 @@ export function bookmarksQueryOptions(filters: BookmarkFilters) {
 
 export function invalidateBookmarks() {
   return queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
+}
+
+type CreateBookmarkInput = {
+  url: string
+  title: string
+  description: string
+  notes: string
+  tags: string
+  favorite: boolean
+  collection_id: number | null
+}
+
+export function useCreateBookmark() {
+  return useMutation({
+    mutationFn: (input: CreateBookmarkInput) =>
+      requester<{ id: number }>("/api/v1/bookmarks", {
+        method: "POST",
+        body: input,
+      }),
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: countsQueryOptions().queryKey })
+      await queryClient.cancelQueries({ queryKey: tagsQueryOptions().queryKey })
+
+      const prevCounts = queryClient.getQueryData<BookmarkCounts>(countsQueryOptions().queryKey)
+      const prevTags = queryClient.getQueryData<Tag[]>(tagsQueryOptions().queryKey)
+
+      if (prevCounts) {
+        queryClient.setQueryData<BookmarkCounts>(countsQueryOptions().queryKey, {
+          ...prevCounts,
+          all: prevCounts.all + 1,
+          unread: prevCounts.unread + 1,
+          ...(input.favorite ? { favorites: prevCounts.favorites + 1 } : {}),
+        })
+      }
+
+      if (prevTags && input.tags) {
+        const newTagNames = input.tags.split(" ").filter(Boolean)
+        const existingNames = new Set(prevTags.map((t) => t.name))
+        const additions = newTagNames
+          .filter((name) => !existingNames.has(name))
+          .map((name) => ({ name, count: 1 }))
+        if (additions.length > 0) {
+          queryClient.setQueryData<Tag[]>(tagsQueryOptions().queryKey, [...prevTags, ...additions])
+        }
+      }
+
+      return { prevCounts, prevTags }
+    },
+    onError: (_err, _input, context) => {
+      if (context?.prevCounts) {
+        queryClient.setQueryData(countsQueryOptions().queryKey, context.prevCounts)
+      }
+      if (context?.prevTags) {
+        queryClient.setQueryData(tagsQueryOptions().queryKey, context.prevTags)
+      }
+    },
+    onSettled: () => {
+      invalidateBookmarks()
+      queryClient.invalidateQueries({ queryKey: countsQueryOptions().queryKey })
+      queryClient.invalidateQueries({ queryKey: tagsQueryOptions().queryKey })
+    },
+  })
 }
