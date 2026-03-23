@@ -26,4 +26,4 @@ dist-ssr
 *.db
 ronin
 tsconfig.tsbuildinfo
-/assets
+/data/assets

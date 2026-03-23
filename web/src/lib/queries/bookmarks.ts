@@ -115,3 +115,13 @@ export function useCreateBookmark() {
     },
   })
 }
+
+export function useRegenerateAssets() {
+  return useMutation({
+    mutationFn: (id: number) =>
+      requester<{ status: string }>(`/api/v1/assets/${id}/generate`, {
+        method: "POST",
+      }),
+    onSettled: () => invalidateBookmarks(),
+  })
+}

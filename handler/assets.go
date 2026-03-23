@@ -52,15 +52,18 @@ func (h *Handler) getReadable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	path := filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10), "readable.html")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	path := filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10), "readable.html.gz")
+	f, err := os.Open(path)
+	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "readable version not available")
 		return
 	}
+	defer f.Close()
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
-	http.ServeFile(w, r, path)
+	io.Copy(w, f)
 }
 
 func (h *Handler) getAssetStatus(w http.ResponseWriter, r *http.Request) {
@@ -87,10 +90,58 @@ func (h *Handler) getAssetStatus(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) generateAssets(bookmarkID int64, bookmarkURL string) {
 	go h.generateSnapshot(bookmarkID, bookmarkURL)
 	go h.generateReadable(bookmarkID, bookmarkURL)
+	go h.submitToWebArchive(bookmarkURL)
 }
 
-const maxRetries = 2
-const retryDelay = 3 * time.Second
+func (h *Handler) regenerateAssetsHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathParamInt(r, "id")
+	if err != nil {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, "invalid id")
+		return
+	}
+
+	var bookmarkURL string
+	err = h.store.DB.GetContext(r.Context(), &bookmarkURL,
+		"SELECT url FROM bookmark WHERE id = ?", id)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
+		return
+	}
+
+	// Clean old assets
+	os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10)))
+
+	h.generateAssets(id, bookmarkURL)
+
+	httputil.WriteJSON(w, http.StatusAccepted, map[string]string{"status": "generating"})
+}
+
+func (h *Handler) submitToWebArchive(bookmarkURL string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	saveURL := "https://web.archive.org/save/" + bookmarkURL
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, saveURL, nil)
+	if err != nil {
+		slog.Warn("web archive request failed", "url", bookmarkURL, "err", err)
+		return
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Ronin/1.0)")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		slog.Warn("web archive submission failed", "url", bookmarkURL, "err", err)
+		return
+	}
+	resp.Body.Close()
+
+	slog.Info("web archive submitted", "url", bookmarkURL, "status", resp.StatusCode)
+}
+
+const (
+	maxRetries = 2
+	retryDelay = 3 * time.Second
+)
 
 func (h *Handler) generateSnapshot(bookmarkID int64, bookmarkURL string) {
 	dir := filepath.Join(h.dataDir, "assets", strconv.FormatInt(bookmarkID, 10))
@@ -155,7 +206,7 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 		return
 	}
 
-	outPath := filepath.Join(dir, "readable.html")
+	gzPath := filepath.Join(dir, "readable.html.gz")
 
 	h.store.DB.ExecContext(context.Background(),
 		"UPDATE bookmark SET readable_status = 'pending' WHERE id = ?", bookmarkID)
@@ -186,7 +237,7 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 		}
 
 		htmlContent := wrapReadableHTML(article.Title(), parsedURL.String(), contentBuf.String())
-		if err := os.WriteFile(outPath, []byte(htmlContent), 0o644); err != nil {
+		if err := writeGzipped(gzPath, []byte(htmlContent)); err != nil {
 			lastErr = err
 			continue
 		}
@@ -204,6 +255,20 @@ func (h *Handler) setReadableStatus(id int64, status string, err error) {
 	slog.Error("readable generation failed", "bookmark_id", id, "err", err)
 	h.store.DB.ExecContext(context.Background(),
 		"UPDATE bookmark SET readable_status = ? WHERE id = ?", status, id)
+}
+
+func writeGzipped(dst string, data []byte) error {
+	f, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("create file: %w", err)
+	}
+	defer f.Close()
+
+	w := gzip.NewWriter(f)
+	if _, err := w.Write(data); err != nil {
+		return fmt.Errorf("gzip write: %w", err)
+	}
+	return w.Close()
 }
 
 func gzipFile(src, dst string) error {

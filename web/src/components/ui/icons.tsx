@@ -20,4 +20,5 @@ export {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   LogOut as LogOutIcon,
+  RefreshCw as RefreshIcon,
 } from "lucide-react";

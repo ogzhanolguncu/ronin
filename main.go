@@ -48,7 +48,7 @@ func main() {
 
 	dataDir := os.Getenv("DATA_DIR")
 	if dataDir == "" {
-		dataDir = "./"
+		dataDir = "./data"
 	}
 
 	srv := handler.New(s, distFS, cfg.passphrase, cfg.devMode, cfg.secureCookie, dataDir)

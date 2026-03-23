@@ -262,6 +262,12 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var oldURL string
+	if err := h.store.DB.GetContext(r.Context(), &oldURL, "SELECT url FROM bookmark WHERE id = ?", id); err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
+		return
+	}
+
 	err = store.WithTx(r.Context(), h.store.DB.DB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
@@ -301,6 +307,11 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateTagCache()
+
+	if req.URL != oldURL {
+		go os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10)))
+		h.generateAssets(id, req.URL)
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }

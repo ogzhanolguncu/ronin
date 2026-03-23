@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Dialog as DialogPrimitive } from "radix-ui";
 import { BookmarkItem } from "./bookmark-item";
 import { BookmarkDetails } from "./bookmark-details";
 import { Pagination } from "./pagination";
-import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
 import { bookmarksQueryOptions, type BookmarkFilters } from "@/lib/queries/bookmarks";
@@ -75,17 +74,11 @@ export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDiv
         totalPages={meta.total_pages}
         onPageChange={handlePageChange}
       />
-      <DialogPrimitive.Root open={detailOpen} onOpenChange={handleDetailOpenChange}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogPrimitive.Content
-            data-slot="dialog-content"
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-[440px] bg-background rounded-xl ring-1 ring-foreground/8 outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 duration-200 ease-out"
-          >
-            {selectedBookmark && <BookmarkDetails bookmark={selectedBookmark} />}
-          </DialogPrimitive.Content>
-        </DialogPortal>
-      </DialogPrimitive.Root>
+      <Dialog open={detailOpen} onOpenChange={handleDetailOpenChange}>
+        <DialogContent showCloseButton={false} className="bg-surface border border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
+          {selectedBookmark && <BookmarkDetails bookmark={selectedBookmark} />}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

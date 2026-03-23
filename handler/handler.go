@@ -101,6 +101,7 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("GET    /api/v1/assets/{id}", h.getSnapshot)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/read", h.getReadable)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/status", h.getAssetStatus)
+	mux.HandleFunc("POST   /api/v1/assets/{id}/generate", h.regenerateAssetsHandler)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)
