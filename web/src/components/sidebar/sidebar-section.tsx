@@ -47,16 +47,16 @@ function NavRow({
     >
       {item.icon}
       {item.label}
-      {item.count !== undefined && (
+      {item.count ? (
         <span className={cn(
-          "ml-auto mr-4 py-px font-mono text-[11px] tabular-nums transition-colors",
+          "ml-auto mr-4 font-mono text-[11px] tabular-nums transition-colors",
           isActive
             ? "text-primary/60"
             : "text-muted-foreground",
         )}>
           {formatCount(item.count)}
         </span>
-      )}
+      ) : null}
     </button>
   );
 }

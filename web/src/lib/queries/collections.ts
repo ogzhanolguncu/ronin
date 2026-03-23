@@ -1,12 +1,15 @@
 import { queryOptions } from "@tanstack/react-query"
 import { requester } from "../requester"
 import { queryClient } from "./query-client"
-import type { Collection } from "../types"
+import type { CollectionsResponse } from "../types"
 
 export function collectionsQueryOptions() {
   return queryOptions({
     queryKey: ["collections"] as const,
-    queryFn: () => requester<Collection[]>("/api/v1/collections"),
+    queryFn: () =>
+      requester<CollectionsResponse>("/api/v1/collections").then(
+        (r) => r.collections,
+      ),
     staleTime: Infinity,
   })
 }

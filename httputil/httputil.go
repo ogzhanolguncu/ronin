@@ -12,7 +12,9 @@ import (
 )
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error   string            `json:"error"`
+	Code    string            `json:"code,omitempty"`
+	Details map[string]string `json:"details,omitempty"`
 }
 
 const MaxRequestBodySize = 1 << 20 // 1MB
@@ -40,12 +42,43 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func WriteError(w http.ResponseWriter, status int, msg string) {
-	WriteJSON(w, status, ErrorResponse{Error: msg})
+	code := statusToCode(status)
+	WriteJSON(w, status, ErrorResponse{Error: msg, Code: code})
+}
+
+func WriteValidationError(w http.ResponseWriter, field, msg string) {
+	WriteJSON(w, http.StatusUnprocessableEntity, ErrorResponse{
+		Error:   msg,
+		Code:    "validation_error",
+		Details: map[string]string{"field": field},
+	})
 }
 
 func ServerError(w http.ResponseWriter, msg string, err error, attrs ...any) {
 	slog.Error(msg, append([]any{"error", err}, attrs...)...)
-	WriteError(w, http.StatusInternalServerError, msg)
+	WriteJSON(w, http.StatusInternalServerError, ErrorResponse{
+		Error: "internal server error",
+		Code:  "internal_error",
+	})
+}
+
+func statusToCode(status int) string {
+	switch status {
+	case http.StatusBadRequest:
+		return "bad_request"
+	case http.StatusUnauthorized:
+		return "unauthorized"
+	case http.StatusNotFound:
+		return "not_found"
+	case http.StatusConflict:
+		return "conflict"
+	case http.StatusUnprocessableEntity:
+		return "validation_error"
+	case http.StatusBadGateway:
+		return "bad_gateway"
+	default:
+		return ""
+	}
 }
 
 func PathParamInt(r *http.Request, key string) (int64, error) {

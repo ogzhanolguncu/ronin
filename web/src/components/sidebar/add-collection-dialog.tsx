@@ -28,7 +28,7 @@ const collectionSchema = z.object({
 
 type CollectionFormValues = z.infer<typeof collectionSchema>;
 
-export function AddCollectionDialog() {
+export function AddCollectionDialog({ hasCollections }: { hasCollections: boolean }) {
   const [open, setOpen] = useState(false);
 
   const {
@@ -68,7 +68,7 @@ export function AddCollectionDialog() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2.5 px-4 py-1.5 text-xs text-muted2/40 transition-colors hover:text-muted2"
+          className={cn("flex items-center gap-2.5 px-4 text-xs text-muted2/40 transition-colors hover:text-muted2", hasCollections && "py-2")}
         >
           <PlusIcon className="h-3 w-3" />
           New collection

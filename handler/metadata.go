@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -59,7 +60,10 @@ func (h *Handler) fetchMetadata(ctx context.Context, rawURL string) (*metadata.R
 	}
 	defer resp.Body.Close()
 
-	parsed, _ := url.Parse(rawURL)
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse URL: %w", err)
+	}
 
 	ct := resp.Header.Get("Content-Type")
 	baseOrigin := parsed.Scheme + "://" + parsed.Host

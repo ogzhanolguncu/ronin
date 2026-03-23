@@ -27,7 +27,7 @@ var readableCSS string
 func (h *Handler) getSnapshot(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "invalid id")
+		httputil.WriteError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -42,13 +42,15 @@ func (h *Handler) getSnapshot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Set("Content-Security-Policy", "sandbox allow-scripts")
-	io.Copy(w, f)
+	if _, err := io.Copy(w, f); err != nil {
+		slog.Warn("failed to write snapshot response", "id", id, "err", err)
+	}
 }
 
 func (h *Handler) getReadable(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "invalid id")
+		httputil.WriteError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -63,13 +65,15 @@ func (h *Handler) getReadable(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
-	io.Copy(w, f)
+	if _, err := io.Copy(w, f); err != nil {
+		slog.Warn("failed to write readable response", "id", id, "err", err)
+	}
 }
 
 func (h *Handler) getAssetStatus(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "invalid id")
+		httputil.WriteError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -96,7 +100,7 @@ func (h *Handler) generateAssets(bookmarkID int64, bookmarkURL string) {
 func (h *Handler) regenerateAssetsHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "invalid id")
+		httputil.WriteError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -109,7 +113,9 @@ func (h *Handler) regenerateAssetsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Clean old assets
-	os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10)))
+	if err := os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10))); err != nil {
+		slog.Warn("failed to remove old assets", "bookmark_id", id, "err", err)
+	}
 
 	h.generateAssets(id, bookmarkURL)
 
@@ -153,13 +159,17 @@ func (h *Handler) generateSnapshot(bookmarkID int64, bookmarkURL string) {
 	gzPath := filepath.Join(dir, "snapshot.html.gz")
 	tmpPath := gzPath + ".tmp"
 
-	h.store.DB.ExecContext(context.Background(),
-		"UPDATE bookmark SET snapshot_status = 'pending' WHERE id = ?", bookmarkID)
+	if _, err := h.store.DB.ExecContext(context.Background(),
+		"UPDATE bookmark SET snapshot_status = 'pending' WHERE id = ?", bookmarkID); err != nil {
+		slog.Error("failed to set snapshot status to pending", "bookmark_id", bookmarkID, "err", err)
+	}
 
 	if _, err := exec.LookPath("monolith"); err != nil {
 		slog.Warn("monolith not installed, skipping snapshot", "bookmark_id", bookmarkID)
-		h.store.DB.ExecContext(context.Background(),
-			"UPDATE bookmark SET snapshot_status = 'failed' WHERE id = ?", bookmarkID)
+		if _, err := h.store.DB.ExecContext(context.Background(),
+			"UPDATE bookmark SET snapshot_status = 'failed' WHERE id = ?", bookmarkID); err != nil {
+			slog.Error("failed to set snapshot status to failed", "bookmark_id", bookmarkID, "err", err)
+		}
 		return
 	}
 
@@ -188,15 +198,19 @@ func (h *Handler) generateSnapshot(bookmarkID int64, bookmarkURL string) {
 		}
 		os.Remove(tmpPath)
 
-		h.store.DB.ExecContext(context.Background(),
-			"UPDATE bookmark SET snapshot_status = 'ready' WHERE id = ?", bookmarkID)
+		if _, err := h.store.DB.ExecContext(context.Background(),
+			"UPDATE bookmark SET snapshot_status = 'ready' WHERE id = ?", bookmarkID); err != nil {
+			slog.Error("failed to set snapshot status to ready", "bookmark_id", bookmarkID, "err", err)
+		}
 		slog.Info("snapshot created", "bookmark_id", bookmarkID)
 		return
 	}
 
 	slog.Error("monolith failed after retries", "bookmark_id", bookmarkID, "err", lastErr)
-	h.store.DB.ExecContext(context.Background(),
-		"UPDATE bookmark SET snapshot_status = 'failed' WHERE id = ?", bookmarkID)
+	if _, err := h.store.DB.ExecContext(context.Background(),
+		"UPDATE bookmark SET snapshot_status = 'failed' WHERE id = ?", bookmarkID); err != nil {
+		slog.Error("failed to set snapshot status to failed", "bookmark_id", bookmarkID, "err", err)
+	}
 }
 
 func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
@@ -208,8 +222,10 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 
 	gzPath := filepath.Join(dir, "readable.html.gz")
 
-	h.store.DB.ExecContext(context.Background(),
-		"UPDATE bookmark SET readable_status = 'pending' WHERE id = ?", bookmarkID)
+	if _, err := h.store.DB.ExecContext(context.Background(),
+		"UPDATE bookmark SET readable_status = 'pending' WHERE id = ?", bookmarkID); err != nil {
+		slog.Error("failed to set readable status to pending", "bookmark_id", bookmarkID, "err", err)
+	}
 
 	parsedURL, err := nurl.Parse(bookmarkURL)
 	if err != nil {
@@ -242,8 +258,10 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 			continue
 		}
 
-		h.store.DB.ExecContext(context.Background(),
-			"UPDATE bookmark SET readable_status = 'ready' WHERE id = ?", bookmarkID)
+		if _, err := h.store.DB.ExecContext(context.Background(),
+			"UPDATE bookmark SET readable_status = 'ready' WHERE id = ?", bookmarkID); err != nil {
+			slog.Error("failed to set readable status to ready", "bookmark_id", bookmarkID, "err", err)
+		}
 		slog.Info("readable created", "bookmark_id", bookmarkID)
 		return
 	}
@@ -253,8 +271,10 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 
 func (h *Handler) setReadableStatus(id int64, status string, err error) {
 	slog.Error("readable generation failed", "bookmark_id", id, "err", err)
-	h.store.DB.ExecContext(context.Background(),
-		"UPDATE bookmark SET readable_status = ? WHERE id = ?", status, id)
+	if _, dbErr := h.store.DB.ExecContext(context.Background(),
+		"UPDATE bookmark SET readable_status = ? WHERE id = ?", status, id); dbErr != nil {
+		slog.Error("failed to set readable status", "bookmark_id", id, "status", status, "err", dbErr)
+	}
 }
 
 func writeGzipped(dst string, data []byte) error {

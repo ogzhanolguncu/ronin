@@ -3,7 +3,7 @@ import { requester } from "../requester"
 import { queryClient } from "./query-client"
 import { countsQueryOptions, type BookmarkCounts } from "./counts"
 import { tagsQueryOptions, type Tag } from "./tags"
-import type { ListBookmarksResponse } from "../types"
+import type { Bookmark, ListBookmarksResponse } from "../types"
 
 export const ITEMS_PER_PAGE = 20
 
@@ -34,19 +34,16 @@ function buildSearchParams(filters: BookmarkFilters): URLSearchParams {
 }
 
 export function bookmarksQueryOptions(filters: BookmarkFilters) {
-  const isSearch = filters.q !== ""
   const params = buildSearchParams(filters)
 
-  if (isSearch) {
+  if (filters.q) {
     params.set("q", filters.q)
   }
-
-  const endpoint = isSearch ? "/api/v1/bookmarks/search" : "/api/v1/bookmarks"
 
   return queryOptions({
     queryKey: ["bookmarks", filters] as const,
     queryFn: () =>
-      requester<ListBookmarksResponse>(endpoint, { params }),
+      requester<ListBookmarksResponse>("/api/v1/bookmarks", { params }),
   })
 }
 
@@ -67,7 +64,7 @@ type CreateBookmarkInput = {
 export function useCreateBookmark() {
   return useMutation({
     mutationFn: (input: CreateBookmarkInput) =>
-      requester<{ id: number }>("/api/v1/bookmarks", {
+      requester<Bookmark>("/api/v1/bookmarks", {
         method: "POST",
         body: input,
       }),
@@ -119,7 +116,7 @@ export function useCreateBookmark() {
 export function useRegenerateAssets() {
   return useMutation({
     mutationFn: (id: number) =>
-      requester<{ status: string }>(`/api/v1/assets/${id}/generate`, {
+      requester<{ status: string }>(`/api/v1/assets/${id}/regenerate`, {
         method: "POST",
       }),
     onSettled: () => invalidateBookmarks(),

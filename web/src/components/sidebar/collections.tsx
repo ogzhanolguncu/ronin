@@ -9,16 +9,15 @@ import { collectionsQueryOptions } from "@/lib/queries/collections";
 export function Collections() {
   const collection = useUrlState((s) => s.collection);
   const { data: collections } = useSuspenseQuery(collectionsQueryOptions());
-  const isEmpty = collections.length === 0;
 
   return (
     <div className={cn(
       "shrink-0 min-h-0 flex flex-col border-t border-border-soft/30 transition-[max-height] duration-500 ease-in-out",
-      isEmpty ? "max-h-13" : "max-h-[350px]",
+      "max-h-[350px]",
     )}>
       <div className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
         <div className="flex flex-col">
-          <AddCollectionDialog />
+          <AddCollectionDialog hasCollections={collections.length > 0} />
           {collections.map((item) => {
             const isActive = collection === item.slug;
             const color = getCollectionColor(item.color_id as CollectionColorId);

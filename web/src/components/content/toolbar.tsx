@@ -114,7 +114,7 @@ export function ContentToolbar() {
             value={localQ}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            placeholder={!hasChips && !localQ ? "Search · tag: · domain: · is:" : undefined}
+            placeholder={!hasChips && !localQ ? "Search bookmarks... try tag:design or is:unread" : undefined}
           />
         </div>
       </div>

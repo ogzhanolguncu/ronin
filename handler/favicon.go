@@ -40,7 +40,9 @@ func (h *Handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=86400")
-	w.Write(data)
+	if _, err := w.Write(data); err != nil {
+		slog.Warn("failed to write favicon response", "domain", domain, "err", err)
+	}
 }
 
 // fetchAndStoreFavicon downloads a favicon and stores it in the database.

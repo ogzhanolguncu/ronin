@@ -33,7 +33,13 @@ export async function requester<T>(
 
   const response = await fetch(url, fetchInit)
   if (!response.ok) {
-    throw new ApiError(response)
+    let body: { error?: string; code?: string; details?: Record<string, string> } | undefined
+    try {
+      body = await response.json()
+    } catch {
+      // response body may not be JSON
+    }
+    throw new ApiError(response, body)
   }
   return response.json() as Promise<T>
 }

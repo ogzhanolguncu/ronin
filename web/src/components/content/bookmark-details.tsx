@@ -44,7 +44,7 @@ export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
             <div className="flex items-center gap-2.5 mt-3">
               {readerReady && (
                 <a
-                  href={`/api/v1/assets/${bookmark.id}/read`}
+                  href={`/api/v1/assets/${bookmark.id}/readable`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1"

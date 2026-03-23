@@ -78,7 +78,6 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("POST   /api/v1/auth/login", h.authLogin)
 	mux.HandleFunc("POST   /api/v1/auth/logout", h.authLogout)
 
-	mux.HandleFunc("GET    /api/v1/bookmarks/search", h.searchBookmarks)
 	mux.HandleFunc("GET    /api/v1/bookmarks/counts", h.getBookmarkCounts)
 	mux.HandleFunc("GET    /api/v1/bookmarks", h.getBookmarks)
 	mux.HandleFunc("GET    /api/v1/bookmarks/{id}", h.getBookmark)
@@ -99,9 +98,9 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
 
 	mux.HandleFunc("GET    /api/v1/assets/{id}", h.getSnapshot)
-	mux.HandleFunc("GET    /api/v1/assets/{id}/read", h.getReadable)
+	mux.HandleFunc("GET    /api/v1/assets/{id}/readable", h.getReadable)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/status", h.getAssetStatus)
-	mux.HandleFunc("POST   /api/v1/assets/{id}/generate", h.regenerateAssetsHandler)
+	mux.HandleFunc("POST   /api/v1/assets/{id}/regenerate", h.regenerateAssetsHandler)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)

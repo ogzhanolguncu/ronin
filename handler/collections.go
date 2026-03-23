@@ -42,13 +42,13 @@ func (h *Handler) getCollections(w http.ResponseWriter, r *http.Request) {
 		httputil.ServerError(w, "failed to query collections", err)
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, collections)
+	httputil.WriteJSON(w, http.StatusOK, model.CollectionsResponse{Collections: collections})
 }
 
 func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid collection id: %s", err.Error()))
+		httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("invalid collection id: %s", err.Error()))
 		return
 	}
 
@@ -100,14 +100,25 @@ func (h *Handler) createCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.invalidateCollectionCache()
-	id, _ := result.LastInsertId()
-	httputil.WriteJSON(w, http.StatusCreated, map[string]int64{"id": id})
+	id, err := result.LastInsertId()
+	if err != nil {
+		httputil.ServerError(w, "failed to get last insert id", err)
+		return
+	}
+
+	var created model.Collection
+	if err := h.store.DB.GetContext(r.Context(), &created,
+		`SELECT id, name, slug, color_id, created_at, updated_at FROM collection WHERE id = ?`, id); err != nil {
+		httputil.ServerError(w, "failed to fetch created collection", err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusCreated, created)
 }
 
 func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid collection id: %s", err.Error()))
+		httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("invalid collection id: %s", err.Error()))
 		return
 	}
 
@@ -141,7 +152,11 @@ func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, _ := result.RowsAffected()
+	rows, err := result.RowsAffected()
+	if err != nil {
+		httputil.ServerError(w, "failed to check rows affected", err)
+		return
+	}
 	if rows == 0 {
 		httputil.WriteError(w, http.StatusNotFound, "collection not found")
 		return
@@ -154,7 +169,7 @@ func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) deleteCollection(w http.ResponseWriter, r *http.Request) {
 	id, err := httputil.PathParamInt(r, "id")
 	if err != nil {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid collection id: %s", err.Error()))
+		httputil.WriteError(w, http.StatusBadRequest, fmt.Sprintf("invalid collection id: %s", err.Error()))
 		return
 	}
 
@@ -165,7 +180,11 @@ func (h *Handler) deleteCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, _ := result.RowsAffected()
+	rows, err := result.RowsAffected()
+	if err != nil {
+		httputil.ServerError(w, "failed to check rows affected", err)
+		return
+	}
 	if rows == 0 {
 		httputil.WriteError(w, http.StatusNotFound, "collection not found")
 		return

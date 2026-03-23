@@ -31,7 +31,9 @@ type Bookmark struct {
 	WaybackURL     string   `db:"-"               json:"wayback_url"`
 	CreatedAt      uint64   `db:"created_at"      json:"created_at"`
 	UpdatedAt      uint64   `db:"updated_at"      json:"updated_at"`
-	TotalCount     int      `db:"total_count"     json:"-"`
+	TitleSnippet       string `db:"title_snippet"       json:"title_snippet,omitempty"`
+	DescriptionSnippet string `db:"description_snippet" json:"description_snippet,omitempty"`
+	TotalCount         int    `db:"total_count"         json:"-"`
 }
 
 func (b *Bookmark) ParseTags() {
@@ -55,25 +57,6 @@ type ListBookmarksResponse struct {
 	Meta      PaginationMeta `json:"meta"`
 }
 
-type SearchBookmark struct {
-	Bookmark
-	TitleSnippet       string `db:"title_snippet"       json:"title_snippet"`
-	DescriptionSnippet string `db:"description_snippet" json:"description_snippet"`
-}
-
-func (b *SearchBookmark) ParseTags() {
-	if b.Tags == "" {
-		b.ParsedTags = []string{}
-	} else {
-		b.ParsedTags = strings.Fields(b.Tags)
-	}
-	b.WaybackURL = "https://web.archive.org/web/" + b.URL
-}
-
-type SearchBookmarksResponse struct {
-	Bookmarks []SearchBookmark `json:"bookmarks"`
-	Meta      PaginationMeta   `json:"meta"`
-}
 
 type CreateBookmarkRequest struct {
 	URL          string `json:"url"`

@@ -20,3 +20,7 @@ type UpdateCollectionRequest struct {
 	Slug    string `json:"slug"`
 	ColorID int    `json:"color_id"`
 }
+
+type CollectionsResponse struct {
+	Collections []Collection `json:"collections"`
+}

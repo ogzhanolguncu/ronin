@@ -12,6 +12,8 @@ export interface Bookmark {
   snapshot_status: string
   readable_status: string
   wayback_url: string
+  title_snippet?: string
+  description_snippet?: string
   created_at: number
   updated_at: number
 }
@@ -28,16 +30,6 @@ export interface ListBookmarksResponse {
   meta: PaginationMeta
 }
 
-export interface SearchBookmark extends Bookmark {
-  title_snippet: string
-  description_snippet: string
-}
-
-export interface SearchBookmarksResponse {
-  bookmarks: SearchBookmark[]
-  meta: PaginationMeta
-}
-
 export interface Collection {
   id: number
   name: string
@@ -45,6 +37,10 @@ export interface Collection {
   color_id: number
   created_at: number
   updated_at: number
+}
+
+export interface CollectionsResponse {
+  collections: Collection[]
 }
 
 export function getHostname(url: string): string {
