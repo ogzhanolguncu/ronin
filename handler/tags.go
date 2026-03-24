@@ -15,7 +15,7 @@ func (h *Handler) loadTags(ctx context.Context) ([]model.Tag, error) {
 		return cached.([]model.Tag), nil
 	}
 	var tags []model.Tag
-	if err := h.store.DB.SelectContext(ctx, &tags, "SELECT name, count FROM tag ORDER BY name"); err != nil {
+	if err := h.store.ReadDB.SelectContext(ctx, &tags, "SELECT name, count FROM tag ORDER BY name"); err != nil {
 		return nil, err
 	}
 	h.tagCache.Set(tagCacheKey, tags, 0)

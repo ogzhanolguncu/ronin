@@ -1,4 +1,4 @@
-.PHONY: dev run build web preview prod seed
+.PHONY: dev run build web preview prod prod-dev seed
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -24,8 +24,13 @@ preview:
 
 prod:
 	cd web && pnpm build
-	CGO_ENABLED=1 go build -ldflags "$(LDFLAGS)" -o ronin .
+	go build -ldflags "$(LDFLAGS)" -o ronin .
 	set -a && . ./.env && set +a && ./ronin
+
+prod-dev:
+	cd web && pnpm build
+	go build -ldflags "$(LDFLAGS)" -o ronin .
+	PASSPHRASE=dev INSECURE_COOKIE=1 ./ronin
 
 seed:
 	DEV=1 go run . -seed 100

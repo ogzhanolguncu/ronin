@@ -19,7 +19,7 @@ func (h *Handler) loadCollections(ctx context.Context) ([]model.Collection, erro
 		return cached.([]model.Collection), nil
 	}
 	var collections []model.Collection
-	err := h.store.DB.SelectContext(ctx, &collections,
+	err := h.store.ReadDB.SelectContext(ctx, &collections,
 		`SELECT id, name, slug, color_id, created_at, updated_at
 		 FROM collection ORDER BY name ASC`)
 	if err != nil {
@@ -53,7 +53,7 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var c model.Collection
-	err = h.store.DB.GetContext(r.Context(), &c,
+	err = h.store.ReadDB.GetContext(r.Context(), &c,
 		`SELECT id, name, slug, color_id, created_at, updated_at
 		 FROM collection WHERE id = ?`, id)
 	if err != nil {
@@ -87,7 +87,7 @@ func (h *Handler) createCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.DB.ExecContext(r.Context(),
+	result, err := h.store.WriteDB.ExecContext(r.Context(),
 		`INSERT INTO collection (name, slug, color_id) VALUES (?, ?, ?)`,
 		req.Name, req.Slug, req.ColorID)
 	if err != nil {
@@ -107,7 +107,7 @@ func (h *Handler) createCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var created model.Collection
-	if err := h.store.DB.GetContext(r.Context(), &created,
+	if err := h.store.ReadDB.GetContext(r.Context(), &created,
 		`SELECT id, name, slug, color_id, created_at, updated_at FROM collection WHERE id = ?`, id); err != nil {
 		httputil.ServerError(w, "failed to fetch created collection", err)
 		return
@@ -140,7 +140,7 @@ func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.DB.ExecContext(r.Context(),
+	result, err := h.store.WriteDB.ExecContext(r.Context(),
 		`UPDATE collection SET name = ?, slug = ?, color_id = ? WHERE id = ?`,
 		req.Name, req.Slug, req.ColorID, id)
 	if err != nil {
@@ -173,7 +173,7 @@ func (h *Handler) deleteCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.DB.ExecContext(r.Context(),
+	result, err := h.store.WriteDB.ExecContext(r.Context(),
 		`DELETE FROM collection WHERE id = ?`, id)
 	if err != nil {
 		httputil.ServerError(w, "failed to delete collection", err)

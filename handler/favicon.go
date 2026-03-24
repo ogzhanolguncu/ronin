@@ -26,7 +26,7 @@ func (h *Handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 
 	var data []byte
 	var contentType string
-	err := h.store.DB.QueryRowContext(r.Context(),
+	err := h.store.ReadDB.QueryRowContext(r.Context(),
 		"SELECT data, content_type FROM favicon WHERE domain = ?", domain,
 	).Scan(&data, &contentType)
 	if err == sql.ErrNoRows {
@@ -50,7 +50,7 @@ func (h *Handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
 	// Check if we already have a fresh favicon
 	var fetchedAt int64
-	err := h.store.DB.QueryRowContext(context.Background(),
+	err := h.store.ReadDB.QueryRowContext(context.Background(),
 		"SELECT fetched_at FROM favicon WHERE domain = ?", domain,
 	).Scan(&fetchedAt)
 	if err == nil && time.Since(time.Unix(fetchedAt, 0)) < faviconMaxAge {
@@ -92,7 +92,7 @@ func (h *Handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
 			contentType = "image/x-icon"
 		}
 
-		_, err = h.store.DB.ExecContext(context.Background(),
+		_, err = h.store.WriteDB.ExecContext(context.Background(),
 			`INSERT INTO favicon (domain, data, content_type, fetched_at) VALUES (?, ?, ?, unixepoch())
 			 ON CONFLICT(domain) DO UPDATE SET data = excluded.data, content_type = excluded.content_type, fetched_at = excluded.fetched_at`,
 			domain, data, contentType,

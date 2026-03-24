@@ -10,28 +10,45 @@ import (
 )
 
 type Store struct {
-	DB *sqlx.DB
+	ReadDB  *sqlx.DB
+	WriteDB *sqlx.DB
 }
 
 func NewStore(path string) (*Store, error) {
-	db, err := openDB(path)
+	writeDB, err := openDB(path, 1)
 	if err != nil {
-		return nil, fmt.Errorf("open db: %w", err)
+		return nil, fmt.Errorf("open write db: %w", err)
 	}
 
-	if err := migrate(db); err != nil {
-		db.Close()
+	if err := migrate(writeDB); err != nil {
+		writeDB.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 
-	return &Store{DB: db}, nil
+	// For in-memory DBs, reuse the same connection since each :memory:
+	// connection creates a separate database.
+	if path == ":memory:" {
+		return &Store{ReadDB: writeDB, WriteDB: writeDB}, nil
+	}
+
+	readDB, err := openDB(path, 4)
+	if err != nil {
+		writeDB.Close()
+		return nil, fmt.Errorf("open read db: %w", err)
+	}
+
+	return &Store{ReadDB: readDB, WriteDB: writeDB}, nil
 }
 
 func (s *Store) Close() error {
-	return s.DB.Close()
+	var readErr error
+	if s.ReadDB != s.WriteDB {
+		readErr = s.ReadDB.Close()
+	}
+	return errors.Join(readErr, s.WriteDB.Close())
 }
 
-func openDB(path string) (*sqlx.DB, error) {
+func openDB(path string, maxConns int) (*sqlx.DB, error) {
 	params := url.Values{
 		"_foreign_keys": {"on"},
 		"_journal_mode": {"WAL"},
@@ -41,6 +58,7 @@ func openDB(path string) (*sqlx.DB, error) {
 		"_temp_store":   {"memory"},
 		"_mmap_size":    {"268435456"},
 	}
+
 	dsn := path + "?" + params.Encode()
 
 	db, err := sqlx.Open("sqlite", dsn)
@@ -48,9 +66,8 @@ func openDB(path string) (*sqlx.DB, error) {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
 
-	// Single connection: avoids SQLITE_BUSY on concurrent writes.
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(maxConns)
+	db.SetMaxIdleConns(maxConns)
 	db.SetConnMaxLifetime(0)
 
 	if err := db.Ping(); err != nil {

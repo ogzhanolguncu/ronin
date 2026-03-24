@@ -7,9 +7,14 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/ogzhanolguncu/ronin/model"
 )
+
+var bufPool = sync.Pool{
+	New: func() any { return new(bytes.Buffer) },
+}
 
 type ErrorResponse struct {
 	Error   string            `json:"error"`
@@ -30,7 +35,10 @@ func ReadJSON(r *http.Request, v any) error {
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) {
-	buf := &bytes.Buffer{}
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+
 	if err := json.NewEncoder(buf).Encode(v); err != nil {
 		slog.Error("encode response", "err", err)
 		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)

@@ -123,6 +123,7 @@ func newRouter(h *Handler) http.Handler {
 	mux.Handle("/", h.frontendHandler())
 
 	return applyMiddleware(mux,
+		gzipMiddleware,
 		corsMiddleware,
 		h.authMiddleware,
 		recoveryMiddleware,

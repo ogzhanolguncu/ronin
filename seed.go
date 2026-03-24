@@ -174,7 +174,7 @@ func seedBookmarks(ctx context.Context, s *store.Store, count int) error {
 	limit := min(count, len(seedTemplates))
 
 	// Insert bookmarks and collections inside a transaction
-	err := store.WithTx(ctx, s.DB.DB, func(tx *sql.Tx) error {
+	err := store.WithTx(ctx, s.WriteDB, func(tx *sql.Tx) error {
 		// Seed collections first
 		collectionIDs := make(map[string]int64, len(seedCollections))
 		for _, c := range seedCollections {
@@ -282,7 +282,7 @@ func seedFavicons(ctx context.Context, s *store.Store, limit int) {
 				return
 			}
 
-			if _, err := s.DB.ExecContext(ctx,
+			if _, err := s.WriteDB.ExecContext(ctx,
 				`INSERT OR IGNORE INTO favicon (domain, data, content_type, fetched_at) VALUES (?, ?, ?, unixepoch())`,
 				domain, data, contentType,
 			); err != nil {

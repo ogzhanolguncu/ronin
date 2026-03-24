@@ -48,12 +48,13 @@ func TestBookmarkHandlers(t *testing.T) {
 	defer s.Close()
 
 	h := &Handler{
-		store:         s,
-		devMode:       true,
-		distFS:        embed.FS{},
-		metadataCache: gocache.New(gocache.NoExpiration, 0),
-		tagCache:      gocache.New(gocache.NoExpiration, 0),
-		sessionCache:  gocache.New(gocache.NoExpiration, 0),
+		store:           s,
+		devMode:         true,
+		distFS:          embed.FS{},
+		metadataCache:   gocache.New(gocache.NoExpiration, 0),
+		tagCache:        gocache.New(gocache.NoExpiration, 0),
+		collectionCache: gocache.New(gocache.NoExpiration, 0),
+		sessionCache:    gocache.New(gocache.NoExpiration, 0),
 	}
 	srv := httptest.NewServer(newRouter(h))
 	defer srv.Close()
@@ -74,14 +75,14 @@ func TestBookmarkHandlers(t *testing.T) {
 			t.Fatalf("expected 201, got %d", resp.StatusCode)
 		}
 
-		var result map[string]int64
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		var bm model.Bookmark
+		if err := json.NewDecoder(resp.Body).Decode(&bm); err != nil {
 			t.Fatalf("decode response: %v", err)
 		}
-		if result["id"] == 0 {
+		if bm.ID == 0 {
 			t.Fatal("expected non-zero id")
 		}
-		createdID = result["id"]
+		createdID = bm.ID
 	})
 
 	t.Run("CreateBookmark_DuplicateURL", func(t *testing.T) {
@@ -163,10 +164,10 @@ func TestBookmarkHandlers(t *testing.T) {
 			Title: "Example 2",
 			Tags:  "pagination",
 		})
-		var created map[string]int64
+		var created model.Bookmark
 		json.NewDecoder(createResp.Body).Decode(&created)
 		createResp.Body.Close()
-		paginationID := created["id"]
+		paginationID := created.ID
 
 		resp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks?limit=1", nil)
 		defer resp.Body.Close()
@@ -294,9 +295,9 @@ func TestBookmarkHandlers(t *testing.T) {
 			t.Fatalf("expected 201, got %d", resp.StatusCode)
 		}
 
-		var result map[string]int64
-		json.NewDecoder(resp.Body).Decode(&result)
-		secondID = result["id"]
+		var bm model.Bookmark
+		json.NewDecoder(resp.Body).Decode(&bm)
+		secondID = bm.ID
 	})
 
 	t.Run("DeleteBookmark", func(t *testing.T) {
