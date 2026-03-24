@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { getCollectionColor, type CollectionColorId } from "@/lib/colors";
@@ -5,17 +6,20 @@ import { AddCollectionDialog } from "@/components/sidebar/add-collection-dialog"
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
 import { collectionsQueryOptions } from "@/lib/queries/collections";
+import { useScrollMist } from "@/hooks/use-scroll-mist";
 
 export function Collections() {
   const collection = useUrlState((s) => s.collection);
   const { data: collections } = useSuspenseQuery(collectionsQueryOptions());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollMist(scrollRef);
 
   return (
     <div className={cn(
       "shrink-0 min-h-0 flex flex-col border-t border-border-soft/30 transition-[max-height] duration-500 ease-in-out",
       "max-h-[350px]",
     )}>
-      <div className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
+      <div ref={scrollRef} className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
         <div className="flex flex-col">
           <AddCollectionDialog hasCollections={collections.length > 0} />
           {collections.map((item) => {

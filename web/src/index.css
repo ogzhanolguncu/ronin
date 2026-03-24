@@ -341,18 +341,10 @@ body {
 }
 
 /* Content scroll mist — items emerge from toolbar edge (Yugen) */
-@property --mist-top {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 1;
-}
-@property --mist-bottom {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 1;
-}
-
+/* --mist-top / --mist-bottom are set via useScrollMist hook (JS) */
 .content-scroll-mist {
+  --mist-top: 1;
+  --mist-bottom: 1;
   mask-image: linear-gradient(
     to bottom,
     oklch(0 0 0 / var(--mist-top)),
@@ -360,19 +352,6 @@ body {
     black calc(100% - 16px),
     oklch(0 0 0 / var(--mist-bottom))
   );
-  animation: mist-top linear, mist-bottom linear;
-  animation-timeline: scroll(self);
-  animation-range: 0px 24px, calc(100% - 24px) 100%;
-  animation-fill-mode: both;
-}
-
-@keyframes mist-top {
-  from { --mist-top: 1; }
-  to { --mist-top: 0; }
-}
-@keyframes mist-bottom {
-  from { --mist-bottom: 0; }
-  to { --mist-bottom: 1; }
 }
 
 /* Scrollbar utility */

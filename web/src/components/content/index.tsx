@@ -2,9 +2,11 @@ import { useRef } from "react";
 import { BookmarkList } from "./bookmark-list";
 import { ContentToolbar } from "./toolbar";
 import { QueryBoundary } from "../query-boundary";
+import { useScrollMist } from "@/hooks/use-scroll-mist";
 
 export function Content() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollMist(scrollRef);
 
   return (
     <main className="flex h-full flex-col overflow-hidden">

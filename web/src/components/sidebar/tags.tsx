@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { formatCount } from "@/lib/format";
 import { tagsQueryOptions } from "@/lib/queries/tags";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
+import { useScrollMist } from "@/hooks/use-scroll-mist";
 
 export const Tags = () => {
   const { data: tags } = useSuspenseQuery(tagsQueryOptions());
@@ -34,9 +36,12 @@ export const Tags = () => {
     );
   }
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollMist(scrollRef);
+
   return (
     <div className="border-t border-border-soft/30 min-h-0 flex-1 flex flex-col">
-      <div className="thin-scrollbar overflow-y-auto content-scroll-mist font-mono py-3">
+      <div ref={scrollRef} className="thin-scrollbar overflow-y-auto content-scroll-mist font-mono py-3">
         <div className="flex flex-col">
           {tags.map((tag) => {
             const isActive = activeTags.includes(tag.name);
