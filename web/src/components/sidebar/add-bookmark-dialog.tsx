@@ -78,8 +78,13 @@ export function AddBookmarkDialog() {
   });
 
   async function handleUrlBlur(url: string) {
+    let normalized = url.trim();
+    if (normalized && !/^https?:\/\//i.test(normalized)) {
+      normalized = `https://${normalized}`;
+      setValue("url", normalized);
+    }
     try {
-      new URL(url);
+      new URL(normalized);
     } catch {
       return;
     }
@@ -90,7 +95,7 @@ export function AddBookmarkDialog() {
     setFetchingMeta(true);
     try {
       const meta = await requester<{ title?: string; description?: string }>("/api/v1/metadata", {
-        params: { url },
+        params: { url: normalized },
       });
       if (meta.title && !getValues("title")) {
         setValue("title", meta.title);

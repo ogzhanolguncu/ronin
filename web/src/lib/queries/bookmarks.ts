@@ -25,6 +25,7 @@ function buildSearchParams(filters: BookmarkFilters): URLSearchParams {
 
   if (filters.view === "favorites") params.set("favorite", "1")
   if (filters.view === "archived") params.set("archived", "1")
+  else params.set("archived", "0")
   if (filters.view === "unread") params.set("unread", "1")
   if (filters.collection) params.set("collection", filters.collection)
   if (filters.tags.length) params.set("tags", filters.tags.join(","))
@@ -120,5 +121,71 @@ export function useRegenerateAssets() {
         method: "POST",
       }),
     onSettled: () => invalidateBookmarks(),
+  })
+}
+
+// TODO: Move those to single mutations. Bulk is causing overhead
+export function useReadBookmark() {
+  return useMutation({
+    mutationKey: ["readBookmark"],
+    mutationFn: ({ id, read }: { id: number; read: boolean }) =>
+      requester<void>("/api/v1/bookmarks/read", {
+        method: "PATCH",
+        body: { ids_read: [{ id, read }] },
+      }),
+    onSettled: (_d, _e, _v, _r, context) =>
+      Promise.all([
+        context.client.invalidateQueries({ queryKey: ["bookmarks"] }),
+        context.client.invalidateQueries({ queryKey: countsQueryOptions().queryKey }),
+      ]),
+  })
+}
+
+export function useDeleteBookmark() {
+  return useMutation({
+    mutationKey: ["deleteBookmark"],
+    mutationFn: (id: number) =>
+      requester<void>(`/api/v1/bookmarks/${id}`, { method: "DELETE" }),
+    onSettled: (_d, _e, _v, _r, context) =>
+      Promise.all([
+        context.client.invalidateQueries({ queryKey: ["bookmarks"] }),
+        context.client.invalidateQueries({ queryKey: countsQueryOptions().queryKey }),
+        context.client.invalidateQueries({ queryKey: tagsQueryOptions().queryKey }),
+      ]),
+  })
+}
+
+// TODO: Move those to single mutations. Bulk is causing overhead
+export function useArchiveBookmark() {
+  return useMutation({
+    mutationKey: ["archiveBookmark"],
+    mutationFn: ({ id, archived }: { id: number; archived: boolean }) =>
+      requester<void>("/api/v1/bookmarks/archive", {
+        method: "PATCH",
+        body: { ids_archived: [{ id, archived }] },
+      }),
+    onSettled: (_d, _e, _v, _r, context) =>
+      Promise.all([
+        context.client.invalidateQueries({ queryKey: ["bookmarks"] }),
+        context.client.invalidateQueries({ queryKey: countsQueryOptions().queryKey }),
+      ]),
+  })
+}
+
+
+// TODO: Move those to single mutations. Bulk is causing overhead
+export function useFavoriteBookmark() {
+  return useMutation({
+    mutationKey: ["favoriteBookmark"],
+    mutationFn: ({ id, favorite }: { id: number; favorite: boolean }) =>
+      requester<void>("/api/v1/bookmarks/favorite", {
+        method: "PATCH",
+        body: { ids_favorite: [{ id, favorite }] },
+      }),
+    onSettled: (_d, _e, _v, _r, context) =>
+      Promise.all([
+        context.client.invalidateQueries({ queryKey: ["bookmarks"] }),
+        context.client.invalidateQueries({ queryKey: countsQueryOptions().queryKey }),
+      ]),
   })
 }

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutationState } from "@tanstack/react-query";
 import { BookmarkItem } from "./bookmark-item";
 import { BookmarkDetails } from "./bookmark-details";
 import { Pagination } from "./pagination";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
-import { bookmarksQueryOptions, type BookmarkFilters } from "@/lib/queries/bookmarks";
+import { bookmarksQueryOptions, useDeleteBookmark, useArchiveBookmark, useFavoriteBookmark, useReadBookmark, type BookmarkFilters } from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
 import { Interlude } from "@/components/interlude";
 
@@ -22,7 +22,39 @@ export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDiv
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const bookmarks = data.bookmarks ?? [];
+  const deleteMutation = useDeleteBookmark();
+  const archiveMutation = useArchiveBookmark();
+  const favoriteMutation = useFavoriteBookmark();
+  const readMutation = useReadBookmark();
+
+  const pendingDeletes = useMutationState<number>({
+    filters: { mutationKey: ["deleteBookmark"], status: "pending" },
+    select: (m) => m.state.variables as number,
+  });
+
+  const pendingArchives = useMutationState<{ id: number; archived: boolean }>({
+    filters: { mutationKey: ["archiveBookmark"], status: "pending" },
+    select: (m) => m.state.variables as { id: number; archived: boolean },
+  });
+
+  const pendingFavorites = useMutationState<{ id: number; favorite: boolean }>({
+    filters: { mutationKey: ["favoriteBookmark"], status: "pending" },
+    select: (m) => m.state.variables as { id: number; favorite: boolean },
+  });
+
+  const pendingReads = useMutationState<{ id: number; read: boolean }>({
+    filters: { mutationKey: ["readBookmark"], status: "pending" },
+    select: (m) => m.state.variables as { id: number; read: boolean },
+  });
+
+  const bookmarks = (data.bookmarks ?? [])
+    .filter((b) => !pendingDeletes.includes(b.id))
+    .filter((b) => !pendingArchives.some((v) => v?.id === b.id))
+    .map((b) => {
+      const pf = pendingFavorites.find((v) => v?.id === b.id);
+      const pr = pendingReads.find((v) => v?.id === b.id);
+      return { ...b, ...(pf && { favorite: pf.favorite }), ...(pr && { read: pr.read }) };
+    });
   const meta = data.meta;
 
   function handleViewClick(bookmark: Bookmark) {
@@ -66,6 +98,10 @@ export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDiv
               page: 1,
             }))}
             onViewClick={handleViewClick}
+            onFavoriteClick={(b) => favoriteMutation.mutate({ id: b.id, favorite: !b.favorite })}
+            onDeleteClick={(b) => deleteMutation.mutate(b.id)}
+            onArchiveClick={(b) => archiveMutation.mutate({ id: b.id, archived: !b.archived })}
+            onReadClick={(b) => { if (!b.read) readMutation.mutate({ id: b.id, read: true }) }}
           />
         ))}
       </div>

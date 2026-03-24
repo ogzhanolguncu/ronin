@@ -20,7 +20,7 @@ func (h *Handler) getBookmarkCounts(w http.ResponseWriter, r *http.Request) {
 	var counts model.BookmarkCounts
 	err := h.store.ReadDB.GetContext(r.Context(), &counts, `
     SELECT
-        COUNT(*)                                                      AS all_count,
+        COALESCE(SUM(CASE WHEN archived = 0 THEN 1 ELSE 0 END), 0)    AS all_count,
         COALESCE(SUM(CASE WHEN favorite = 1 THEN 1 ELSE 0 END), 0)    AS favorites_count,
         COALESCE(SUM(CASE WHEN read = 0    THEN 1 ELSE 0 END), 0)     AS unread_count,
         COALESCE(SUM(CASE WHEN archived = 1 THEN 1 ELSE 0 END), 0)    AS archived_count
@@ -119,6 +119,10 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 			httputil.ServerError(w, "failed to query bookmarks", err)
 			return
 		}
+	}
+
+	if response.Bookmarks == nil {
+		response.Bookmarks = []model.Bookmark{}
 	}
 
 	var totalCount int
@@ -303,6 +307,9 @@ func (h *Handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", id); err != nil {
+			return fmt.Errorf("failed to delete bookmark tags: %w", err)
+		}
 		result, err := tx.ExecContext(r.Context(), "DELETE FROM bookmark WHERE id = ?", id)
 		if err != nil {
 			return fmt.Errorf("failed to delete bookmark: %w", err)
@@ -343,6 +350,9 @@ func (h *Handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
+		if err := store.BulkDelete(r.Context(), tx, "bookmark_tag", "bookmark_id", req.IDs); err != nil {
+			return fmt.Errorf("failed to delete bookmark tags: %w", err)
+		}
 		if err := store.BulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
 			return fmt.Errorf("failed to delete bookmarks: %w", err)
 		}

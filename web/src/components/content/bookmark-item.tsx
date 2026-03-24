@@ -10,11 +10,17 @@ export function BookmarkItem({
   onTagClick,
   onViewClick,
   onFavoriteClick,
+  onDeleteClick,
+  onArchiveClick,
+  onReadClick,
 }: {
   bookmark: Bookmark;
   onTagClick?: (tag: string) => void;
   onViewClick?: (bookmark: Bookmark) => void;
   onFavoriteClick?: (bookmark: Bookmark) => void;
+  onDeleteClick?: (bookmark: Bookmark) => void;
+  onArchiveClick?: (bookmark: Bookmark) => void;
+  onReadClick?: (bookmark: Bookmark) => void;
 }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -34,7 +40,7 @@ export function BookmarkItem({
     if (confirmingDelete) {
       if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
       setConfirmingDelete(false);
-      console.log("delete", bookmark.id);
+      onDeleteClick?.(bookmark);
     } else {
       setConfirmingDelete(true);
       deleteTimeoutRef.current = setTimeout(() => {
@@ -47,7 +53,7 @@ export function BookmarkItem({
     if (confirmingArchive) {
       if (archiveTimeoutRef.current) clearTimeout(archiveTimeoutRef.current);
       setConfirmingArchive(false);
-      console.log("archive", bookmark.id);
+      onArchiveClick?.(bookmark);
     } else {
       setConfirmingArchive(true);
       archiveTimeoutRef.current = setTimeout(() => {
@@ -140,6 +146,7 @@ export function BookmarkItem({
           href={bookmark.url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => onReadClick?.(bookmark)}
           className="text-sm font-medium text-foreground leading-snug tracking-tight truncate transition-colors hover:text-primary"
           {...(bookmark.title_snippet
             ? { dangerouslySetInnerHTML: { __html: bookmark.title_snippet } }
