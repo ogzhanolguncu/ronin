@@ -27,3 +27,4 @@ dist-ssr
 ronin
 tsconfig.tsbuildinfo
 /data/assets
+.DS_Store
