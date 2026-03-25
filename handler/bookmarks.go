@@ -165,6 +165,30 @@ func (h *Handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
+func (h *Handler) getBookmarkByURL(w http.ResponseWriter, r *http.Request) {
+	rawURL := r.URL.Query().Get("url")
+	if rawURL == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "url parameter is required")
+		return
+	}
+
+	var bm model.Bookmark
+	err := h.store.ReadDB.GetContext(r.Context(), &bm,
+		model.BookmarkBaseQuery+` WHERE bm.url = ?`, rawURL,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "not found")
+			return
+		}
+		httputil.ServerError(w, "failed to query bookmark", err)
+		return
+	}
+
+	bm.ParseTags()
+	httputil.WriteJSON(w, http.StatusOK, bm)
+}
+
 func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	req, ok := httputil.Decode[model.CreateBookmarkRequest](r, w)
 	if !ok {

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./shared/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -7,91 +8,6 @@
   syntax: "<number>";
   inherits: false;
   initial-value: 0;
-}
-
-:root {
-  --background: oklch(0.965 0.009 84.6);
-  --foreground: oklch(0.216 0.006 56);
-  --card: oklch(0.944 0.012 84.6);
-  --card-foreground: oklch(0.216 0.006 56);
-  --popover: oklch(0.965 0.009 84.6);
-  --popover-foreground: oklch(0.216 0.006 56);
-  --primary: oklch(0.28 0.015 60);
-  --primary-foreground: oklch(0.97 0.005 80);
-  --secondary: oklch(0.911 0.014 67.7);
-  --secondary-foreground: oklch(0.311 0.007 67.6);
-  --muted: oklch(0.932 0.009 78.3);
-  --muted-foreground: oklch(0.525 0.012 106.8);
-  --accent: oklch(0.911 0.014 67.7);
-  --accent-foreground: oklch(0.216 0.006 56);
-  --destructive: oklch(0.5 0.15 27);
-  --border: oklch(0.819 0.014 82.4);
-  --input: oklch(0.819 0.014 82.4);
-  --ring: oklch(0.28 0.015 60);
-  --radius: 0.375rem;
-
-  /* Extended palette (custom) */
-  --surface: oklch(0.944 0.012 84.6);
-  --surface2: oklch(0.911 0.014 67.7);
-  --surface3: oklch(0.885 0.014 74.4);
-  --border2: oklch(0.731 0.012 95.2);
-  --text2: oklch(0.311 0.007 67.6);
-  --muted2: oklch(0.525 0.012 106.8);
-  --accent-hover: oklch(0.22 0.012 60);
-  --accent-dim: oklch(0.28 0.015 60 / 0.08);
-  --red-dim: oklch(0.5 0.16 27 / 0.09);
-  --kitsune: oklch(0.45 0.14 75);
-  --yellow-dim: oklch(0.45 0.14 75 / 0.09);
-
-  /* Japanese accent colors */
-  --sumi: oklch(0.25 0.005 60);
-  --ai: oklch(0.42 0.08 255);
-  --shu: oklch(0.48 0.16 30);
-  --kinari: oklch(0.94 0.015 90);
-
-  /* Soft border */
-  --border-soft: color-mix(in oklch, var(--border) 60%, var(--background));
-}
-
-.dark {
-  --background: oklch(0.145 0.008 230);
-  --foreground: oklch(0.911 0.012 84.6);
-  --card: oklch(0.185 0.008 235);
-  --card-foreground: oklch(0.911 0.012 84.6);
-  --popover: oklch(0.145 0.008 230);
-  --popover-foreground: oklch(0.911 0.012 84.6);
-  --primary: oklch(0.82 0.04 60);
-  --primary-foreground: oklch(0.15 0.015 60);
-  --secondary: oklch(0.275 0.010 232);
-  --secondary-foreground: oklch(0.822 0.015 84.6);
-  --muted: oklch(0.25 0.009 232);
-  --muted-foreground: oklch(0.626 0.012 95.3);
-  --accent: oklch(0.30 0.010 232);
-  --accent-foreground: oklch(0.911 0.012 84.6);
-  --destructive: oklch(0.6 0.15 27);
-  --border: oklch(0.330 0.012 235);
-  --input: oklch(0.330 0.012 235);
-  --ring: oklch(0.82 0.04 60);
-
-  --surface: oklch(0.185 0.008 235);
-  --surface2: oklch(0.275 0.010 232);
-  --surface3: oklch(0.330 0.012 235);
-  --border2: oklch(0.39 0.011 235);
-  --text2: oklch(0.822 0.015 84.6);
-  --muted2: oklch(0.626 0.012 95.3);
-  --accent-hover: oklch(0.87 0.045 60);
-  --accent-dim: oklch(0.82 0.04 60 / 0.1);
-  --red-dim: oklch(0.6 0.15 27 / 0.094);
-  --kitsune: oklch(0.68 0.12 75);
-  --yellow-dim: oklch(0.68 0.12 75 / 0.094);
-
-  /* Japanese accent colors (dark) */
-  --sumi: oklch(0.82 0.008 60);
-  --ai: oklch(0.72 0.10 255);
-  --shu: oklch(0.62 0.14 30);
-  --kinari: oklch(0.22 0.01 90);
-
-  --border-soft: color-mix(in oklch, var(--border) 60%, var(--background));
 }
 
 @theme inline {

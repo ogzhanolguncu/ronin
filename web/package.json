@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "fmt": "prettier --write 'src/**/*.{ts,tsx,css}'"
+    "fmt": "prettier --write 'src/**/*.{ts,tsx,css}'",
+    "ext:dev": "vite --config vite.extension.config.ts",
+    "ext:watch": "vite build --config vite.extension.config.ts --watch",
+    "ext:build": "vite build --config vite.extension.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -35,6 +38,7 @@
     "@eslint/js": "^9.39.4",
     "@rolldown/plugin-babel": "^0.2.0",
     "@types/babel__core": "^7.20.5",
+    "@types/chrome": "^0.1.38",
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

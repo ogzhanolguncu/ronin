@@ -1,4 +1,4 @@
-.PHONY: dev run build web preview prod prod-dev seed
+.PHONY: dev run build web preview prod prod-dev seed ext ext-dev ext-build
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -34,3 +34,12 @@ prod-dev:
 
 seed:
 	DEV=1 go run . -seed 100
+
+ext:
+	$(MAKE) -j3 dev-backend ext-dev dev-frontend
+
+ext-dev:
+	cd web && pnpm ext:dev
+
+ext-build:
+	cd web && pnpm ext:build
