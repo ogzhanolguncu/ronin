@@ -455,13 +455,13 @@ func parseBookmarkFilters(r *http.Request) bookmarkFilters {
 	favorite, _ := httputil.QueryParam(r, "favorite", -1)
 	archived, _ := httputil.QueryParam(r, "archived", -1)
 	unread, _ := httputil.QueryParam(r, "unread", -1)
-	collection, _ := httputil.QueryParam(r, "collection", -1)
+	collectionSlug, _ := httputil.QueryParam(r, "collection", "")
 	tagsParam, _ := httputil.QueryParam(r, "tags", "")
 	domainsParam, _ := httputil.QueryParam(r, "domains", "")
 
-	if collection != -1 {
-		f.where += " AND bm.collection_id = ?"
-		f.args = append(f.args, collection)
+	if collectionSlug != "" {
+		f.where += " AND bm.collection_id = (SELECT id FROM collection WHERE slug = ?)"
+		f.args = append(f.args, collectionSlug)
 	}
 	if favorite != -1 {
 		f.where += " AND bm.favorite = ?"
