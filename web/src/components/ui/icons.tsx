@@ -21,4 +21,5 @@ export {
   ChevronRight as ChevronRightIcon,
   LogOut as LogOutIcon,
   RefreshCw as RefreshIcon,
+  Highlighter as HighlighterIcon,
 } from "lucide-react";

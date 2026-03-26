@@ -115,10 +115,10 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
                         key={color.id}
                         type="button"
                         className={cn(
-                          "size-5 rounded-full cursor-pointer transition-all duration-200",
+                          "size-5 rounded-full cursor-pointer transition-all duration-200 dot-glow",
                           field.value === color.id
-                            ? "dot-glow ring-2 ring-offset-2 ring-offset-surface"
-                            : "opacity-50 hover:opacity-80",
+                            ? "ring-2 ring-offset-2 ring-offset-surface scale-110"
+                            : "opacity-65 hover:opacity-80",
                         )}
                         style={{
                           backgroundColor: color.value,

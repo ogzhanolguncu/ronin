@@ -5,6 +5,7 @@ import { readableContentQueryOptions, highlightsQueryOptions, useCreateHighlight
 import { computeAnchor, createHighlightRange, applyHighlightMark, clearAllHighlightMarks } from "@/lib/highlight-anchoring"
 import { formatRelativeTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { HighlighterIcon } from "@/components/ui/icons"
 import type { Highlight, HighlightColor } from "@/lib/types"
 import "./reader-view.css"
 
@@ -272,7 +273,7 @@ export function ReaderView({
                   : "text-muted2 hover:text-foreground",
               )}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11-6 6v3h9l3-3" /><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" /></svg>
+              <HighlighterIcon className="size-3.5" />
               Highlights{highlights?.length ? ` (${highlights.length})` : ""}
             </button>
           </div>
@@ -385,10 +386,10 @@ export function ReaderView({
                               type="button"
                               onClick={() => setEditColor(c.value)}
                               className={cn(
-                                "h-3 w-3 rounded-full transition-all duration-200",
+                                "size-3 rounded-full transition-all duration-200 dot-glow",
                                 editColor === c.value
-                                  ? "dot-glow ring-2 ring-offset-2 ring-offset-surface"
-                                  : "opacity-50 hover:opacity-80",
+                                  ? "ring-2 ring-offset-2 ring-offset-surface scale-110"
+                                  : "opacity-65 hover:opacity-80",
                               )}
                               style={{
                                 backgroundColor: c.color,
@@ -474,9 +475,10 @@ function FloatingToolbar({
           key={c.value}
           type="button"
           onClick={() => onSelect(c.value)}
-          className="w-5 h-5 rounded-full transition-transform duration-200 hover:scale-110"
-          style={{ backgroundColor: c.color }}
+          className="size-4 rounded-full transition-all duration-200 dot-glow ring-2 ring-offset-2 ring-offset-surface hover:scale-110"
+          style={{ backgroundColor: c.color, color: c.color }}
           title={c.label}
+
         />
       ))}
     </div>

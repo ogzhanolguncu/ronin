@@ -1,8 +1,5 @@
-/* Reader view — Japanese design principles applied */
-
-/* Article base — Ma (generous space), Wabi-sabi (serif, old-style numerals) */
 .reader-article {
-  max-width: 42rem;
+  max-width: 50rem;
   margin: 0 auto;
   padding: 0 clamp(2rem, 6vw, 4rem);
   font-family: var(--font-serif, "Source Serif 4", Georgia, serif);
