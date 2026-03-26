@@ -48,29 +48,6 @@ func (h *Handler) getSnapshot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) getReadable(w http.ResponseWriter, r *http.Request) {
-	id, err := httputil.PathParamInt(r, "id")
-	if err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid id")
-		return
-	}
-
-	path := filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10), "readable.html.gz")
-	f, err := os.Open(path)
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "readable version not available")
-		return
-	}
-	defer f.Close()
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Encoding", "gzip")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
-	if _, err := io.Copy(w, f); err != nil {
-		slog.Warn("failed to write readable response", "id", id, "err", err)
-	}
-}
-
 type readableContentResponse struct {
 	HTML      string `json:"html"`
 	Title     string `json:"title"`

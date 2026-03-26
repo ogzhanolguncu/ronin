@@ -8,12 +8,16 @@ import { cn } from "@/lib/utils"
 import type { Highlight, HighlightColor } from "@/lib/types"
 import "./reader-view.css"
 
-const HIGHLIGHT_COLORS: { value: HighlightColor; bg: string }[] = [
-  { value: "yellow", bg: "bg-yellow-300/60 dark:bg-yellow-500/40" },
-  { value: "green", bg: "bg-green-300/60 dark:bg-green-500/40" },
-  { value: "blue", bg: "bg-blue-300/60 dark:bg-blue-500/40" },
-  { value: "pink", bg: "bg-pink-300/60 dark:bg-pink-500/40" },
+const HIGHLIGHT_COLORS: { value: HighlightColor; color: string; label: string }[] = [
+  { value: "yellow", color: "oklch(0.78 0.08 80)", label: "Kitsune" },
+  { value: "green", color: "oklch(0.72 0.08 145)", label: "Matcha" },
+  { value: "blue", color: "oklch(0.68 0.08 250)", label: "Ai" },
+  { value: "pink", color: "oklch(0.72 0.07 310)", label: "Fuji" },
 ]
+
+function getHighlightColor(value: HighlightColor): string {
+  return HIGHLIGHT_COLORS.find((c) => c.value === value)?.color ?? HIGHLIGHT_COLORS[0].color
+}
 
 type SelectionAnchor = {
   text: string
@@ -60,11 +64,9 @@ export function ReaderView({
     const root = articleRef.current
     if (!root || !highlights) return
 
-    console.log("[highlights] applying", highlights.length, "highlights to DOM")
     clearAllHighlightMarks(root)
 
     for (const hl of highlights) {
-      console.log("[highlights] resolving:", { start_path: hl.start_path, start_offset: hl.start_offset, end_path: hl.end_path, end_offset: hl.end_offset })
       const range = createHighlightRange(
         hl.start_path,
         hl.start_offset,
@@ -72,16 +74,9 @@ export function ReaderView({
         hl.end_offset,
         root,
       )
-      if (!range) {
-        console.warn("[highlights] failed to resolve range for highlight", hl.id)
-        continue
-      }
-      console.log("[highlights] applying mark for highlight", hl.id, range.toString().slice(0, 50))
+      if (!range) continue
       applyHighlightMark(range, hl.id, hl.color, root)
     }
-
-    const marks = root.querySelectorAll("mark[data-highlight-id]")
-    console.log("[highlights] total marks in DOM after apply:", marks.length)
   }, [sanitizedHTML, highlights])
 
   // Handle active highlight styling
@@ -119,8 +114,6 @@ export function ReaderView({
     const start = computeAnchor(range.startContainer, range.startOffset, root)
     const end = computeAnchor(range.endContainer, range.endOffset, root)
     const rect = range.getBoundingClientRect()
-
-    console.log("[selection] computed anchors:", { start, end, text: text.slice(0, 50) })
 
     setSelection({
       text,
@@ -245,51 +238,57 @@ export function ReaderView({
   }, [selection])
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-background">
+    <div className="fixed inset-0 z-50 flex reader-bg">
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="flex items-center gap-3 px-6 py-3 border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
+        {/* Navigation */}
+        <div className="flex items-center justify-between h-11 px-5 shrink-0 border-b border-border-soft/50">
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+            className="text-sm text-muted2 hover:text-foreground transition-colors duration-200 inline-flex items-center gap-1.5"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
             Back
           </button>
-          <div className="h-4 w-px bg-border/50" />
-          <h1 className="text-sm font-medium text-foreground truncate flex-1">
-            {content.title}
-          </h1>
-          {content.source_url && (
-            <a
-              href={content.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              Source
-            </a>
-          )}
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={cn(
-              "text-xs px-2.5 py-1 rounded-sm transition-colors inline-flex items-center gap-1.5",
-              sidebarOpen
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground",
+          <div className="flex items-center gap-3">
+            {content.source_url && (
+              <a
+                href={content.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted2 hover:text-foreground transition-colors duration-200"
+              >
+                Source
+              </a>
             )}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
-            {highlights?.length ? highlights.length : ""}
-            {" "}Highlights
-          </button>
-        </header>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={cn(
+                "transition-colors duration-200 inline-flex items-center gap-1.5 text-sm",
+                sidebarOpen
+                  ? "text-primary"
+                  : "text-muted2 hover:text-foreground",
+              )}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11-6 6v3h9l3-3" /><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" /></svg>
+              Highlights{highlights?.length ? ` (${highlights.length})` : ""}
+            </button>
+          </div>
+        </div>
 
         {/* Article */}
-        <div className="flex-1 overflow-y-auto thin-scrollbar py-12">
+        <div className="flex-1 overflow-y-auto thin-scrollbar py-12 reader-scroll-mist">
+          <div className="reader-article">
+            <h1 className="reader-title">{content.title}</h1>
+            {content.source_url && (
+              <p className="reader-source">
+                {new URL(content.source_url).hostname.replace(/^www\./, "")}
+              </p>
+            )}
+          </div>
+          <div className="reader-title-divider" />
           <div
             ref={articleRef}
             className="reader-article"
@@ -302,9 +301,8 @@ export function ReaderView({
 
       {/* Highlight sidebar */}
       {sidebarOpen && (
-        <aside className="w-80 border-l border-border/50 bg-surface flex flex-col overflow-hidden shrink-0">
-          <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Highlights</span>
+        <aside className="w-80 bg-surface flex flex-col overflow-hidden shrink-0 reader-sidebar-enter paper-grain border-l border-border-soft/60 sidebar-edge">
+          <div className="h-11 px-4 border-b border-border-soft/50 flex items-center justify-between shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -312,104 +310,115 @@ export function ReaderView({
                 setEditingHighlight(null)
                 setActiveHighlightId(null)
               }}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted2 hover:text-foreground transition-colors duration-200 p-1 ml-auto"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto thin-scrollbar">
+          <div className="flex-1 overflow-y-auto thin-scrollbar content-scroll-mist">
             {!highlights?.length && (
-              <p className="text-xs text-muted-foreground px-4 py-6 text-center">
-                Select text in the article to create highlights
+              <p className="text-xs text-muted-foreground px-5 py-8 text-center leading-relaxed">
+                Select text to highlight
               </p>
             )}
 
-            {highlights?.map((hl) => (
-              <div
-                key={hl.id}
-                className={cn(
-                  "px-4 py-3 border-b border-border/30 cursor-pointer transition-colors",
-                  activeHighlightId === hl.id ? "bg-primary/5" : "hover:bg-foreground/[0.02]",
-                )}
-                onClick={() => {
-                  scrollToHighlight(hl.id)
-                  setEditingHighlight(hl)
-                  setEditNote(hl.note)
-                  setEditColor(hl.color)
-                }}
-              >
-                <div className="flex items-start gap-2">
+            {highlights?.map((hl) => {
+              const isActive = activeHighlightId === hl.id
+              const hlColor = getHighlightColor(hl.color)
+              return (
+                <div
+                  key={hl.id}
+                  className={cn(
+                    "px-4 py-3 cursor-pointer transition-colors duration-200 flex items-start gap-2.5",
+                    isActive
+                      ? "bg-surface2"
+                      : "hover:bg-surface2/50",
+                  )}
+                  onClick={() => {
+                    scrollToHighlight(hl.id)
+                    setEditingHighlight(hl)
+                    setEditNote(hl.note)
+                    setEditColor(hl.color)
+                  }}
+                >
+                  {/* Color dot — like collections */}
                   <span
-                    className={cn(
-                      "w-2.5 h-2.5 rounded-full mt-1 shrink-0",
-                      hl.color === "yellow" && "bg-yellow-400",
-                      hl.color === "green" && "bg-green-400",
-                      hl.color === "blue" && "bg-blue-400",
-                      hl.color === "pink" && "bg-pink-400",
-                    )}
+                    className="h-2.5 w-2.5 shrink-0 rounded-full mt-0.5 dot-glow"
+                    style={{ backgroundColor: hlColor, color: hlColor }}
                   />
+
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-foreground/80 line-clamp-3 leading-relaxed">
-                      &ldquo;{hl.text}&rdquo;
+                    {/* Quoted excerpt */}
+                    <p className={cn(
+                      "text-sm line-clamp-3 leading-relaxed transition-colors",
+                      isActive ? "text-foreground" : "text-text2",
+                    )}>
+                      {hl.text}
                     </p>
+
+                    {/* Note */}
                     {hl.note && (
-                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                      <p className="text-xs text-text2 mt-1.5 line-clamp-2 leading-relaxed">
                         {hl.note}
                       </p>
                     )}
-                    <span className="text-[10px] text-muted-foreground/60 mt-1 block">
+
+                    <span className="text-xs text-muted2 mt-1.5 block font-mono">
                       {formatRelativeTime(hl.created_at)}
                     </span>
+
+                    {/* Edit form */}
+                    {editingHighlight?.id === hl.id && (
+                      <div className="mt-3 pt-3 border-t border-border-soft/50 space-y-3" onClick={(e) => e.stopPropagation()}>
+                        <textarea
+                          value={editNote}
+                          onChange={(e) => setEditNote(e.target.value)}
+                          placeholder="Add a note..."
+                          className="w-full text-xs bg-background border border-border-soft/50 rounded-sm px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring min-h-[64px] transition-colors duration-200 placeholder:text-muted-foreground"
+                          rows={3}
+                        />
+                        <div className="flex items-center gap-2">
+                          {HIGHLIGHT_COLORS.map((c) => (
+                            <button
+                              key={c.value}
+                              type="button"
+                              onClick={() => setEditColor(c.value)}
+                              className={cn(
+                                "h-3 w-3 rounded-full transition-all duration-200",
+                                editColor === c.value
+                                  ? "dot-glow ring-2 ring-offset-2 ring-offset-surface"
+                                  : "opacity-50 hover:opacity-80",
+                              )}
+                              style={{
+                                backgroundColor: c.color,
+                                color: c.color,
+                                ...(editColor === c.value ? { "--tw-ring-color": c.color } as React.CSSProperties : {}),
+                              }}
+                            />
+                          ))}
+                          <div className="flex-1" />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteHighlight(hl)}
+                            className="text-xs text-muted2 hover:text-shu transition-colors duration-200"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveNote}
+                            className="text-xs text-primary font-medium hover:text-accent-hover transition-colors duration-200"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Inline edit form when this highlight is selected */}
-                {editingHighlight?.id === hl.id && (
-                  <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
-                    <textarea
-                      value={editNote}
-                      onChange={(e) => setEditNote(e.target.value)}
-                      placeholder="Add a note..."
-                      className="w-full text-xs bg-background border border-border/50 rounded-sm px-2.5 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring min-h-[60px]"
-                      rows={3}
-                    />
-                    <div className="flex items-center gap-1.5">
-                      {HIGHLIGHT_COLORS.map((c) => (
-                        <button
-                          key={c.value}
-                          type="button"
-                          onClick={() => setEditColor(c.value)}
-                          className={cn(
-                            "w-5 h-5 rounded-full transition-all",
-                            c.value === "yellow" && "bg-yellow-400",
-                            c.value === "green" && "bg-green-400",
-                            c.value === "blue" && "bg-blue-400",
-                            c.value === "pink" && "bg-pink-400",
-                            editColor === c.value && "ring-2 ring-primary ring-offset-1 ring-offset-surface",
-                          )}
-                        />
-                      ))}
-                      <div className="flex-1" />
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteHighlight(hl)}
-                        className="text-[10px] text-destructive/70 hover:text-destructive transition-colors"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSaveNote}
-                        className="text-[10px] text-primary hover:text-primary/80 font-medium transition-colors"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </aside>
       )}
@@ -419,7 +428,6 @@ export function ReaderView({
         <FloatingToolbar
           rect={selection.rect}
           onSelect={handleHighlightCreate}
-          onDismiss={dismissSelection}
         />
       )}
     </div>
@@ -429,11 +437,9 @@ export function ReaderView({
 function FloatingToolbar({
   rect,
   onSelect,
-  onDismiss,
 }: {
   rect: DOMRect
   onSelect: (color: HighlightColor) => void
-  onDismiss: () => void
 }) {
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0 })
@@ -460,7 +466,7 @@ function FloatingToolbar({
     <div
       id="highlight-toolbar"
       ref={toolbarRef}
-      className="fixed z-[100] flex items-center gap-1 bg-surface border border-border/60 rounded-md shadow-lg px-1.5 py-1"
+      className="fixed z-[100] flex items-center gap-1.5 bg-surface/90 backdrop-blur-sm border border-border-soft rounded-sm shadow-sm px-2 py-1.5 reader-toolbar-enter"
       style={{ top: position.top, left: position.left }}
     >
       {HIGHLIGHT_COLORS.map((c) => (
@@ -468,24 +474,11 @@ function FloatingToolbar({
           key={c.value}
           type="button"
           onClick={() => onSelect(c.value)}
-          className={cn(
-            "w-6 h-6 rounded-full transition-transform hover:scale-110",
-            c.value === "yellow" && "bg-yellow-400",
-            c.value === "green" && "bg-green-400",
-            c.value === "blue" && "bg-blue-400",
-            c.value === "pink" && "bg-pink-400",
-          )}
-          title={`Highlight ${c.value}`}
+          className="w-5 h-5 rounded-full transition-transform duration-200 hover:scale-110"
+          style={{ backgroundColor: c.color }}
+          title={c.label}
         />
       ))}
-      <div className="w-px h-4 bg-border/50 mx-0.5" />
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="text-xs text-muted-foreground hover:text-foreground px-1 transition-colors"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
     </div>
   )
 }

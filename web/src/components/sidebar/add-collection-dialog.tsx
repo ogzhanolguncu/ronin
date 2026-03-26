@@ -115,11 +115,16 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
                         key={color.id}
                         type="button"
                         className={cn(
-                          "size-5 rounded-full cursor-pointer transition-shadow",
-                          field.value === color.id &&
-                          "ring-2 ring-offset-2 ring-foreground/40",
+                          "size-5 rounded-full cursor-pointer transition-all duration-200",
+                          field.value === color.id
+                            ? "dot-glow ring-2 ring-offset-2 ring-offset-surface"
+                            : "opacity-50 hover:opacity-80",
                         )}
-                        style={{ backgroundColor: color.value }}
+                        style={{
+                          backgroundColor: color.value,
+                          color: color.value,
+                          ...(field.value === color.id ? { "--tw-ring-color": color.value } as React.CSSProperties : {}),
+                        }}
                         onClick={() => field.onChange(color.id)}
                         aria-label={color.key}
                       />

@@ -13,6 +13,7 @@
 @theme inline {
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
+  --font-serif: "Source Serif 4", Georgia, serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -302,7 +303,10 @@ body {
   text-shadow: 0 0 20px oklch(from var(--primary) l c h / 0.15);
 }
 
-/* Dark mode — collection dot glow */
+/* Collection / highlight dot glow */
+.dot-glow {
+  box-shadow: 0 0 4px currentColor;
+}
 .dark .dot-glow {
   box-shadow: 0 0 6px currentColor;
 }

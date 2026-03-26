@@ -114,7 +114,6 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
 
 	mux.HandleFunc("GET    /api/v1/assets/{id}", h.getSnapshot)
-	mux.HandleFunc("GET    /api/v1/assets/{id}/readable", h.getReadable)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/status", h.getAssetStatus)
 	mux.HandleFunc("POST   /api/v1/assets/{id}/regenerate", h.regenerateAssetsHandler)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/readable/content", h.getReadableContent)
