@@ -360,7 +360,7 @@ export function ReaderView({
 
                     {/* Note */}
                     {hl.note && (
-                      <p className="text-xs text-text2 mt-1.5 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-muted2 mt-1.5 line-clamp-2 leading-relaxed italic">
                         {hl.note}
                       </p>
                     )}
