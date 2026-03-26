@@ -117,6 +117,12 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("GET    /api/v1/assets/{id}/readable", h.getReadable)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/status", h.getAssetStatus)
 	mux.HandleFunc("POST   /api/v1/assets/{id}/regenerate", h.regenerateAssetsHandler)
+	mux.HandleFunc("GET    /api/v1/assets/{id}/readable/content", h.getReadableContent)
+
+	mux.HandleFunc("GET    /api/v1/bookmarks/{id}/highlights", h.getHighlights)
+	mux.HandleFunc("POST   /api/v1/bookmarks/{id}/highlights", h.createHighlight)
+	mux.HandleFunc("PUT    /api/v1/highlights/{id}", h.updateHighlight)
+	mux.HandleFunc("DELETE /api/v1/highlights/{id}", h.deleteHighlight)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)

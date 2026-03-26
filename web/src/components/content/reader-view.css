@@ -1,0 +1,141 @@
+/* Reader view — article typography derived from readable.css */
+.reader-article {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 0 clamp(1.5rem, 5vw, 3rem);
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.85;
+  letter-spacing: 0.01em;
+  color: var(--foreground);
+  word-break: break-word;
+}
+
+.reader-article h1 {
+  font-weight: 300;
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  margin: 0 0 0.5rem 0;
+}
+
+.reader-article h2,
+.reader-article h3,
+.reader-article h4,
+.reader-article h5,
+.reader-article h6 {
+  font-weight: 400;
+  letter-spacing: 0.015em;
+  margin: 2.5rem 0 1rem 0;
+}
+
+.reader-article p {
+  margin: 0 0 1.5em 0;
+}
+
+.reader-article a {
+  color: var(--primary);
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color 200ms ease-out;
+}
+.reader-article a:hover {
+  text-decoration-color: currentColor;
+}
+
+.reader-article img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+  margin: 1.5em 0;
+}
+
+.reader-article blockquote {
+  margin: 1.5em 0;
+  padding: 0.5em 0 0.5em 1.5em;
+  border-left: 2px solid var(--border);
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.reader-article pre {
+  background: var(--card);
+  padding: 1.25em;
+  overflow-x: auto;
+  border-radius: 2px;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+.reader-article code {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.88em;
+  background: var(--card);
+  padding: 0.15em 0.35em;
+  border-radius: 2px;
+}
+
+.reader-article pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+.reader-article figure {
+  margin: 1.5em 0;
+}
+
+.reader-article figcaption {
+  font-size: 0.85em;
+  color: var(--muted-foreground);
+  margin-top: 0.5em;
+}
+
+.reader-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+.reader-article th,
+.reader-article td {
+  border: 1px solid var(--border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.reader-article th {
+  background: var(--card);
+  font-weight: 500;
+}
+
+/* Highlight colors */
+.reader-article mark[data-highlight-id] {
+  border-radius: 2px;
+  padding: 0.05em 0;
+  cursor: pointer;
+  transition: filter 150ms;
+  box-decoration-break: clone;
+}
+.reader-article mark[data-highlight-id]:hover {
+  filter: brightness(0.92);
+}
+
+.reader-article mark.highlight-yellow { background: oklch(0.93 0.08 90 / 0.5); color: inherit; }
+.reader-article mark.highlight-green  { background: oklch(0.90 0.10 150 / 0.45); color: inherit; }
+.reader-article mark.highlight-blue   { background: oklch(0.90 0.08 250 / 0.4); color: inherit; }
+.reader-article mark.highlight-pink   { background: oklch(0.90 0.10 350 / 0.4); color: inherit; }
+
+/* Dark mode highlight colors */
+.dark .reader-article mark.highlight-yellow { background: oklch(0.55 0.10 90 / 0.35); }
+.dark .reader-article mark.highlight-green  { background: oklch(0.50 0.10 150 / 0.35); }
+.dark .reader-article mark.highlight-blue   { background: oklch(0.50 0.10 250 / 0.35); }
+.dark .reader-article mark.highlight-pink   { background: oklch(0.50 0.10 350 / 0.35); }
+
+/* Active highlight in sidebar */
+.reader-article mark.highlight-active {
+  filter: brightness(0.88);
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}

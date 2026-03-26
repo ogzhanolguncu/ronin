@@ -8,7 +8,7 @@ import type { Bookmark } from "@/lib/types";
 import { getHostname } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
+export function BookmarkDetails({ bookmark, onOpenReader }: { bookmark: Bookmark; onOpenReader: (id: number) => void }) {
   const [editing, setEditing] = useState(false);
   const regenerate = useRegenerateAssets();
   const isRegenerating = regenerate.isPending;
@@ -55,15 +55,14 @@ export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
           </a>
           <div className="flex items-center gap-2.5 mt-3">
             {readerReady && (
-              <a
-                href={`/api/v1/assets/${bookmark.id}/readable`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => onOpenReader(bookmark.id)}
                 className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1"
               >
                 <ReaderModeIcon className="w-3.5 h-3.5" />
                 Reader mode
-              </a>
+              </button>
             )}
             {readablePending && (
               <span className="text-xs text-muted2/50 inline-flex items-center gap-1">

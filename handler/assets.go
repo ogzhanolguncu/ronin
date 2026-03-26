@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"strings"
 	"log/slog"
 	"net/http"
 	nurl "net/url"
@@ -68,6 +69,79 @@ func (h *Handler) getReadable(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(w, f); err != nil {
 		slog.Warn("failed to write readable response", "id", id, "err", err)
 	}
+}
+
+type readableContentResponse struct {
+	HTML      string `json:"html"`
+	Title     string `json:"title"`
+	SourceURL string `json:"source_url"`
+}
+
+func (h *Handler) getReadableContent(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.PathParamInt(r, "id")
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	path := filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10), "readable.html.gz")
+	f, err := os.Open(path)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "readable version not available")
+		return
+	}
+	defer f.Close()
+
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		httputil.ServerError(w, "failed to decompress readable", err)
+		return
+	}
+	defer gz.Close()
+
+	data, err := io.ReadAll(gz)
+	if err != nil {
+		httputil.ServerError(w, "failed to read readable content", err)
+		return
+	}
+
+	fullHTML := string(data)
+	resp := extractReadableContent(fullHTML)
+	httputil.WriteJSON(w, http.StatusOK, resp)
+}
+
+func extractReadableContent(fullHTML string) readableContentResponse {
+	var resp readableContentResponse
+
+	// Extract title from <h1>...</h1>
+	if i := strings.Index(fullHTML, "<h1>"); i != -1 {
+		if j := strings.Index(fullHTML[i:], "</h1>"); j != -1 {
+			resp.Title = html.UnescapeString(fullHTML[i+4 : i+j])
+		}
+	}
+
+	// Extract source URL from <p class="source"><a href="...">
+	sourcePrefix := `<p class="source"><a href="`
+	if i := strings.Index(fullHTML, sourcePrefix); i != -1 {
+		start := i + len(sourcePrefix)
+		if j := strings.Index(fullHTML[start:], `"`); j != -1 {
+			resp.SourceURL = html.UnescapeString(fullHTML[start : start+j])
+		}
+	}
+
+	// Extract article content: everything between </p>\n and \n</body>
+	sourceEnd := "</p>\n"
+	bodyEnd := "\n</body>"
+	if i := strings.Index(fullHTML, `<p class="source">`); i != -1 {
+		if j := strings.Index(fullHTML[i:], sourceEnd); j != -1 {
+			contentStart := i + j + len(sourceEnd)
+			if k := strings.LastIndex(fullHTML, bodyEnd); k != -1 && k > contentStart {
+				resp.HTML = fullHTML[contentStart:k]
+			}
+		}
+	}
+
+	return resp
 }
 
 func (h *Handler) getAssetStatus(w http.ResponseWriter, r *http.Request) {

@@ -15,7 +15,7 @@ function useBookmarkFilters(): BookmarkFilters {
   return { q: s.q, tags: s.tags, domains: s.domains, view: s.view, sort: s.sort, collection: s.collection, page: s.page };
 }
 
-export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
+export function BookmarkList({ scrollRef, onOpenReader }: { scrollRef: React.RefObject<HTMLDivElement | null>; onOpenReader: (id: number) => void }) {
   const filters = useBookmarkFilters();
   const { data } = useSuspenseQuery(bookmarksQueryOptions(filters));
 
@@ -112,7 +112,7 @@ export function BookmarkList({ scrollRef }: { scrollRef: React.RefObject<HTMLDiv
       />
       <Dialog open={detailOpen} onOpenChange={handleDetailOpenChange}>
         <DialogContent showCloseButton={false} className="bg-surface border border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
-          {selectedBookmark && <BookmarkDetails bookmark={selectedBookmark} />}
+          {selectedBookmark && <BookmarkDetails bookmark={selectedBookmark} onOpenReader={(id) => { setDetailOpen(false); onOpenReader(id); }} />}
         </DialogContent>
       </Dialog>
     </>

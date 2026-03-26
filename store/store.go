@@ -211,6 +211,26 @@ func migrate(db *sqlx.DB) error {
 			content_type TEXT NOT NULL DEFAULT 'image/x-icon',
 			fetched_at   INTEGER NOT NULL DEFAULT (unixepoch())
 		)`,
+
+		`CREATE TABLE IF NOT EXISTS highlight (
+			id           INTEGER PRIMARY KEY AUTOINCREMENT,
+			bookmark_id  INTEGER NOT NULL REFERENCES bookmark(id) ON DELETE CASCADE,
+			text         TEXT    NOT NULL CHECK(length(text) >= 1 AND length(text) <= 4096),
+			note         TEXT    NOT NULL DEFAULT '' CHECK(length(note) <= 4096),
+			color        TEXT    NOT NULL DEFAULT 'yellow' CHECK(color IN ('yellow','green','blue','pink')),
+			start_path   TEXT    NOT NULL,
+			start_offset INTEGER NOT NULL,
+			end_path     TEXT    NOT NULL,
+			end_offset   INTEGER NOT NULL,
+			created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+			updated_at   INTEGER NOT NULL DEFAULT (unixepoch())
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_highlight_bookmark_id ON highlight(bookmark_id)`,
+		`CREATE TRIGGER IF NOT EXISTS highlight_updated_at
+		AFTER UPDATE ON highlight
+		BEGIN
+			UPDATE highlight SET updated_at = unixepoch() WHERE id = NEW.id;
+		END`,
 	}
 
 	for _, stmt := range stmts {

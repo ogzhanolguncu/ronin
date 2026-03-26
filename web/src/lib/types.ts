@@ -43,6 +43,32 @@ export interface CollectionsResponse {
   collections: Collection[]
 }
 
+export type HighlightColor = "yellow" | "green" | "blue" | "pink"
+
+export interface Highlight {
+  id: number
+  bookmark_id: number
+  text: string
+  note: string
+  color: HighlightColor
+  start_path: string
+  start_offset: number
+  end_path: string
+  end_offset: number
+  created_at: number
+  updated_at: number
+}
+
+export interface HighlightsResponse {
+  highlights: Highlight[]
+}
+
+export interface ReadableContent {
+  html: string
+  title: string
+  source_url: string
+}
+
 export function getHostname(url: string): string {
   try {
     return new URL(url).hostname
