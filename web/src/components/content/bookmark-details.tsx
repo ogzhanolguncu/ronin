@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ExternalLinkIcon, ReaderModeIcon, ArchiveIcon, RefreshIcon } from "@/components/ui/icons";
+import { ExternalLinkIcon, ReaderModeIcon, ArchiveIcon, RefreshIcon, EditIcon } from "@/components/ui/icons";
+import { BookmarkEditForm } from "./bookmark-edit-form";
 import { formatRelativeTime } from "@/lib/format";
 import { useRegenerateAssets } from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
@@ -7,6 +9,7 @@ import { getHostname } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
+  const [editing, setEditing] = useState(false);
   const regenerate = useRegenerateAssets();
   const isRegenerating = regenerate.isPending;
 
@@ -17,6 +20,16 @@ export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
   const snapshotFailed = !isRegenerating && bookmark.snapshot_status === "failed";
   const readableFailed = !isRegenerating && bookmark.readable_status === "failed";
   const canRegenerate = snapshotFailed || readableFailed || snapshotReady || readerReady;
+
+  if (editing) {
+    return (
+      <BookmarkEditForm
+        bookmark={bookmark}
+        onCancel={() => setEditing(false)}
+        onSaved={() => setEditing(false)}
+      />
+    );
+  }
 
   return (
     <div className="px-8 pt-9 pb-9 flex flex-col max-h-[70vh] overflow-y-auto bg-surface">
@@ -40,41 +53,50 @@ export function BookmarkDetails({ bookmark }: { bookmark: Bookmark }) {
           >
             {bookmark.url}
           </a>
-          {(readerReady || readablePending || bookmark.wayback_url) && (
-            <div className="flex items-center gap-2.5 mt-3">
-              {readerReady && (
-                <a
-                  href={`/api/v1/assets/${bookmark.id}/readable`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1"
-                >
-                  <ReaderModeIcon className="w-3.5 h-3.5" />
-                  Reader mode
-                </a>
-              )}
-              {readablePending && (
-                <span className="text-xs text-muted2/50 inline-flex items-center gap-1">
-                  <ReaderModeIcon className="w-3.5 h-3.5" />
-                  Extracting...
-                </span>
-              )}
-              {(readerReady || readablePending) && bookmark.wayback_url && (
-                <span className="text-xs text-muted2/30">&middot;</span>
-              )}
-              {bookmark.wayback_url && (
-                <a
-                  href={bookmark.wayback_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1"
-                >
-                  <ExternalLinkIcon className="w-3.5 h-3.5" />
-                  Internet Archive
-                </a>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2.5 mt-3">
+            {readerReady && (
+              <a
+                href={`/api/v1/assets/${bookmark.id}/readable`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1"
+              >
+                <ReaderModeIcon className="w-3.5 h-3.5" />
+                Reader mode
+              </a>
+            )}
+            {readablePending && (
+              <span className="text-xs text-muted2/50 inline-flex items-center gap-1">
+                <ReaderModeIcon className="w-3.5 h-3.5" />
+                Extracting...
+              </span>
+            )}
+            {(readerReady || readablePending) && bookmark.wayback_url && (
+              <span className="text-xs text-muted2/30">&middot;</span>
+            )}
+            {bookmark.wayback_url && (
+              <a
+                href={bookmark.wayback_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1"
+              >
+                <ExternalLinkIcon className="w-3.5 h-3.5" />
+                Internet Archive
+              </a>
+            )}
+            {(readerReady || readablePending || bookmark.wayback_url) && (
+              <span className="text-xs text-muted2/30">&middot;</span>
+            )}
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-xs text-muted2/70 hover:text-muted2 inline-flex items-center gap-1 transition-colors duration-300"
+            >
+              <EditIcon className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
         </div>
       </div>
 

@@ -124,6 +124,32 @@ export function useRegenerateAssets() {
   })
 }
 
+type UpdateBookmarkInput = {
+  id: number
+  url: string
+  title: string
+  description: string
+  notes: string
+  tags: string
+  favorite: boolean
+  collection_id: number | null
+}
+
+export function useUpdateBookmark() {
+  return useMutation({
+    mutationFn: ({ id, ...input }: UpdateBookmarkInput) =>
+      requester<void>(`/api/v1/bookmarks/${id}`, {
+        method: "PUT",
+        body: input,
+      }),
+    onSettled: () => {
+      invalidateBookmarks()
+      queryClient.invalidateQueries({ queryKey: countsQueryOptions().queryKey })
+      queryClient.invalidateQueries({ queryKey: tagsQueryOptions().queryKey })
+    },
+  })
+}
+
 // TODO: Move those to single mutations. Bulk is causing overhead
 export function useReadBookmark() {
   return useMutation({
