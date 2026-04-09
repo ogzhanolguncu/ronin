@@ -21,21 +21,21 @@ export function computeAnchor(
 ): { path: string; offset: number } {
   // Find the nearest non-mark element ancestor
   let element: Element | null =
-    node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as Element)
+    node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as Element);
 
   while (element && isHighlightMark(element)) {
-    element = element.parentElement
+    element = element.parentElement;
   }
 
   if (!element || !root.contains(element)) {
-    return { path: "", offset: 0 }
+    return { path: "", offset: 0 };
   }
 
   // Compute character offset within this element's textContent
-  const charOffset = computeCharOffset(element, node, offset)
-  const path = computeElementPath(element, root)
+  const charOffset = computeCharOffset(element, node, offset);
+  const path = computeElementPath(element, root);
 
-  return { path, offset: charOffset }
+  return { path, offset: charOffset };
 }
 
 /**
@@ -47,24 +47,24 @@ export function resolveAnchor(
   charOffset: number,
   root: HTMLElement,
 ): { node: Node; offset: number } | null {
-  const element = resolveElementPath(path, root)
-  if (!element) return null
+  const element = resolveElementPath(path, root);
+  if (!element) return null;
 
   // Walk all text nodes within this element, counting characters
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
-  let remaining = charOffset
-  let textNode = walker.nextNode()
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let remaining = charOffset;
+  let textNode = walker.nextNode();
 
   while (textNode) {
-    const len = textNode.textContent?.length ?? 0
+    const len = textNode.textContent?.length ?? 0;
     if (remaining <= len) {
-      return { node: textNode, offset: remaining }
+      return { node: textNode, offset: remaining };
     }
-    remaining -= len
-    textNode = walker.nextNode()
+    remaining -= len;
+    textNode = walker.nextNode();
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -77,18 +77,18 @@ export function createHighlightRange(
   endOffset: number,
   root: HTMLElement,
 ): Range | null {
-  const start = resolveAnchor(startPath, startOffset, root)
-  const end = resolveAnchor(endPath, endOffset, root)
+  const start = resolveAnchor(startPath, startOffset, root);
+  const end = resolveAnchor(endPath, endOffset, root);
 
-  if (!start || !end) return null
+  if (!start || !end) return null;
 
   try {
-    const range = document.createRange()
-    range.setStart(start.node, start.offset)
-    range.setEnd(end.node, end.offset)
-    return range
+    const range = document.createRange();
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset);
+    return range;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -102,27 +102,27 @@ export function applyHighlightMark(
   color: string,
   root: HTMLElement,
 ): void {
-  const textNodes = getTextNodesInRange(range, root)
+  const textNodes = getTextNodesInRange(range, root);
 
   for (const textNode of textNodes) {
-    const nodeRange = document.createRange()
-    nodeRange.selectNodeContents(textNode)
+    const nodeRange = document.createRange();
+    nodeRange.selectNodeContents(textNode);
 
     if (textNode === range.startContainer) {
-      nodeRange.setStart(textNode, range.startOffset)
+      nodeRange.setStart(textNode, range.startOffset);
     }
     if (textNode === range.endContainer) {
-      nodeRange.setEnd(textNode, range.endOffset)
+      nodeRange.setEnd(textNode, range.endOffset);
     }
 
-    if (nodeRange.collapsed) continue
+    if (nodeRange.collapsed) continue;
 
-    const mark = document.createElement("mark")
-    mark.dataset.highlightId = String(highlightId)
-    mark.className = `highlight-${color}`
+    const mark = document.createElement("mark");
+    mark.dataset.highlightId = String(highlightId);
+    mark.className = `highlight-${color}`;
 
     try {
-      nodeRange.surroundContents(mark)
+      nodeRange.surroundContents(mark);
     } catch {
       // surroundContents can fail on partially-selected nodes; skip
     }
@@ -133,21 +133,21 @@ export function applyHighlightMark(
  * Remove all highlight <mark> elements from the root, restoring text nodes.
  */
 export function clearAllHighlightMarks(root: HTMLElement): void {
-  const marks = root.querySelectorAll("mark[data-highlight-id]")
+  const marks = root.querySelectorAll("mark[data-highlight-id]");
   marks.forEach((mark) => {
-    const parent = mark.parentNode!
+    const parent = mark.parentNode!;
     while (mark.firstChild) {
-      parent.insertBefore(mark.firstChild, mark)
+      parent.insertBefore(mark.firstChild, mark);
     }
-    parent.removeChild(mark)
-  })
-  root.normalize()
+    parent.removeChild(mark);
+  });
+  root.normalize();
 }
 
 // ---- Internal helpers ----
 
 function isHighlightMark(el: Element): boolean {
-  return el.tagName === "MARK" && el.hasAttribute("data-highlight-id")
+  return el.tagName === "MARK" && el.hasAttribute("data-highlight-id");
 }
 
 /**
@@ -159,28 +159,28 @@ function computeCharOffset(
   targetNode: Node,
   targetOffset: number,
 ): number {
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
-  let charCount = 0
-  let textNode = walker.nextNode()
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let charCount = 0;
+  let textNode = walker.nextNode();
 
   while (textNode) {
     if (textNode === targetNode) {
-      return charCount + targetOffset
+      return charCount + targetOffset;
     }
-    charCount += textNode.textContent?.length ?? 0
-    textNode = walker.nextNode()
+    charCount += textNode.textContent?.length ?? 0;
+    textNode = walker.nextNode();
   }
 
   // If targetNode is the element itself (offset = child index), sum text up to that child
   if (targetNode === element) {
-    let count = 0
+    let count = 0;
     for (let i = 0; i < targetOffset && i < element.childNodes.length; i++) {
-      count += element.childNodes[i].textContent?.length ?? 0
+      count += element.childNodes[i].textContent?.length ?? 0;
     }
-    return count
+    return count;
   }
 
-  return charCount
+  return charCount;
 }
 
 /**
@@ -188,37 +188,37 @@ function computeCharOffset(
  * Skips <mark> highlight elements — they are treated as transparent wrappers.
  */
 function computeElementPath(element: Element, root: HTMLElement): string {
-  if (element === root) return ""
+  if (element === root) return "";
 
-  const parts: string[] = []
-  let current: Element | null = element
+  const parts: string[] = [];
+  let current: Element | null = element;
 
   while (current && current !== root) {
     // Skip highlight marks
     if (isHighlightMark(current)) {
-      current = current.parentElement
-      continue
+      current = current.parentElement;
+      continue;
     }
 
-    const parent = current.parentElement
-    if (!parent) break
+    const parent = current.parentElement;
+    if (!parent) break;
 
-    const tag = current.tagName.toLowerCase()
+    const tag = current.tagName.toLowerCase();
     const siblings = Array.from(parent.children).filter(
       (el) => el.tagName.toLowerCase() === tag && !isHighlightMark(el),
-    )
+    );
 
     if (siblings.length > 1) {
-      const idx = siblings.indexOf(current) + 1
-      parts.unshift(`${tag}:nth-of-type(${idx})`)
+      const idx = siblings.indexOf(current) + 1;
+      parts.unshift(`${tag}:nth-of-type(${idx})`);
     } else {
-      parts.unshift(tag)
+      parts.unshift(tag);
     }
 
-    current = parent
+    current = parent;
   }
 
-  return parts.join(" > ")
+  return parts.join(" > ");
 }
 
 /**
@@ -226,27 +226,24 @@ function computeElementPath(element: Element, root: HTMLElement): string {
  * Uses :scope > to ensure the path is anchored to root's direct children,
  * preventing depth-first matches of nested elements with the same selector.
  */
-function resolveElementPath(
-  path: string,
-  root: HTMLElement,
-): Element | null {
-  if (!path) return root
-  return root.querySelector(`:scope > ${path}`) ?? root.querySelector(path)
+function resolveElementPath(path: string, root: HTMLElement): Element | null {
+  if (!path) return root;
+  return root.querySelector(`:scope > ${path}`) ?? root.querySelector(path);
 }
 
 /**
  * Get all text nodes within a Range, in document order.
  */
 function getTextNodesInRange(range: Range, root: HTMLElement): Text[] {
-  const textNodes: Text[] = []
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const textNodes: Text[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 
-  let node: Node | null = walker.nextNode()
+  let node: Node | null = walker.nextNode();
   while (node) {
     if (range.intersectsNode(node)) {
-      textNodes.push(node as Text)
+      textNodes.push(node as Text);
     }
-    node = walker.nextNode()
+    node = walker.nextNode();
   }
-  return textNodes
+  return textNodes;
 }

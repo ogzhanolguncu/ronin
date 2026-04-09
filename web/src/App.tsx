@@ -7,7 +7,7 @@ import { QueryBoundary } from "./components/query-boundary";
 
 function App() {
   const [isUnlocked, setIsUnlocked] = useState(
-    () => import.meta.env.DEV || window.__AUTH__ === "authenticated"
+    () => import.meta.env.DEV || window.__AUTH__ === "authenticated",
   );
   const [readerBookmarkId, setReaderBookmarkId] = useState<number | null>(null);
 

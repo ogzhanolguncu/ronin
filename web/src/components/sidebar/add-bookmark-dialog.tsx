@@ -2,7 +2,10 @@ import { useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { requester } from "@/lib/requester";
-import { bookmarkSchema, type BookmarkFormValues } from "@/lib/schemas/bookmark";
+import {
+  bookmarkSchema,
+  type BookmarkFormValues,
+} from "@/lib/schemas/bookmark";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +15,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FormInput, FormTextarea, FormSelect } from "@/components/ui/form-input";
+import {
+  FormInput,
+  FormTextarea,
+  FormSelect,
+} from "@/components/ui/form-input";
 import { FormTagInput } from "@/components/ui/tag-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
@@ -23,8 +30,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { tagsQueryOptions } from "@/lib/queries/tags";
 
 export function AddBookmarkDialog() {
-  const { data: tags } = useSuspenseQuery(tagsQueryOptions())
-  const { data: collections } = useSuspenseQuery(collectionsQueryOptions())
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions());
+  const { data: collections } = useSuspenseQuery(collectionsQueryOptions());
   const [open, setOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [fetchingMeta, setFetchingMeta] = useState(false);
@@ -69,9 +76,12 @@ export function AddBookmarkDialog() {
     fetchingMetaRef.current = true;
     setFetchingMeta(true);
     try {
-      const meta = await requester<{ title?: string; description?: string }>("/api/v1/metadata", {
-        params: { url: normalized },
-      });
+      const meta = await requester<{ title?: string; description?: string }>(
+        "/api/v1/metadata",
+        {
+          params: { url: normalized },
+        },
+      );
       if (meta.title && !getValues("title")) {
         setValue("title", meta.title);
       }
@@ -122,31 +132,40 @@ export function AddBookmarkDialog() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2.5 text-xs text-muted2/40 transition-colors hover:text-muted2"
+          className="text-muted2/40 hover:text-muted2 flex items-center gap-2.5 text-xs transition-colors"
         >
           <PlusIcon className="h-3 w-3" />
           Add bookmark
         </button>
       </DialogTrigger>
-      <DialogContent showCloseButton={false} className="bg-surface border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
+      <DialogContent
+        showCloseButton={false}
+        className="bg-surface border-border-soft max-w-[calc(100vw-32px)] min-w-[550px] gap-0 overflow-hidden p-0 shadow-none sm:max-w-md"
+      >
         <div className="px-6 pt-8 pb-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-medium">Add bookmark</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+            <DialogTitle className="text-base font-medium">
+              Add bookmark
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
               Save a link to your collection.
             </DialogDescription>
           </DialogHeader>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="px-6 py-4 flex flex-col gap-6">
+          <div className="flex flex-col gap-6 px-6 py-4">
             <FormInput
               label="URL"
               required
               id="url"
               placeholder="https://brandur.org/interfaces"
               error={errors.url?.message}
-              rightIcon={fetchingMeta ? <Loader2 className="animate-spin text-muted2/40" /> : undefined}
+              rightIcon={
+                fetchingMeta ? (
+                  <Loader2 className="text-muted2/40 animate-spin" />
+                ) : undefined
+              }
               autoFocus
               {...urlRegistration}
               onBlur={(e) => {
@@ -200,12 +219,21 @@ export function AddBookmarkDialog() {
                   label="Tags"
                   id="tags"
                   name={field.name}
-                  allTags={tags.map(t => t.name)}
+                  allTags={tags.map((t) => t.name)}
                   value={field.value}
                   onBlur={field.onBlur}
                   onChange={(tags) => field.onChange(tags)}
                   placeholder="#engineering, #api-design"
-                  hint={<>Enter any number of tags separated by space and <span className="text-muted-foreground font-medium">without</span> the hash (#). If a tag does not exist it will be automatically created.</>}
+                  hint={
+                    <>
+                      Enter any number of tags separated by space and{" "}
+                      <span className="text-muted-foreground font-medium">
+                        without
+                      </span>{" "}
+                      the hash (#). If a tag does not exist it will be
+                      automatically created.
+                    </>
+                  }
                 />
               )}
             />
@@ -217,14 +245,17 @@ export function AddBookmarkDialog() {
                 <div>
                   <button
                     type="button"
-                    className="text-sm font-medium text-foreground/80 cursor-pointer select-none flex items-center gap-0.5"
+                    className="text-foreground/80 flex cursor-pointer items-center gap-0.5 text-sm font-medium select-none"
                     onClick={() => setNotesOpen((o) => !o)}
                   >
-                    <ChevronRight className="size-4 text-muted2/50 transition-transform duration-200 data-[open]:rotate-90" data-open={notesOpen || undefined} />
+                    <ChevronRight
+                      className="text-muted2/50 size-4 transition-transform duration-200 data-[open]:rotate-90"
+                      data-open={notesOpen || undefined}
+                    />
                     Notes
                   </button>
                   {notesOpen && (
-                    <div className="pt-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="animate-in fade-in slide-in-from-top-1 pt-2 duration-150">
                       <FormTextarea
                         hint="Supports Markdown"
                         id="notes"
@@ -259,8 +290,16 @@ export function AddBookmarkDialog() {
             </div>
           </div>
           <div className="p-6 pb-7">
-            <Button type="submit" className="w-full h-9" disabled={createBookmark.isPending}>
-              {createBookmark.isPending ? <Loader2 className="animate-spin size-4" /> : "Save"}
+            <Button
+              type="submit"
+              className="h-9 w-full"
+              disabled={createBookmark.isPending}
+            >
+              {createBookmark.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </form>

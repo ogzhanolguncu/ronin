@@ -1,55 +1,85 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react"
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query"
-import DOMPurify from "dompurify"
-import { readableContentQueryOptions, highlightsQueryOptions, useCreateHighlight, useUpdateHighlight, useDeleteHighlight } from "@/lib/queries/highlights"
-import { computeAnchor, createHighlightRange, applyHighlightMark, clearAllHighlightMarks } from "@/lib/highlight-anchoring"
-import { formatRelativeTime } from "@/lib/format"
-import { cn } from "@/lib/utils"
-import { HighlighterIcon } from "@/components/ui/icons"
-import type { Highlight, HighlightColor } from "@/lib/types"
-import "./reader-view.css"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import DOMPurify from "dompurify";
+import {
+  readableContentQueryOptions,
+  highlightsQueryOptions,
+  useCreateHighlight,
+  useUpdateHighlight,
+  useDeleteHighlight,
+} from "@/lib/queries/highlights";
+import {
+  computeAnchor,
+  createHighlightRange,
+  applyHighlightMark,
+  clearAllHighlightMarks,
+} from "@/lib/highlight-anchoring";
+import { formatRelativeTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import {
+  HighlighterIcon,
+  ChevronLeftIcon,
+  CloseIcon,
+} from "@/components/ui/icons";
+import type { Highlight, HighlightColor } from "@/lib/types";
+import "./reader-view.css";
 
-const HIGHLIGHT_COLORS: { value: HighlightColor; color: string; label: string }[] = [
+const HIGHLIGHT_COLORS: {
+  value: HighlightColor;
+  color: string;
+  label: string;
+}[] = [
   { value: "yellow", color: "oklch(0.78 0.08 80)", label: "Kitsune" },
   { value: "green", color: "oklch(0.72 0.08 145)", label: "Matcha" },
   { value: "blue", color: "oklch(0.68 0.08 250)", label: "Ai" },
   { value: "pink", color: "oklch(0.72 0.07 310)", label: "Fuji" },
-]
+];
 
 function getHighlightColor(value: HighlightColor): string {
-  return HIGHLIGHT_COLORS.find((c) => c.value === value)?.color ?? HIGHLIGHT_COLORS[0].color
+  return (
+    HIGHLIGHT_COLORS.find((c) => c.value === value)?.color ??
+    HIGHLIGHT_COLORS[0].color
+  );
 }
 
 type SelectionAnchor = {
-  text: string
-  startPath: string
-  startOffset: number
-  endPath: string
-  endOffset: number
-  rect: DOMRect
-}
+  text: string;
+  startPath: string;
+  startOffset: number;
+  endPath: string;
+  endOffset: number;
+  rect: DOMRect;
+};
 
 export function ReaderView({
   bookmarkId,
   onClose,
 }: {
-  bookmarkId: number
-  onClose: () => void
+  bookmarkId: number;
+  onClose: () => void;
 }) {
-  const { data: content } = useSuspenseQuery(readableContentQueryOptions(bookmarkId))
-  const { data: highlights = [] } = useQuery(highlightsQueryOptions(bookmarkId))
+  const { data: content } = useSuspenseQuery(
+    readableContentQueryOptions(bookmarkId),
+  );
+  const { data: highlights = [] } = useQuery(
+    highlightsQueryOptions(bookmarkId),
+  );
 
-  const articleRef = useRef<HTMLDivElement>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [selection, setSelection] = useState<SelectionAnchor | null>(null)
-  const [activeHighlightId, setActiveHighlightId] = useState<number | null>(null)
-  const [editingHighlight, setEditingHighlight] = useState<Highlight | null>(null)
-  const [editNote, setEditNote] = useState("")
-  const [editColor, setEditColor] = useState<HighlightColor>("yellow")
+  const articleRef = useRef<HTMLDivElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selection, setSelection] = useState<SelectionAnchor | null>(null);
+  const [activeHighlightId, setActiveHighlightId] = useState<number | null>(
+    null,
+  );
+  const [editingHighlight, setEditingHighlight] = useState<Highlight | null>(
+    null,
+  );
+  const [editNote, setEditNote] = useState("");
+  const [editColor, setEditColor] = useState<HighlightColor>("yellow");
 
-  const createHighlight = useCreateHighlight()
-  const updateHighlight = useUpdateHighlight()
-  const deleteHighlight = useDeleteHighlight()
+  const createHighlight = useCreateHighlight();
+  const updateHighlight = useUpdateHighlight();
+  const deleteHighlight = useDeleteHighlight();
 
   const sanitizedHTML = useMemo(
     () =>
@@ -58,14 +88,14 @@ export function ReaderView({
         ADD_ATTR: ["data-highlight-id"],
       }),
     [content.html],
-  )
+  );
 
   // Apply highlights to DOM after render
   useEffect(() => {
-    const root = articleRef.current
-    if (!root || !highlights) return
+    const root = articleRef.current;
+    if (!root || !highlights) return;
 
-    clearAllHighlightMarks(root)
+    clearAllHighlightMarks(root);
 
     for (const hl of highlights) {
       const range = createHighlightRange(
@@ -74,47 +104,52 @@ export function ReaderView({
         hl.end_path,
         hl.end_offset,
         root,
-      )
-      if (!range) continue
-      applyHighlightMark(range, hl.id, hl.color, root)
+      );
+      if (!range) continue;
+      applyHighlightMark(range, hl.id, hl.color, root);
     }
-  }, [sanitizedHTML, highlights])
+  }, [sanitizedHTML, highlights]);
 
   // Handle active highlight styling
   useEffect(() => {
-    const root = articleRef.current
-    if (!root) return
+    const root = articleRef.current;
+    if (!root) return;
 
     root.querySelectorAll("mark.highlight-active").forEach((el) => {
-      el.classList.remove("highlight-active")
-    })
+      el.classList.remove("highlight-active");
+    });
 
     if (activeHighlightId !== null) {
-      root.querySelectorAll(`mark[data-highlight-id="${activeHighlightId}"]`).forEach((el) => {
-        el.classList.add("highlight-active")
-      })
+      root
+        .querySelectorAll(`mark[data-highlight-id="${activeHighlightId}"]`)
+        .forEach((el) => {
+          el.classList.add("highlight-active");
+        });
     }
-  }, [activeHighlightId])
+  }, [activeHighlightId]);
 
   // Handle text selection
   const handleMouseUp = useCallback(() => {
-    const sel = window.getSelection()
-    const root = articleRef.current
+    const sel = window.getSelection();
+    const root = articleRef.current;
     if (!sel || sel.isCollapsed || !root || !sel.rangeCount) {
-      return
+      return;
     }
 
-    const range = sel.getRangeAt(0)
-    if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) {
-      return
+    const range = sel.getRangeAt(0);
+    if (
+      !root.contains(range.startContainer) ||
+      !root.contains(range.endContainer)
+    ) {
+      return;
     }
 
-    const text = sel.toString().trim()
-    if (!text || text.length > 4096) return
+    const text = sel.toString().trim();
+    if (!text || text.length > 4096) return;
 
-    const start = computeAnchor(range.startContainer, range.startOffset, root)
-    const end = computeAnchor(range.endContainer, range.endOffset, root)
-    const rect = range.getBoundingClientRect()
+    const start = computeAnchor(range.startContainer, range.startOffset, root);
+    const end = computeAnchor(range.endContainer, range.endOffset, root);
+    const rect = range.getBoundingClientRect();
 
     setSelection({
       text,
@@ -123,12 +158,12 @@ export function ReaderView({
       endPath: end.path,
       endOffset: end.offset,
       rect,
-    })
-  }, [])
+    });
+  }, []);
 
   const handleHighlightCreate = useCallback(
     (color: HighlightColor) => {
-      if (!selection) return
+      if (!selection) return;
 
       createHighlight.mutate({
         bookmark_id: bookmarkId,
@@ -139,117 +174,115 @@ export function ReaderView({
         start_offset: selection.startOffset,
         end_path: selection.endPath,
         end_offset: selection.endOffset,
-      })
+      });
 
-      window.getSelection()?.removeAllRanges()
-      setSelection(null)
+      window.getSelection()?.removeAllRanges();
+      setSelection(null);
     },
     [selection, bookmarkId, createHighlight],
-  )
+  );
 
   const dismissSelection = useCallback(() => {
-    setSelection(null)
-    window.getSelection()?.removeAllRanges()
-  }, [])
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+  }, []);
 
   // Click on a highlight mark in the article
   const handleArticleClick = useCallback(
     (e: React.MouseEvent) => {
-      const mark = (e.target as HTMLElement).closest("mark[data-highlight-id]")
-      if (!mark) return
+      const mark = (e.target as HTMLElement).closest("mark[data-highlight-id]");
+      if (!mark) return;
 
-      const hlId = Number(mark.getAttribute("data-highlight-id"))
-      const hl = highlights?.find((h) => h.id === hlId)
-      if (!hl) return
+      const hlId = Number(mark.getAttribute("data-highlight-id"));
+      const hl = highlights?.find((h) => h.id === hlId);
+      if (!hl) return;
 
-      setActiveHighlightId(hlId)
-      setEditingHighlight(hl)
-      setEditNote(hl.note)
-      setEditColor(hl.color)
-      setSidebarOpen(true)
+      setActiveHighlightId(hlId);
+      setEditingHighlight(hl);
+      setEditNote(hl.note);
+      setEditColor(hl.color);
+      setSidebarOpen(true);
     },
     [highlights],
-  )
+  );
 
   // Scroll to a highlight in the article
   const scrollToHighlight = useCallback((hlId: number) => {
-    const root = articleRef.current
-    if (!root) return
+    const root = articleRef.current;
+    if (!root) return;
 
-    const mark = root.querySelector(`mark[data-highlight-id="${hlId}"]`)
+    const mark = root.querySelector(`mark[data-highlight-id="${hlId}"]`);
     if (mark) {
-      mark.scrollIntoView({ behavior: "smooth", block: "center" })
-      setActiveHighlightId(hlId)
+      mark.scrollIntoView({ behavior: "smooth", block: "center" });
+      setActiveHighlightId(hlId);
     }
-  }, [])
+  }, []);
 
   const handleSaveNote = useCallback(() => {
-    if (!editingHighlight) return
+    if (!editingHighlight) return;
     updateHighlight.mutate({
       id: editingHighlight.id,
       bookmark_id: bookmarkId,
       note: editNote,
       color: editColor,
-    })
-    setEditingHighlight(null)
-    setActiveHighlightId(null)
-  }, [editingHighlight, editNote, editColor, bookmarkId, updateHighlight])
+    });
+    setEditingHighlight(null);
+    setActiveHighlightId(null);
+  }, [editingHighlight, editNote, editColor, bookmarkId, updateHighlight]);
 
   const handleDeleteHighlight = useCallback(
     (hl: Highlight) => {
-      deleteHighlight.mutate({ id: hl.id, bookmark_id: bookmarkId })
+      deleteHighlight.mutate({ id: hl.id, bookmark_id: bookmarkId });
       if (editingHighlight?.id === hl.id) {
-        setEditingHighlight(null)
-        setActiveHighlightId(null)
+        setEditingHighlight(null);
+        setActiveHighlightId(null);
       }
     },
     [bookmarkId, deleteHighlight, editingHighlight],
-  )
+  );
 
   // Close sidebar on Escape
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         if (selection) {
-          dismissSelection()
+          dismissSelection();
         } else if (sidebarOpen) {
-          setSidebarOpen(false)
-          setEditingHighlight(null)
-          setActiveHighlightId(null)
+          setSidebarOpen(false);
+          setEditingHighlight(null);
+          setActiveHighlightId(null);
         } else {
-          onClose()
+          onClose();
         }
       }
     }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [selection, sidebarOpen, onClose, dismissSelection])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selection, sidebarOpen, onClose, dismissSelection]);
 
   // Dismiss selection when clicking outside toolbar
   useEffect(() => {
-    if (!selection) return
+    if (!selection) return;
     function handleClickOutside(e: MouseEvent) {
-      const toolbar = document.getElementById("highlight-toolbar")
+      const toolbar = document.getElementById("highlight-toolbar");
       if (toolbar && !toolbar.contains(e.target as Node)) {
-        setSelection(null)
+        setSelection(null);
       }
     }
-    window.addEventListener("mousedown", handleClickOutside)
-    return () => window.removeEventListener("mousedown", handleClickOutside)
-  }, [selection])
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [selection]);
 
   return (
-    <div className="fixed inset-0 z-50 flex reader-bg">
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Navigation */}
-        <div className="flex items-center justify-between h-11 px-5 shrink-0 border-b border-border-soft/50">
+    <div className="reader-bg fixed inset-0 z-50 flex">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="border-border-soft/50 flex h-11 shrink-0 items-center justify-between border-b px-5">
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-muted2 hover:text-foreground transition-colors duration-200 inline-flex items-center gap-1.5"
+            className="text-muted2 hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors duration-300"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            <ChevronLeftIcon className="size-3.5" strokeWidth={1.5} />
             Back
           </button>
           <div className="flex items-center gap-3">
@@ -258,7 +291,7 @@ export function ReaderView({
                 href={content.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-muted2 hover:text-foreground transition-colors duration-200"
+                className="text-muted2 hover:text-foreground text-sm transition-colors duration-300"
               >
                 Source
               </a>
@@ -267,7 +300,7 @@ export function ReaderView({
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className={cn(
-                "transition-colors duration-200 inline-flex items-center gap-1.5 text-sm",
+                "inline-flex items-center gap-1.5 text-sm transition-colors duration-300",
                 sidebarOpen
                   ? "text-primary"
                   : "text-muted2 hover:text-foreground",
@@ -279,8 +312,7 @@ export function ReaderView({
           </div>
         </div>
 
-        {/* Article */}
-        <div className="flex-1 overflow-y-auto thin-scrollbar py-12 reader-scroll-mist">
+        <div className="thin-scrollbar reader-scroll-mist flex-1 overflow-y-auto py-12">
           <div className="reader-article">
             <h1 className="reader-title">{content.title}</h1>
             {content.source_url && (
@@ -300,83 +332,81 @@ export function ReaderView({
         </div>
       </div>
 
-      {/* Highlight sidebar */}
       {sidebarOpen && (
-        <aside className="w-80 bg-surface flex flex-col overflow-hidden shrink-0 reader-sidebar-enter paper-grain border-l border-border-soft/60 sidebar-edge">
-          <div className="h-11 px-4 border-b border-border-soft/50 flex items-center justify-between shrink-0">
+        <aside className="bg-surface reader-sidebar-enter paper-grain border-border-soft/60 sidebar-edge flex w-80 shrink-0 flex-col overflow-hidden border-l">
+          <div className="border-border-soft/50 flex h-11 shrink-0 items-center justify-between border-b px-4">
             <button
               type="button"
               onClick={() => {
-                setSidebarOpen(false)
-                setEditingHighlight(null)
-                setActiveHighlightId(null)
+                setSidebarOpen(false);
+                setEditingHighlight(null);
+                setActiveHighlightId(null);
               }}
-              className="text-muted2 hover:text-foreground transition-colors duration-200 p-1 ml-auto"
+              className="text-muted2 hover:text-foreground ml-auto p-1 transition-colors duration-300"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              <CloseIcon className="size-3.5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto thin-scrollbar content-scroll-mist">
+          <div className="thin-scrollbar content-scroll-mist flex-1 overflow-y-auto">
             {!highlights?.length && (
-              <p className="text-xs text-muted-foreground px-5 py-8 text-center leading-relaxed">
+              <p className="text-muted-foreground px-5 py-10 text-center text-sm leading-relaxed">
                 Select text to highlight
               </p>
             )}
 
             {highlights?.map((hl) => {
-              const isActive = activeHighlightId === hl.id
-              const hlColor = getHighlightColor(hl.color)
+              const isActive = activeHighlightId === hl.id;
+              const hlColor = getHighlightColor(hl.color);
               return (
                 <div
                   key={hl.id}
                   className={cn(
-                    "px-4 py-3 cursor-pointer transition-colors duration-200 flex items-start gap-2.5",
-                    isActive
-                      ? "bg-surface2"
-                      : "hover:bg-surface2/50",
+                    "flex cursor-pointer items-start gap-2.5 px-4 py-3 transition-colors duration-200",
+                    isActive ? "bg-surface2" : "hover:bg-surface2/50",
                   )}
                   onClick={() => {
-                    scrollToHighlight(hl.id)
-                    setEditingHighlight(hl)
-                    setEditNote(hl.note)
-                    setEditColor(hl.color)
+                    scrollToHighlight(hl.id);
+                    setEditingHighlight(hl);
+                    setEditNote(hl.note);
+                    setEditColor(hl.color);
                   }}
                 >
-                  {/* Color dot — like collections */}
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full mt-0.5 dot-glow"
-                    style={{ backgroundColor: hlColor, color: hlColor }}
-                  />
-
                   <div className="min-w-0 flex-1">
-                    {/* Quoted excerpt */}
-                    <p className={cn(
-                      "text-sm line-clamp-3 leading-relaxed transition-colors",
-                      isActive ? "text-foreground" : "text-text2",
-                    )}>
-                      {hl.text}
-                    </p>
-
-                    {/* Note */}
+                    <div className="flex items-start gap-2">
+                      <span
+                        className="dot-glow mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: hlColor, color: hlColor }}
+                      />
+                      <p
+                        className={cn(
+                          "line-clamp-3 text-sm leading-relaxed transition-colors",
+                          isActive ? "text-foreground" : "text-text2",
+                        )}
+                      >
+                        {hl.text}
+                      </p>
+                    </div>
                     {hl.note && (
-                      <p className="text-xs text-muted2 mt-1.5 line-clamp-2 leading-relaxed italic">
+                      <p className="text-text2 mt-4 line-clamp-2 text-xs leading-relaxed italic">
                         {hl.note}
                       </p>
                     )}
 
-                    <span className="text-xs text-muted2 mt-1.5 block font-mono">
+                    <span className="text-text2 mt-4 block font-mono text-xs">
                       {formatRelativeTime(hl.created_at)}
                     </span>
 
-                    {/* Edit form */}
                     {editingHighlight?.id === hl.id && (
-                      <div className="mt-3 pt-3 border-t border-border-soft/50 space-y-3" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="border-border-soft/50 mt-3 space-y-3 border-t pt-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <textarea
                           value={editNote}
                           onChange={(e) => setEditNote(e.target.value)}
                           placeholder="Add a note..."
-                          className="w-full text-xs bg-background border border-border-soft/50 rounded-sm px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring min-h-[64px] transition-colors duration-200 placeholder:text-muted-foreground"
+                          className="bg-background border-border-soft/50 focus:ring-ring placeholder:text-muted-foreground min-h-[64px] w-full resize-none rounded-sm border px-3 py-2 text-xs transition-colors duration-200 focus:ring-1 focus:outline-none"
                           rows={3}
                         />
                         <div className="flex items-center gap-2">
@@ -386,15 +416,19 @@ export function ReaderView({
                               type="button"
                               onClick={() => setEditColor(c.value)}
                               className={cn(
-                                "size-3 rounded-full transition-all duration-200 dot-glow",
+                                "dot-glow size-3 rounded-full transition-all duration-200",
                                 editColor === c.value
-                                  ? "ring-2 ring-offset-2 ring-offset-surface scale-110"
+                                  ? "ring-offset-surface scale-110 ring-2 ring-offset-2"
                                   : "opacity-65 hover:opacity-80",
                               )}
                               style={{
                                 backgroundColor: c.color,
                                 color: c.color,
-                                ...(editColor === c.value ? { "--tw-ring-color": c.color } as React.CSSProperties : {}),
+                                ...(editColor === c.value
+                                  ? ({
+                                      "--tw-ring-color": c.color,
+                                    } as React.CSSProperties)
+                                  : {}),
                               }}
                             />
                           ))}
@@ -402,14 +436,14 @@ export function ReaderView({
                           <button
                             type="button"
                             onClick={() => handleDeleteHighlight(hl)}
-                            className="text-xs text-muted2 hover:text-shu transition-colors duration-200"
+                            className="text-text2 hover:text-shu text-xs transition-colors duration-300"
                           >
                             Delete
                           </button>
                           <button
                             type="button"
                             onClick={handleSaveNote}
-                            className="text-xs text-primary font-medium hover:text-accent-hover transition-colors duration-200"
+                            className="text-primary hover:text-accent-hover text-xs font-medium transition-colors duration-200"
                           >
                             Save
                           </button>
@@ -418,13 +452,12 @@ export function ReaderView({
                     )}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </aside>
       )}
 
-      {/* Floating highlight toolbar */}
       {selection && (
         <FloatingToolbar
           rect={selection.rect}
@@ -432,42 +465,42 @@ export function ReaderView({
         />
       )}
     </div>
-  )
+  );
 }
 
 function FloatingToolbar({
   rect,
   onSelect,
 }: {
-  rect: DOMRect
-  onSelect: (color: HighlightColor) => void
+  rect: DOMRect;
+  onSelect: (color: HighlightColor) => void;
 }) {
-  const toolbarRef = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
-    const toolbar = toolbarRef.current
-    if (!toolbar) return
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
 
-    const toolbarRect = toolbar.getBoundingClientRect()
-    let top = rect.top - toolbarRect.height - 8
-    let left = rect.left + rect.width / 2 - toolbarRect.width / 2
+    const toolbarRect = toolbar.getBoundingClientRect();
+    let top = rect.top - toolbarRect.height - 8;
+    let left = rect.left + rect.width / 2 - toolbarRect.width / 2;
 
     // Keep within viewport
-    if (top < 8) top = rect.bottom + 8
-    if (left < 8) left = 8
+    if (top < 8) top = rect.bottom + 8;
+    if (left < 8) left = 8;
     if (left + toolbarRect.width > window.innerWidth - 8) {
-      left = window.innerWidth - toolbarRect.width - 8
+      left = window.innerWidth - toolbarRect.width - 8;
     }
 
-    setPosition({ top, left })
-  }, [rect])
+    setPosition({ top, left });
+  }, [rect]);
 
   return (
     <div
       id="highlight-toolbar"
       ref={toolbarRef}
-      className="fixed z-[100] flex items-center gap-1.5 bg-surface/90 backdrop-blur-sm border border-border-soft rounded-sm shadow-sm px-2 py-1.5 reader-toolbar-enter"
+      className="bg-surface/90 border-border-soft reader-toolbar-enter fixed z-[100] flex items-center gap-1.5 rounded-sm border px-2 py-1.5 shadow-sm backdrop-blur-sm"
       style={{ top: position.top, left: position.left }}
     >
       {HIGHLIGHT_COLORS.map((c) => (
@@ -475,12 +508,11 @@ function FloatingToolbar({
           key={c.value}
           type="button"
           onClick={() => onSelect(c.value)}
-          className="size-4 rounded-full transition-all duration-200 dot-glow ring-2 ring-offset-2 ring-offset-surface hover:scale-110"
+          className="dot-glow ring-offset-surface size-4 rounded-full ring-2 ring-offset-2 transition-all duration-200 hover:scale-110"
           style={{ backgroundColor: c.color, color: c.color }}
           title={c.label}
-
         />
       ))}
     </div>
-  )
+  );
 }

@@ -6,20 +6,43 @@ import { Pagination } from "./pagination";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
-import { bookmarksQueryOptions, useDeleteBookmark, useArchiveBookmark, useFavoriteBookmark, useReadBookmark, type BookmarkFilters } from "@/lib/queries/bookmarks";
+import {
+  bookmarksQueryOptions,
+  useDeleteBookmark,
+  useArchiveBookmark,
+  useFavoriteBookmark,
+  useReadBookmark,
+  type BookmarkFilters,
+} from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
 import { Interlude } from "@/components/interlude";
 
 function useBookmarkFilters(): BookmarkFilters {
   const [s] = useUrlState();
-  return { q: s.q, tags: s.tags, domains: s.domains, view: s.view, sort: s.sort, collection: s.collection, page: s.page };
+  return {
+    q: s.q,
+    tags: s.tags,
+    domains: s.domains,
+    view: s.view,
+    sort: s.sort,
+    collection: s.collection,
+    page: s.page,
+  };
 }
 
-export function BookmarkList({ scrollRef, onOpenReader }: { scrollRef: React.RefObject<HTMLDivElement | null>; onOpenReader: (id: number) => void }) {
+export function BookmarkList({
+  scrollRef,
+  onOpenReader,
+}: {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  onOpenReader: (id: number) => void;
+}) {
   const filters = useBookmarkFilters();
   const { data } = useSuspenseQuery(bookmarksQueryOptions(filters));
 
-  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
+  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
+    null,
+  );
   const [detailOpen, setDetailOpen] = useState(false);
 
   const deleteMutation = useDeleteBookmark();
@@ -53,7 +76,11 @@ export function BookmarkList({ scrollRef, onOpenReader }: { scrollRef: React.Ref
     .map((b) => {
       const pf = pendingFavorites.find((v) => v?.id === b.id);
       const pr = pendingReads.find((v) => v?.id === b.id);
-      return { ...b, ...(pf && { favorite: pf.favorite }), ...(pr && { read: pr.read }) };
+      return {
+        ...b,
+        ...(pf && { favorite: pf.favorite }),
+        ...(pr && { read: pr.read }),
+      };
     });
   const meta = data.meta;
 
@@ -77,7 +104,7 @@ export function BookmarkList({ scrollRef, onOpenReader }: { scrollRef: React.Ref
   if (bookmarks.length === 0 && meta.page === 1) {
     return (
       <Interlude title="The path is clear">
-        <p className="text-sm text-muted2 font-mono font-light">
+        <p className="text-muted2 font-mono text-sm font-light">
           Save your first bookmark to leave a mark
         </p>
       </Interlude>
@@ -91,17 +118,25 @@ export function BookmarkList({ scrollRef, onOpenReader }: { scrollRef: React.Ref
           <BookmarkItem
             key={bookmark.id}
             bookmark={bookmark}
-            onTagClick={(tag) => urlState.set((prev) => ({
-              tags: prev.tags.includes(tag)
-                ? prev.tags.filter((t) => t !== tag)
-                : [...prev.tags, tag],
-              page: 1,
-            }))}
+            onTagClick={(tag) =>
+              urlState.set((prev) => ({
+                tags: prev.tags.includes(tag)
+                  ? prev.tags.filter((t) => t !== tag)
+                  : [...prev.tags, tag],
+                page: 1,
+              }))
+            }
             onViewClick={handleViewClick}
-            onFavoriteClick={(b) => favoriteMutation.mutate({ id: b.id, favorite: !b.favorite })}
+            onFavoriteClick={(b) =>
+              favoriteMutation.mutate({ id: b.id, favorite: !b.favorite })
+            }
             onDeleteClick={(b) => deleteMutation.mutate(b.id)}
-            onArchiveClick={(b) => archiveMutation.mutate({ id: b.id, archived: !b.archived })}
-            onReadClick={(b) => { if (!b.read) readMutation.mutate({ id: b.id, read: true }) }}
+            onArchiveClick={(b) =>
+              archiveMutation.mutate({ id: b.id, archived: !b.archived })
+            }
+            onReadClick={(b) => {
+              if (!b.read) readMutation.mutate({ id: b.id, read: true });
+            }}
           />
         ))}
       </div>
@@ -111,8 +146,19 @@ export function BookmarkList({ scrollRef, onOpenReader }: { scrollRef: React.Ref
         onPageChange={handlePageChange}
       />
       <Dialog open={detailOpen} onOpenChange={handleDetailOpenChange}>
-        <DialogContent showCloseButton={false} className="bg-surface border border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[550px]">
-          {selectedBookmark && <BookmarkDetails bookmark={selectedBookmark} onOpenReader={(id) => { setDetailOpen(false); onOpenReader(id); }} />}
+        <DialogContent
+          showCloseButton={false}
+          className="bg-surface border-border-soft max-w-[calc(100vw-32px)] min-w-[550px] gap-0 overflow-hidden border p-0 shadow-none sm:max-w-md"
+        >
+          {selectedBookmark && (
+            <BookmarkDetails
+              bookmark={selectedBookmark}
+              onOpenReader={(id) => {
+                setDetailOpen(false);
+                onOpenReader(id);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

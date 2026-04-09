@@ -72,10 +72,7 @@ function serializeToParams(
     if (value === null || value === undefined) continue;
 
     if (Array.isArray(value)) {
-      if (
-        Array.isArray(def) &&
-        JSON.stringify(value) === JSON.stringify(def)
-      )
+      if (Array.isArray(def) && JSON.stringify(value) === JSON.stringify(def))
         continue;
       for (const v of value) params.append(key, String(v));
       continue;
@@ -129,10 +126,7 @@ export function createUrlState<S extends z.ZodMiniObject>(schema: S) {
         : update;
     const next = { ...current, ...partial };
 
-    const params = serializeToParams(
-      next as Record<string, unknown>,
-      defaults,
-    );
+    const params = serializeToParams(next as Record<string, unknown>, defaults);
     const search = params.size > 0 ? `?${params}` : "";
     const url = window.location.pathname + search + window.location.hash;
 

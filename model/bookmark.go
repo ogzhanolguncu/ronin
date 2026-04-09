@@ -15,25 +15,25 @@ const BookmarkBaseQuery = `
 	FROM bookmark bm`
 
 type Bookmark struct {
-	ID          int64    `db:"id"          json:"id"`
-	URL         string   `db:"url"         json:"url"`
-	Title       string   `db:"title"       json:"title"`
-	Notes       string   `db:"notes"       json:"notes"`
-	Description string   `db:"description" json:"description"`
-	Archived    bool     `db:"archived"    json:"archived"`
-	Read        bool     `db:"read"        json:"read"`
-	Favorite     bool     `db:"favorite"      json:"favorite"`
-	CollectionID *int64  `db:"collection_id" json:"collection_id"`
-	Tags           string   `db:"tags"            json:"-"`
-	ParsedTags     []string `db:"-"               json:"tags"`
-	SnapshotStatus string   `db:"snapshot_status" json:"snapshot_status"`
-	ReadableStatus string   `db:"readable_status" json:"readable_status"`
-	WaybackURL     string   `db:"-"               json:"wayback_url"`
-	CreatedAt      uint64   `db:"created_at"      json:"created_at"`
-	UpdatedAt      uint64   `db:"updated_at"      json:"updated_at"`
-	TitleSnippet       string `db:"title_snippet"       json:"title_snippet,omitempty"`
-	DescriptionSnippet string `db:"description_snippet" json:"description_snippet,omitempty"`
-	TotalCount         int    `db:"total_count"         json:"-"`
+	ID                 int64    `db:"id"          json:"id"`
+	URL                string   `db:"url"         json:"url"`
+	Title              string   `db:"title"       json:"title"`
+	Notes              string   `db:"notes"       json:"notes"`
+	Description        string   `db:"description" json:"description"`
+	Archived           bool     `db:"archived"    json:"archived"`
+	Read               bool     `db:"read"        json:"read"`
+	Favorite           bool     `db:"favorite"      json:"favorite"`
+	CollectionID       *int64   `db:"collection_id" json:"collection_id"`
+	Tags               string   `db:"tags"            json:"-"`
+	ParsedTags         []string `db:"-"               json:"tags"`
+	SnapshotStatus     string   `db:"snapshot_status" json:"snapshot_status"`
+	ReadableStatus     string   `db:"readable_status" json:"readable_status"`
+	WaybackURL         string   `db:"-"               json:"wayback_url"`
+	CreatedAt          uint64   `db:"created_at"      json:"created_at"`
+	UpdatedAt          uint64   `db:"updated_at"      json:"updated_at"`
+	TitleSnippet       string   `db:"title_snippet"       json:"title_snippet,omitempty"`
+	DescriptionSnippet string   `db:"description_snippet" json:"description_snippet,omitempty"`
+	TotalCount         int      `db:"total_count"         json:"-"`
 }
 
 func (b *Bookmark) ParseTags() {
@@ -56,7 +56,6 @@ type ListBookmarksResponse struct {
 	Bookmarks []Bookmark     `json:"bookmarks"`
 	Meta      PaginationMeta `json:"meta"`
 }
-
 
 type CreateBookmarkRequest struct {
 	URL          string `json:"url"`

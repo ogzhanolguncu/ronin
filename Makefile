@@ -1,4 +1,4 @@
-.PHONY: help dev run build web preview prod prod-dev seed ext ext-dev ext-build
+.PHONY: help dev run build web preview prod prod-dev seed ext ext-dev ext-build fmt
 
 VERSION    ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT     ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -50,3 +50,7 @@ ext-dev:
 
 ext-build: ## Build browser extension
 	cd web && pnpm ext:build
+
+fmt: ## Format Go and frontend code
+	gofmt -w .
+	cd web && pnpm fmt

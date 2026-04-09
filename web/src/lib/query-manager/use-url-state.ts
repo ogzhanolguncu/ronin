@@ -1,4 +1,10 @@
-import { useSyncExternalStore, useState, useEffect, useRef, useCallback } from "react";
+import {
+  useSyncExternalStore,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 
 type State = ReturnType<typeof urlState.get>;

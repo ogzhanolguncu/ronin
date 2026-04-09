@@ -1,33 +1,35 @@
-import { useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { setServerUrl } from "../lib/storage"
-import { api, ApiError } from "../lib/api"
-import { Brand } from "@/components/ui/brand"
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { setServerUrl } from "../lib/storage";
+import { api, ApiError } from "../lib/api";
+import { Brand } from "@/components/ui/brand";
 
 export function SetupView({ onConnected }: { onConnected: () => void }) {
-  const [url, setUrl] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [url, setUrl] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!url.trim()) return
-    setError("")
-    setLoading(true)
+    e.preventDefault();
+    if (!url.trim()) return;
+    setError("");
+    setLoading(true);
 
     try {
-      await setServerUrl(url.trim())
-      await api.getCollections()
-      onConnected()
+      await setServerUrl(url.trim());
+      await api.getCollections();
+      onConnected();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        onConnected()
+        onConnected();
       } else {
-        setError(err instanceof Error ? err.message : "Cannot connect to server")
+        setError(
+          err instanceof Error ? err.message : "Cannot connect to server",
+        );
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -35,7 +37,7 @@ export function SetupView({ onConnected }: { onConnected: () => void }) {
     <div className="w-[360px] p-6">
       <Brand />
       <form onSubmit={handleSubmit} className="mt-10 space-y-3">
-        <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Server URL
         </label>
         <Input
@@ -50,9 +52,9 @@ export function SetupView({ onConnected }: { onConnected: () => void }) {
           {loading ? "Connecting..." : "Connect"}
         </Button>
         {error && (
-          <p className="text-xs text-destructive text-center">{error}</p>
+          <p className="text-destructive text-center text-xs">{error}</p>
         )}
       </form>
     </div>
-  )
+  );
 }

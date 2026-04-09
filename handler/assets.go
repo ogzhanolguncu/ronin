@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"strings"
 	"log/slog"
 	"net/http"
 	nurl "net/url"
@@ -16,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	readability "codeberg.org/readeck/go-readability/v2"

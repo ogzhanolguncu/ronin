@@ -1,7 +1,7 @@
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 export function BrushStroke({ error }: { error: boolean }) {
-  const color = error ? "var(--destructive)" : "currentColor"
+  const color = error ? "var(--destructive)" : "currentColor";
   return (
     <>
       <style>{`
@@ -18,8 +18,10 @@ export function BrushStroke({ error }: { error: boolean }) {
       `}</style>
       <svg
         viewBox="0 0 360 30"
-        className="w-full h-5 -mt-1"
-        style={{ animation: error ? "brush-shake 0.45s ease-in-out" : undefined }}
+        className="-mt-1 h-5 w-full"
+        style={{
+          animation: error ? "brush-shake 0.45s ease-in-out" : undefined,
+        }}
       >
         <defs>
           <clipPath id="brush-reveal">
@@ -28,7 +30,8 @@ export function BrushStroke({ error }: { error: boolean }) {
               height="30"
               style={{
                 transformOrigin: "0 50%",
-                animation: "brush-draw .45s cubic-bezier(0.25, 0.46, 0.45, 0.94) both",
+                animation:
+                  "brush-draw .45s cubic-bezier(0.25, 0.46, 0.45, 0.94) both",
               }}
             />
           </clipPath>
@@ -55,5 +58,5 @@ export function BrushStroke({ error }: { error: boolean }) {
         />
       </svg>
     </>
-  )
+  );
 }

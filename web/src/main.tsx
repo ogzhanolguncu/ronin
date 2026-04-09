@@ -1,32 +1,35 @@
-import { StrictMode } from "react"
-import { createRoot } from "react-dom/client"
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import { ErrorBoundary } from "react-error-boundary"
-import { queryClient } from "./lib/queries/query-client.ts"
-import { tagsQueryOptions } from "./lib/queries/tags.ts"
-import { collectionsQueryOptions } from "./lib/queries/collections.ts"
-import { ErrorFallback } from "./components/error-fallback"
-import "./index.css"
-import App from "./App.tsx"
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ErrorBoundary } from "react-error-boundary";
+import { queryClient } from "./lib/queries/query-client.ts";
+import { tagsQueryOptions } from "./lib/queries/tags.ts";
+import { collectionsQueryOptions } from "./lib/queries/collections.ts";
+import { ErrorFallback } from "./components/error-fallback";
+import "./index.css";
+import App from "./App.tsx";
 
 const persister = createAsyncStoragePersister({
   storage: window.localStorage,
-})
+});
 
 // Seed TAGS from backend during initial render similar to SSG
 if (window.__TAGS__) {
-  queryClient.setQueryData(tagsQueryOptions().queryKey, window.__TAGS__)
+  queryClient.setQueryData(tagsQueryOptions().queryKey, window.__TAGS__);
 } else if (import.meta.env.DEV) {
-  queryClient.prefetchQuery(tagsQueryOptions())
+  queryClient.prefetchQuery(tagsQueryOptions());
 }
 
 // Seed COLLECTIONS from backend during initial render similar to SSG
 if (window.__COLLECTIONS__) {
-  queryClient.setQueryData(collectionsQueryOptions().queryKey, window.__COLLECTIONS__)
+  queryClient.setQueryData(
+    collectionsQueryOptions().queryKey,
+    window.__COLLECTIONS__,
+  );
 } else if (import.meta.env.DEV) {
-  queryClient.prefetchQuery(collectionsQueryOptions())
+  queryClient.prefetchQuery(collectionsQueryOptions());
 }
 
 createRoot(document.getElementById("app")!).render(
@@ -41,4 +44,4 @@ createRoot(document.getElementById("app")!).render(
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
     </PersistQueryClientProvider>
   </StrictMode>,
-)
+);

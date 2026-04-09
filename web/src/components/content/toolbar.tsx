@@ -1,11 +1,17 @@
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { parseSearchQuery } from "@/lib/query-manager/search-parser";
 import { collectionsQueryOptions } from "@/lib/queries/collections";
-import { useUrlState, useUrlStateLocal } from "@/lib/query-manager/use-url-state";
+import {
+  useUrlState,
+  useUrlStateLocal,
+} from "@/lib/query-manager/use-url-state";
 
 const VIEW_LABELS: Record<string, string> = {
   all: "All bookmarks",
@@ -31,10 +37,14 @@ export function ContentToolbar() {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const parsed = parseSearchQuery(value);
-      const hasPrefix = parsed.tags.length > 0 || parsed.domains.length > 0 || parsed.is.length > 0;
+      const hasPrefix =
+        parsed.tags.length > 0 ||
+        parsed.domains.length > 0 ||
+        parsed.is.length > 0;
 
       if (hasPrefix) {
-        const viewUpdate = parsed.is.length > 0 ? mapIsToView(parsed.is[0]) : undefined;
+        const viewUpdate =
+          parsed.is.length > 0 ? mapIsToView(parsed.is[0]) : undefined;
         urlState.set((prev) => ({
           q: parsed.text,
           tags: [...new Set([...prev.tags, ...parsed.tags])],
@@ -71,8 +81,8 @@ export function ContentToolbar() {
   const hasChips = tags.length > 0 || domains.length > 0 || isViewFromSearch;
 
   const heading = collection
-    ? collections?.find((c) => c.slug === collection)?.name ?? "Collection"
-    : VIEW_LABELS[view] ?? "All bookmarks";
+    ? (collections?.find((c) => c.slug === collection)?.name ?? "Collection")
+    : (VIEW_LABELS[view] ?? "All bookmarks");
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -89,40 +99,55 @@ export function ContentToolbar() {
   }
 
   return (
-    <div className="border-b border-border-soft/50 h-24">
+    <div className="border-border-soft/50 h-24 border-b">
       <div className="px-6 pt-5 pb-3">
         <div
           className={cn(
-            "flex flex-wrap items-center gap-1.5 border-b transition-colors duration-300 cursor-text",
-            hasChips ? "border-border-soft/50" : "border-transparent focus-within:border-border-soft/50",
+            "flex cursor-text flex-wrap items-center gap-1.5 border-b transition-colors duration-300",
+            hasChips
+              ? "border-border-soft/50"
+              : "focus-within:border-border-soft/50 border-transparent",
           )}
           onClick={() => inputRef.current?.focus()}
         >
           {tags.map((tag) => (
-            <FilterChip key={`tag:${tag}`} label={`tag:${tag}`} onRemove={() => removeTag(tag)} />
+            <FilterChip
+              key={`tag:${tag}`}
+              label={`tag:${tag}`}
+              onRemove={() => removeTag(tag)}
+            />
           ))}
           {domains.map((domain) => (
-            <FilterChip key={`domain:${domain}`} label={`domain:${domain}`} onRemove={() => removeDomain(domain)} />
+            <FilterChip
+              key={`domain:${domain}`}
+              label={`domain:${domain}`}
+              onRemove={() => removeDomain(domain)}
+            />
           ))}
           {isViewFromSearch && (
-            <FilterChip label={`is:${view === "favorites" ? "favorite" : view}`} onRemove={removeIsFilter} />
+            <FilterChip
+              label={`is:${view === "favorites" ? "favorite" : view}`}
+              onRemove={removeIsFilter}
+            />
           )}
           <input
             ref={inputRef}
             type="text"
-            className="min-w-[60px] flex-1 bg-transparent text-sm tracking-wide outline-none placeholder:text-muted2/50"
+            className="placeholder:text-muted2/50 min-w-[60px] flex-1 bg-transparent text-sm tracking-wide outline-none"
             value={localQ}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            placeholder={!hasChips && !localQ ? "Search bookmarks... try tag:design or is:unread" : undefined}
+            placeholder={
+              !hasChips && !localQ
+                ? "Search bookmarks... try tag:design or is:unread"
+                : undefined
+            }
           />
         </div>
       </div>
 
       <div className="flex items-baseline justify-between px-6 pb-3">
-        <h2 className="text-xs font-mono text-muted2">
-          {heading}
-        </h2>
+        <h2 className="text-muted2 font-mono text-xs">{heading}</h2>
         <NativeSelect
           variant="ghost"
           size="sm"
@@ -139,7 +164,6 @@ export function ContentToolbar() {
   );
 }
 
-
 function mapIsToView(value: string): string | undefined {
   const map: Record<string, string> = {
     unread: "unread",
@@ -149,17 +173,29 @@ function mapIsToView(value: string): string | undefined {
   return map[value];
 }
 
-function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
   return (
     <span
-      className="inline-flex items-center gap-1 font-mono text-xs text-primary px-1.5 py-0.5 cursor-pointer hover:brightness-125 transition-[filter] duration-300"
-      onClick={(e) => { e.stopPropagation(); onRemove(); }}
+      className="text-primary inline-flex cursor-pointer items-center gap-1 px-1.5 py-0.5 font-mono text-xs transition-[filter] duration-300 hover:brightness-125"
+      onClick={(e) => {
+        e.stopPropagation();
+        onRemove();
+      }}
     >
       {label}
       <button
         type="button"
-        className="text-muted2/50 hover:text-muted2 transition-colors leading-none"
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="text-muted2/50 hover:text-muted2 leading-none transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
         aria-label={`Remove ${label}`}
       >
         ×

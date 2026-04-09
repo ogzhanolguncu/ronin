@@ -25,7 +25,11 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
   return pages;
 }
 
-export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+export function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: PaginationProps) {
   if (totalPages <= 1) return null;
 
   const pages = getPageNumbers(currentPage, totalPages);
@@ -33,20 +37,23 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   const isLast = currentPage === totalPages;
 
   return (
-    <div className="sticky bottom-0 bg-background pb-6 pt-0">
-      <div className="mx-6 h-px bg-gradient-to-r from-transparent via-foreground/8 to-transparent" />
-      <nav className="flex items-center justify-center gap-1 font-mono text-xs pt-5 tracking-wide">
+    <div className="bg-background sticky bottom-0 pt-0 pb-6">
+      <div className="via-foreground/8 mx-6 h-px bg-gradient-to-r from-transparent to-transparent" />
+      <nav className="flex items-center justify-center gap-1 pt-5 font-mono text-xs tracking-wide">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={isFirst}
-          className={`px-2 py-1 transition-colors duration-[400ms] ease-out ${isFirst ? "opacity-30 pointer-events-none" : "text-muted2 hover:text-text2"}`}
+          className={`px-2 py-1 transition-colors duration-[400ms] ease-out ${isFirst ? "pointer-events-none opacity-30" : "text-muted2 hover:text-text2"}`}
         >
           <ChevronLeftIcon size={14} />
         </button>
 
         {pages.map((page, i) =>
           page === "..." ? (
-            <span key={`ellipsis-${i}`} className="text-muted2/50 select-none pointer-events-none px-2 py-1">
+            <span
+              key={`ellipsis-${i}`}
+              className="text-muted2/50 pointer-events-none px-2 py-1 select-none"
+            >
               ...
             </span>
           ) : (
@@ -61,13 +68,13 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
             >
               {page}
             </button>
-          )
+          ),
         )}
 
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={isLast}
-          className={`px-2 py-1 transition-colors duration-[400ms] ease-out ${isLast ? "opacity-30 pointer-events-none" : "text-muted2 hover:text-text2"}`}
+          className={`px-2 py-1 transition-colors duration-[400ms] ease-out ${isLast ? "pointer-events-none opacity-30" : "text-muted2 hover:text-text2"}`}
         >
           <ChevronRightIcon size={14} />
         </button>

@@ -46,13 +46,13 @@ func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCook
 	}
 
 	h := &Handler{
-		store:         s,
-		distFS:        distFS,
-		passphrase:    passphrase,
-		devMode:       devMode,
-		secureCookie:  secureCookie,
-		dataDir:       dataDir,
-		buildInfo:     info,
+		store:           s,
+		distFS:          distFS,
+		passphrase:      passphrase,
+		devMode:         devMode,
+		secureCookie:    secureCookie,
+		dataDir:         dataDir,
+		buildInfo:       info,
 		metadataCache:   gocache.New(10*time.Minute, 15*time.Minute),
 		tagCache:        gocache.New(gocache.NoExpiration, 0),
 		collectionCache: gocache.New(gocache.NoExpiration, 0),

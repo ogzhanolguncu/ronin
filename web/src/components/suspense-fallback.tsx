@@ -17,14 +17,15 @@ export function SuspenseFallback() {
           }
         }
       `}</style>
-      <div className="flex flex-col items-center justify-center gap-5 min-h-[60vh]">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5">
         <div className="flex items-center gap-3">
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="inline-block size-2 rounded-[1px] bg-shu"
+              className="bg-shu inline-block size-2 rounded-[1px]"
               style={{
-                animation: "stamp-press 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+                animation:
+                  "stamp-press 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite",
                 animationDelay: `${i * 300}ms`,
               }}
             />
@@ -32,5 +33,5 @@ export function SuspenseFallback() {
         </div>
       </div>
     </>
-  )
+  );
 }

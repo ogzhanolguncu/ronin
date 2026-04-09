@@ -9,7 +9,10 @@
   letter-spacing: 0.015em;
   color: var(--foreground);
   word-break: break-word;
-  font-feature-settings: "liga" 1, "kern" 1, "onum" 1;
+  font-feature-settings:
+    "liga" 1,
+    "kern" 1,
+    "onum" 1;
 }
 
 /* Article title — displayed as part of reading flow */
@@ -26,7 +29,7 @@
 /* Source hostname below title */
 .reader-source {
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--muted-foreground);
   letter-spacing: 0.02em;
   margin: 0;
@@ -178,7 +181,9 @@
   border-radius: 1px;
   padding: 0.08em 0;
   cursor: pointer;
-  transition: background-color 400ms ease-out, filter 300ms ease-out;
+  transition:
+    background-color 400ms ease-out,
+    filter 300ms ease-out;
   box-decoration-break: clone;
 }
 .reader-article mark[data-highlight-id]:hover {
@@ -186,16 +191,36 @@
 }
 
 /* Light mode — washi-wash highlights */
-.reader-article mark.highlight-yellow { background: oklch(0.90 0.06 80 / 0.35); color: inherit; }
-.reader-article mark.highlight-green  { background: oklch(0.88 0.06 145 / 0.30); color: inherit; }
-.reader-article mark.highlight-blue   { background: oklch(0.88 0.06 250 / 0.28); color: inherit; }
-.reader-article mark.highlight-pink   { background: oklch(0.88 0.06 310 / 0.28); color: inherit; }
+.reader-article mark.highlight-yellow {
+  background: oklch(0.9 0.06 80 / 0.35);
+  color: inherit;
+}
+.reader-article mark.highlight-green {
+  background: oklch(0.88 0.06 145 / 0.3);
+  color: inherit;
+}
+.reader-article mark.highlight-blue {
+  background: oklch(0.88 0.06 250 / 0.28);
+  color: inherit;
+}
+.reader-article mark.highlight-pink {
+  background: oklch(0.88 0.06 310 / 0.28);
+  color: inherit;
+}
 
 /* Dark mode — deeper, lower chroma */
-.dark .reader-article mark.highlight-yellow { background: oklch(0.45 0.08 80 / 0.30); }
-.dark .reader-article mark.highlight-green  { background: oklch(0.42 0.07 145 / 0.30); }
-.dark .reader-article mark.highlight-blue   { background: oklch(0.42 0.08 250 / 0.28); }
-.dark .reader-article mark.highlight-pink   { background: oklch(0.42 0.07 310 / 0.28); }
+.dark .reader-article mark.highlight-yellow {
+  background: oklch(0.45 0.08 80 / 0.3);
+}
+.dark .reader-article mark.highlight-green {
+  background: oklch(0.42 0.07 145 / 0.3);
+}
+.dark .reader-article mark.highlight-blue {
+  background: oklch(0.42 0.08 250 / 0.28);
+}
+.dark .reader-article mark.highlight-pink {
+  background: oklch(0.42 0.07 310 / 0.28);
+}
 
 /* Active highlight — subtle sumi outline */
 .reader-article mark.highlight-active {
@@ -209,12 +234,20 @@
 /* Reader overlay — washi paper feel (Yugen) */
 .reader-bg {
   background:
-    radial-gradient(ellipse at 20% 10%, oklch(0.97 0.012 85 / 0.6), transparent 50%),
+    radial-gradient(
+      ellipse at 20% 10%,
+      oklch(0.97 0.012 85 / 0.6),
+      transparent 50%
+    ),
     var(--background);
 }
 .dark .reader-bg {
   background:
-    radial-gradient(ellipse at 20% 10%, oklch(0.16 0.010 240 / 0.4), transparent 50%),
+    radial-gradient(
+      ellipse at 20% 10%,
+      oklch(0.16 0.01 240 / 0.4),
+      transparent 50%
+    ),
     var(--background);
 }
 

@@ -4,15 +4,11 @@ import type { NavItem } from "./types";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
 
-export function SidebarSection({
-  items,
-}: {
-  items: NavItem[];
-}) {
+export function SidebarSection({ items }: { items: NavItem[] }) {
   const view = useUrlState((s) => s.view);
 
   return (
-    <div className="shrink-0 py-3 flex flex-col">
+    <div className="flex shrink-0 flex-col py-3">
       {items.map((item) => (
         <NavRow
           key={item.id}
@@ -48,12 +44,12 @@ function NavRow({
       {item.icon}
       {item.label}
       {item.count ? (
-        <span className={cn(
-          "ml-auto mr-4 font-mono text-[11px] tabular-nums transition-colors",
-          isActive
-            ? "text-primary/60"
-            : "text-muted-foreground",
-        )}>
+        <span
+          className={cn(
+            "mr-4 ml-auto font-mono text-[11px] tabular-nums transition-colors",
+            isActive ? "text-primary/60" : "text-muted-foreground",
+          )}
+        >
           {formatCount(item.count)}
         </span>
       ) : null}

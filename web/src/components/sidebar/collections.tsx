@@ -15,22 +15,29 @@ export function Collections() {
   useScrollMist(scrollRef);
 
   return (
-    <div className={cn(
-      "shrink-0 min-h-0 flex flex-col border-t border-border-soft/30 transition-[max-height] duration-500 ease-in-out",
-      "max-h-[350px]",
-    )}>
-      <div ref={scrollRef} className="thin-scrollbar overflow-y-auto content-scroll-mist py-3">
+    <div
+      className={cn(
+        "border-border-soft/30 flex min-h-0 shrink-0 flex-col border-t transition-[max-height] duration-500 ease-in-out",
+        "max-h-[350px]",
+      )}
+    >
+      <div
+        ref={scrollRef}
+        className="thin-scrollbar content-scroll-mist overflow-y-auto py-3"
+      >
         <div className="flex flex-col">
           <AddCollectionDialog hasCollections={collections.length > 0} />
           {collections.map((item) => {
             const isActive = collection === item.slug;
-            const color = getCollectionColor(item.color_id as CollectionColorId);
+            const color = getCollectionColor(
+              item.color_id as CollectionColorId,
+            );
             return (
               <button
                 key={item.id}
                 type="button"
                 className={cn(
-                  "flex items-center gap-2.5 px-4 py-2 text-xs transition-colors font-mono",
+                  "flex items-center gap-2.5 px-4 py-2 font-mono text-xs transition-colors",
                   isActive
                     ? "text-primary"
                     : "text-muted2 hover:bg-surface2 hover:text-text2",
@@ -40,7 +47,7 @@ export function Collections() {
                 }
               >
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full dot-glow"
+                  className="dot-glow h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: color?.value, color: color?.value }}
                 />
                 {item.name}

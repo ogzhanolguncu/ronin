@@ -1,7 +1,7 @@
-import { queryOptions } from "@tanstack/react-query"
-import { requester } from "../requester"
-import { queryClient } from "./query-client"
-import type { CollectionsResponse } from "../types"
+import { queryOptions } from "@tanstack/react-query";
+import { requester } from "../requester";
+import { queryClient } from "./query-client";
+import type { CollectionsResponse } from "../types";
 
 export function collectionsQueryOptions() {
   return queryOptions({
@@ -11,9 +11,9 @@ export function collectionsQueryOptions() {
         (r) => r.collections,
       ),
     staleTime: Infinity,
-  })
+  });
 }
 
 export function invalidateCollections() {
-  return queryClient.invalidateQueries({ queryKey: ["collections"] })
+  return queryClient.invalidateQueries({ queryKey: ["collections"] });
 }

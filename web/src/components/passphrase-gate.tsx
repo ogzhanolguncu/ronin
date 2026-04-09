@@ -54,6 +54,6 @@ export function PassphraseGate({ onUnlock }: { onUnlock: () => void }) {
         />
         <BrushStroke error={hasError} />
       </form>
-    </div >
+    </div>
   );
 }

@@ -1,48 +1,48 @@
-import { useState, useRef } from "react"
-import { Input } from "@/components/ui/input"
-import { Brand } from "@/components/ui/brand"
-import { BrushStroke } from "@/components/ui/brush-stroke"
-import { api } from "../lib/api"
+import { useState, useRef } from "react";
+import { Input } from "@/components/ui/input";
+import { Brand } from "@/components/ui/brand";
+import { BrushStroke } from "@/components/ui/brush-stroke";
+import { api } from "../lib/api";
 
 export function LoginView({
   onLogin,
   onChangeServer,
 }: {
-  onLogin: () => void
-  onChangeServer: () => void
+  onLogin: () => void;
+  onChangeServer: () => void;
 }) {
-  const [passphrase, setPassphrase] = useState("")
-  const [hasError, setHasError] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const [passphrase, setPassphrase] = useState("");
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function triggerError() {
-    setHasError(true)
-    clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => setHasError(false), 600)
+    setHasError(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setHasError(false), 600);
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
     if (!passphrase.trim() || isLoading) {
-      triggerError()
-      return
+      triggerError();
+      return;
     }
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await api.login(passphrase)
-      onLogin()
+      await api.login(passphrase);
+      onLogin();
     } catch {
-      triggerError()
+      triggerError();
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   return (
     <div className="w-[360px] p-6">
       <Brand />
-      <form onSubmit={handleSubmit} className="mt-14 w-72 mx-auto">
+      <form onSubmit={handleSubmit} className="mx-auto mt-14 w-72">
         <Input
           type="password"
           variant="ghost"
@@ -50,8 +50,8 @@ export function LoginView({
           value={passphrase}
           disabled={isLoading}
           onChange={(e) => {
-            setPassphrase(e.target.value)
-            if (hasError) setHasError(false)
+            setPassphrase(e.target.value);
+            if (hasError) setHasError(false);
           }}
           className="text-center text-base tracking-widest"
         />
@@ -60,10 +60,10 @@ export function LoginView({
       <button
         type="button"
         onClick={onChangeServer}
-        className="block mx-auto mt-6 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="text-muted-foreground hover:text-foreground mx-auto mt-6 block text-xs transition-colors"
       >
         Change server
       </button>
     </div>
-  )
+  );
 }
