@@ -4,11 +4,7 @@ import { ContentToolbar } from "./toolbar";
 import { QueryBoundary } from "../query-boundary";
 import { useScrollMist } from "@/hooks/use-scroll-mist";
 
-export function Content({
-  onOpenReader,
-}: {
-  onOpenReader: (id: number) => void;
-}) {
+export function Content() {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollMist(scrollRef);
 
@@ -20,7 +16,7 @@ export function Content({
         className="thin-scrollbar content-scroll-mist flex-1 overflow-y-auto"
       >
         <QueryBoundary>
-          <BookmarkList scrollRef={scrollRef} onOpenReader={onOpenReader} />
+          <BookmarkList scrollRef={scrollRef} />
         </QueryBoundary>
       </div>
     </main>

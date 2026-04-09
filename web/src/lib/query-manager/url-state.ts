@@ -14,7 +14,7 @@ type UrlStateStore<T> = {
   /** @internal */ _schema: z.ZodMiniObject;
 };
 
-const URL_STATE_EVENT = "url-state";
+export const URL_STATE_EVENT = "url-state";
 
 // Strips the ZodMiniDefault wrapper to get the underlying type for coercion.
 // WARNING: `_zod.def.innerType` is a Zod internal API — may break on Zod upgrades.

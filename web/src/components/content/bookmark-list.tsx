@@ -16,6 +16,7 @@ import {
 } from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
 import { Interlude } from "@/components/interlude";
+import { navigate } from "@/lib/routes";
 
 function useBookmarkFilters(): BookmarkFilters {
   const [s] = useUrlState();
@@ -32,10 +33,8 @@ function useBookmarkFilters(): BookmarkFilters {
 
 export function BookmarkList({
   scrollRef,
-  onOpenReader,
 }: {
   scrollRef: React.RefObject<HTMLDivElement | null>;
-  onOpenReader: (id: number) => void;
 }) {
   const filters = useBookmarkFilters();
   const { data } = useSuspenseQuery(bookmarksQueryOptions(filters));
@@ -155,7 +154,7 @@ export function BookmarkList({
               bookmark={selectedBookmark}
               onOpenReader={(id) => {
                 setDetailOpen(false);
-                onOpenReader(id);
+                navigate(`/reader/${id}`);
               }}
             />
           )}

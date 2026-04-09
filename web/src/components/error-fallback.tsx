@@ -34,14 +34,21 @@ function getErrorInfo(error: unknown) {
 
 export function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const { title, action } = getErrorInfo(error);
+  const isUnauthorized = error instanceof ApiError && error.status === 401;
 
   return (
     <Interlude title={title}>
       <Button
         variant="ghost"
-        size="sm"
-        onClick={resetErrorBoundary}
-        className="font-mono text-xs tracking-wide"
+        size="lg"
+        onClick={() => {
+          if (isUnauthorized) {
+            window.location.href = "/auth";
+          } else {
+            resetErrorBoundary();
+          }
+        }}
+        className="font-mono text-sm tracking-wide"
       >
         {action}
       </Button>

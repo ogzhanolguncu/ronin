@@ -9,7 +9,7 @@ import { tagsQueryOptions } from "./lib/queries/tags.ts";
 import { collectionsQueryOptions } from "./lib/queries/collections.ts";
 import { ErrorFallback } from "./components/error-fallback";
 import "./index.css";
-import App from "./App.tsx";
+import { Router } from "./lib/routes.tsx";
 
 const persister = createAsyncStoragePersister({
   storage: window.localStorage,
@@ -39,7 +39,7 @@ createRoot(document.getElementById("app")!).render(
       persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
     >
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <App />
+        <Router />
       </ErrorBoundary>
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
     </PersistQueryClientProvider>

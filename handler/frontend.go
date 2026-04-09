@@ -38,8 +38,14 @@ func (h *Handler) frontendHandler() http.Handler {
 			}
 		}
 
-		// For all other routes, serve index.html with auth state and tags injected
+		// Redirect unauthenticated users to /auth
 		status := h.resolveAuthStatus(r)
+		if status == "login" && r.URL.Path != "/auth" {
+			http.Redirect(w, r, "/auth", http.StatusFound)
+			return
+		}
+
+		// For all other routes, serve index.html with auth state and tags injected
 		page := strings.Replace(indexHTML, "<!--AUTH-->",
 			`<script>window.__AUTH__="`+status+`"</script>`, 1)
 
