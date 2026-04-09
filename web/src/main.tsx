@@ -1,12 +1,20 @@
-import { StrictMode } from "react";
+import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ErrorBoundary } from "react-error-boundary";
+
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@tanstack/react-query-devtools").then((m) => ({
+        default: m.ReactQueryDevtools,
+      })),
+    )
+  : () => null;
 import { queryClient } from "./lib/queries/query-client.ts";
 import { tagsQueryOptions } from "./lib/queries/tags.ts";
 import { collectionsQueryOptions } from "./lib/queries/collections.ts";
+import { bookmarksQueryOptions } from "./lib/queries/bookmarks.ts";
 import { ErrorFallback } from "./components/error-fallback";
 import "./index.css";
 import { Router } from "./lib/routes.tsx";
@@ -32,6 +40,20 @@ if (window.__COLLECTIONS__) {
   queryClient.prefetchQuery(collectionsQueryOptions());
 }
 
+if (window.__AUTH__ === "authenticated") {
+  queryClient.prefetchQuery(
+    bookmarksQueryOptions({
+      q: "",
+      tags: [],
+      domains: [],
+      view: "all",
+      sort: "newest",
+      collection: null,
+      page: 1,
+    }),
+  );
+}
+
 createRoot(document.getElementById("app")!).render(
   <StrictMode>
     <PersistQueryClientProvider
@@ -41,7 +63,9 @@ createRoot(document.getElementById("app")!).render(
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Router />
       </ErrorBoundary>
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      <Suspense>
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      </Suspense>
     </PersistQueryClientProvider>
   </StrictMode>,
 );

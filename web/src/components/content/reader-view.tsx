@@ -51,7 +51,7 @@ type SelectionAnchor = {
   rect: DOMRect;
 };
 
-export function ReaderView({
+export default function ReaderView({
   bookmarkId,
   onClose,
 }: {

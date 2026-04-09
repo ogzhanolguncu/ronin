@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -27,7 +27,7 @@ export function ContentToolbar() {
   const domains = useUrlState((s) => s.domains);
   const collection = useUrlState((s) => s.collection);
 
-  const { data: collections } = useQuery(collectionsQueryOptions());
+  const { data: collections } = useSuspenseQuery(collectionsQueryOptions());
   const [localQ, setLocalQ] = useUrlStateLocal((s) => s.q);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 

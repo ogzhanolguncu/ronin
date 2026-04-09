@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
@@ -37,6 +38,9 @@ type Handler struct {
 	tagCache        *gocache.Cache
 	collectionCache *gocache.Cache
 	sessionCache    *gocache.Cache
+
+	cachedAuthPage   string
+	cachedAuthPageMu sync.RWMutex
 }
 
 func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string, info BuildInfo) *http.Server {

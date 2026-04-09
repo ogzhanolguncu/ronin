@@ -1,8 +1,10 @@
+import { lazy } from "react";
 import { usePathname, navigate, route } from "./router";
-import { PassphraseGate } from "@/components/passphrase-gate";
 import { QueryBoundary } from "@/components/query-boundary";
-import { ReaderView } from "@/components/content/reader-view";
 import { MainLayout } from "@/components/main-layout";
+
+const PassphraseGate = lazy(() => import("@/components/passphrase-gate"));
+const ReaderView = lazy(() => import("@/components/content/reader-view"));
 
 export { navigate };
 
@@ -10,12 +12,13 @@ const routes = [
   route({
     path: "/auth",
     render: () => (
-      <PassphraseGate
-        onUnlock={() => {
-          // Full reload — let the backend set window.__AUTH__
-          window.location.href = "/";
-        }}
-      />
+      <QueryBoundary>
+        <PassphraseGate
+          onUnlock={() => {
+            window.location.href = "/";
+          }}
+        />
+      </QueryBoundary>
     ),
   }),
   route({

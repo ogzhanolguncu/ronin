@@ -34,6 +34,7 @@ func (h *Handler) loadCollections(ctx context.Context) ([]model.Collection, erro
 
 func (h *Handler) invalidateCollectionCache() {
 	h.collectionCache.Delete(collectionCacheKey)
+	h.invalidateAuthPageCache()
 }
 
 func (h *Handler) getCollections(w http.ResponseWriter, r *http.Request) {
