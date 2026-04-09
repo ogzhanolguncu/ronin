@@ -49,27 +49,29 @@ func (h *Handler) frontendHandler() http.Handler {
 		page := strings.Replace(indexHTML, "<!--AUTH-->",
 			`<script>window.__AUTH__="`+status+`"</script>`, 1)
 
-		tags, err := h.loadTags(r.Context())
-		if err != nil {
-			slog.Warn("failed to load tags for injection", "err", err)
-		}
-		tagsJSON, err := json.Marshal(tags)
-		if err != nil {
-			slog.Warn("failed to marshal tags", "err", err)
-		}
-		page = strings.Replace(page, "<!--TAGS-->",
-			`<script>window.__TAGS__=`+string(tagsJSON)+`</script>`, 1)
+		if status == "authenticated" {
+			tags, err := h.loadTags(r.Context())
+			if err != nil {
+				slog.Warn("failed to load tags for injection", "err", err)
+			}
+			tagsJSON, err := json.Marshal(tags)
+			if err != nil {
+				slog.Warn("failed to marshal tags", "err", err)
+			}
+			page = strings.Replace(page, "<!--TAGS-->",
+				`<script>window.__TAGS__=`+string(tagsJSON)+`</script>`, 1)
 
-		collections, err := h.loadCollections(r.Context())
-		if err != nil {
-			slog.Warn("failed to load collections for injection", "err", err)
+			collections, err := h.loadCollections(r.Context())
+			if err != nil {
+				slog.Warn("failed to load collections for injection", "err", err)
+			}
+			collectionsJSON, err := json.Marshal(collections)
+			if err != nil {
+				slog.Warn("failed to marshal collections", "err", err)
+			}
+			page = strings.Replace(page, "<!--COLLECTIONS-->",
+				`<script>window.__COLLECTIONS__=`+string(collectionsJSON)+`</script>`, 1)
 		}
-		collectionsJSON, err := json.Marshal(collections)
-		if err != nil {
-			slog.Warn("failed to marshal collections", "err", err)
-		}
-		page = strings.Replace(page, "<!--COLLECTIONS-->",
-			`<script>window.__COLLECTIONS__=`+string(collectionsJSON)+`</script>`, 1)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
