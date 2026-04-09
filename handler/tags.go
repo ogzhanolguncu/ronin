@@ -24,6 +24,7 @@ func (h *Handler) loadTags(ctx context.Context) ([]model.Tag, error) {
 
 func (h *Handler) invalidateTagCache() {
 	h.tagCache.Delete(tagCacheKey)
+	h.invalidateAuthPageCache()
 }
 
 func (h *Handler) getTags(w http.ResponseWriter, r *http.Request) {

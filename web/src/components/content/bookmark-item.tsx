@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArchiveIcon, DeleteIcon, NotesIcon, StarIcon, ViewIcon } from "@/components/ui/icons";
+import {
+  ArchiveIcon,
+  DeleteIcon,
+  NotesIcon,
+  StarIcon,
+  ViewIcon,
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { type Bookmark, getHostname } from "@/lib/types";
 import { formatRelativeTime, formatCount } from "@/lib/format";
@@ -63,14 +69,16 @@ export function BookmarkItem({
   }
 
   return (
-    <div className="group relative px-6 py-6 first:border-t-0 transition-colors duration-200 hover:bg-surface">
+    <div className="group hover:bg-surface relative px-6 py-6 transition-colors duration-200 first:border-t-0">
       {/* Action cluster — revealed on hover */}
-      <div className={cn(
-        "absolute top-3 right-4 flex items-center gap-0.5 transition-opacity duration-200 ease-out",
-        confirmingDelete || confirmingArchive
-          ? "opacity-100"
-          : "opacity-0 group-hover:opacity-100",
-      )}>
+      <div
+        className={cn(
+          "absolute top-3 right-4 flex items-center gap-0.5 transition-opacity duration-200 ease-out",
+          confirmingDelete || confirmingArchive
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100",
+        )}
+      >
         <Button
           variant="ghost"
           size="icon-sm"
@@ -78,7 +86,7 @@ export function BookmarkItem({
             "transition-colors duration-300 ease-out",
             bookmark.favorite
               ? "text-kitsune hover:text-kitsune/70"
-              : "text-muted2/60 hover:text-kitsune"
+              : "text-muted2/60 hover:text-kitsune",
           )}
           onClick={() => onFavoriteClick?.(bookmark)}
         >
@@ -99,7 +107,7 @@ export function BookmarkItem({
             "transition-all duration-300 ease-out",
             confirmingArchive
               ? "bg-yellow-dim text-kitsune hover:bg-kitsune/15"
-              : "text-muted2/60 hover:text-kitsune"
+              : "text-muted2/60 hover:text-kitsune",
           )}
           onClick={handleArchiveClick}
         >
@@ -115,7 +123,7 @@ export function BookmarkItem({
             "transition-all duration-300 ease-out",
             confirmingDelete
               ? "bg-red-dim text-shu hover:bg-shu/15"
-              : "text-muted2/60 hover:text-shu"
+              : "text-muted2/60 hover:text-shu",
           )}
           onClick={handleDeleteClick}
         >
@@ -137,9 +145,9 @@ export function BookmarkItem({
       </div>
 
       {/* Row 1: Favicon + Title */}
-      <div className="flex items-center gap-2 min-w-0 pr-28">
+      <div className="flex min-w-0 items-center gap-2 pr-28">
         {bookmark.favorite && (
-          <span className="size-1 rounded-full bg-kitsune shrink-0" />
+          <span className="bg-kitsune size-1 shrink-0 rounded-full" />
         )}
         <Favicon url={bookmark.url} />
         <a
@@ -147,7 +155,7 @@ export function BookmarkItem({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => onReadClick?.(bookmark)}
-          className="text-sm font-medium text-foreground leading-snug tracking-tight truncate transition-colors hover:text-primary"
+          className="text-foreground hover:text-primary truncate text-sm leading-snug font-medium tracking-tight transition-colors"
           {...(bookmark.title_snippet
             ? { dangerouslySetInnerHTML: { __html: bookmark.title_snippet } }
             : { children: bookmark.title })}
@@ -155,36 +163,44 @@ export function BookmarkItem({
       </div>
 
       {/* Row 2: Hostname */}
-      <p className="font-mono text-[11px] text-muted2 mt-1 truncate">
+      <p className="text-muted2 mt-1 truncate font-mono text-[11px]">
         {getHostname(bookmark.url)}
       </p>
 
       {/* Row 3: Description */}
       {(bookmark.description_snippet || bookmark.description) && (
         <p
-          className="text-xs text-muted2 font-light leading-relaxed mt-4 line-clamp-2 max-w-130"
+          className="text-muted2 mt-4 line-clamp-2 max-w-130 text-xs leading-relaxed font-light"
           {...(bookmark.description_snippet
-            ? { dangerouslySetInnerHTML: { __html: bookmark.description_snippet } }
+            ? {
+                dangerouslySetInnerHTML: {
+                  __html: bookmark.description_snippet,
+                },
+              }
             : { children: bookmark.description })}
         />
       )}
 
       {/* Row 4: Tags + Date */}
-      <div className="flex items-center gap-2.5 mt-3 font-mono text-[11px] text-muted2">
+      <div className="text-muted2 mt-3 flex items-center gap-2.5 font-mono text-[11px]">
         {bookmark.tags.slice(0, 6).map((tag) => (
           <button
             key={tag}
             type="button"
-            className="transition-colors hover:text-primary"
+            className="hover:text-primary transition-colors"
             onClick={() => onTagClick?.(tag)}
           >
             #{tag}
           </button>
         ))}
         {bookmark.tags.length > 6 && (
-          <span className="text-muted2/70 font-medium tabular-nums font-mono select-none">+{formatCount(bookmark.tags.length - 6)}</span>
+          <span className="text-muted2/70 font-mono font-medium tabular-nums select-none">
+            +{formatCount(bookmark.tags.length - 6)}
+          </span>
         )}
-        <span className="ml-auto">{formatRelativeTime(bookmark.created_at)}</span>
+        <span className="ml-auto">
+          {formatRelativeTime(bookmark.created_at)}
+        </span>
       </div>
 
       {/* Notes expansion */}
@@ -195,12 +211,13 @@ export function BookmarkItem({
             gridTemplateRows: notesOpen ? "1fr" : "0fr",
             opacity: notesOpen ? 1 : 0,
             marginTop: notesOpen ? 16 : 0,
-            transition: "grid-template-rows 250ms ease-out, opacity 200ms ease-out, margin-top 250ms ease-out",
+            transition:
+              "grid-template-rows 250ms ease-out, opacity 200ms ease-out, margin-top 250ms ease-out",
           }}
         >
           <div className="overflow-hidden">
-            <div className="pl-3 border-l-2 border-border-soft/50 group-hover:border-border-soft bg-surface/50 group-hover:bg-surface2 rounded-r py-2 pr-3 transition-colors duration-200">
-              <p className="text-[11px] text-foreground/60 font-light leading-relaxed">
+            <div className="border-border-soft/50 group-hover:border-border-soft bg-surface/50 group-hover:bg-surface2 rounded-r border-l-2 py-2 pr-3 pl-3 transition-colors duration-200">
+              <p className="text-foreground/60 text-[11px] leading-relaxed font-light">
                 {bookmark.notes}
               </p>
             </div>
@@ -212,17 +229,19 @@ export function BookmarkItem({
 }
 
 function Favicon({ url }: { url: string }) {
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">(
+    "loading",
+  );
   const hostname = getHostname(url);
 
   return (
-    <div className="w-4 h-4 shrink-0 relative">
+    <div className="relative h-4 w-4 shrink-0">
       {status === "loading" && (
-        <div className="absolute inset-0 rounded-sm bg-border-soft animate-pulse" />
+        <div className="bg-border-soft absolute inset-0 animate-pulse rounded-sm" />
       )}
       {status === "error" && (
-        <div className="absolute inset-0 rounded-sm bg-surface2 flex items-center justify-center">
-          <span className="text-[8px] font-medium text-muted2 uppercase leading-none">
+        <div className="bg-surface2 absolute inset-0 flex items-center justify-center rounded-sm">
+          <span className="text-muted2 text-[8px] leading-none font-medium uppercase">
             {hostname.charAt(0)}
           </span>
         </div>
@@ -230,7 +249,7 @@ function Favicon({ url }: { url: string }) {
       <img
         src={`/api/v1/favicons/${hostname}`}
         alt=""
-        className={cn("w-4 h-4 rounded-sm", status !== "loaded" && "invisible")}
+        className={cn("h-4 w-4 rounded-sm", status !== "loaded" && "invisible")}
         onLoad={() => setStatus("loaded")}
         onError={() => setStatus("error")}
       />

@@ -11,11 +11,14 @@ export function Content() {
   return (
     <main className="flex h-full flex-col overflow-hidden">
       <ContentToolbar />
-      <div ref={scrollRef} className="flex-1 overflow-y-auto thin-scrollbar content-scroll-mist">
-        <QueryBoundary >
+      <div
+        ref={scrollRef}
+        className="thin-scrollbar content-scroll-mist flex-1 overflow-y-auto"
+      >
+        <QueryBoundary>
           <BookmarkList scrollRef={scrollRef} />
         </QueryBoundary>
       </div>
-    </main >
+    </main>
   );
 }

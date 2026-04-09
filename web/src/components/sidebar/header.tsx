@@ -31,15 +31,13 @@ export const Header = ({ onLogout }: { onLogout: () => void }) => {
             size="icon-sm"
             onClick={onLogout}
             aria-label="Log out"
-            className="text-muted2 transition-colors duration-300 hover:text-shu"
+            className="text-muted2 hover:text-shu transition-colors duration-300"
           >
             <LogOutIcon className="size-3.5" />
           </Button>
         </div>
       </div>
-      <div className="text-muted2 mt-1.5 text-sm tracking-wider">
-        浪人
-      </div>
+      <div className="text-muted2 mt-1.5 text-sm tracking-wider">浪人</div>
     </div>
   );
 };

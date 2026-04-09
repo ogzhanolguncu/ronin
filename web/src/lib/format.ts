@@ -9,17 +9,21 @@ export function formatRelativeTime(date: Date | number): string {
   const diffHr = Math.round(diffMin / 60);
   const diffDays = Math.round(diffHr / 24);
 
-
   if (Math.abs(diffSec) < 60) return rtf.format(0, "second"); // "now"
   if (Math.abs(diffMin) < 60) return rtf.format(diffMin, "minute");
   if (Math.abs(diffHr) < 24) return rtf.format(diffHr, "hour");
   if (Math.abs(diffDays) < 7) return rtf.format(diffDays, "day");
-  if (Math.abs(diffDays) < 30) return rtf.format(Math.round(diffDays / 7), "week");
-  if (Math.abs(diffDays) < 365) return rtf.format(Math.round(diffDays / 30), "month");
+  if (Math.abs(diffDays) < 30)
+    return rtf.format(Math.round(diffDays / 7), "week");
+  if (Math.abs(diffDays) < 365)
+    return rtf.format(Math.round(diffDays / 30), "month");
   return rtf.format(Math.round(diffDays / 365), "year");
 }
 
-const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+const nf = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 
 export function formatCount(n: number): string {
   return nf.format(n);

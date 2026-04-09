@@ -1,7 +1,7 @@
-import * as React from "react"
+import * as React from "react";
 
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
 const inputVariants = cva(
   "w-full min-w-0 bg-background text-sm text-foreground outline-none transition-colors disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
@@ -14,14 +14,14 @@ const inputVariants = cva(
       },
     },
     defaultVariants: { variant: "default" },
-  }
-)
+  },
+);
 
 type InputProps = React.ComponentProps<"input"> &
   VariantProps<typeof inputVariants> & {
-    leftIcon?: React.ReactNode
-    rightIcon?: React.ReactNode
-  }
+    leftIcon?: React.ReactNode;
+    rightIcon?: React.ReactNode;
+  };
 
 function Input({
   className,
@@ -31,10 +31,10 @@ function Input({
   rightIcon,
   ...props
 }: InputProps) {
-  const isGhost = variant === "ghost"
+  const isGhost = variant === "ghost";
 
   const iconClasses =
-    "pointer-events-none absolute top-1/2 -translate-y-1/2 select-none [&>svg]:size-3.5"
+    "pointer-events-none absolute top-1/2 -translate-y-1/2 select-none [&>svg]:size-3.5";
 
   if (!leftIcon && !rightIcon) {
     return (
@@ -44,7 +44,7 @@ function Input({
         className={cn(inputVariants({ variant, className }))}
         {...props}
       />
-    )
+    );
   }
 
   return (
@@ -57,7 +57,7 @@ function Input({
           "peer",
           leftIcon && (isGhost ? "pl-5" : "pl-8"),
           rightIcon && (isGhost ? "pr-5" : "pr-8"),
-          className
+          className,
         )}
         {...props}
       />
@@ -66,8 +66,8 @@ function Input({
           className={cn(
             iconClasses,
             isGhost
-              ? "left-0 text-muted2/40 peer-[:not(:placeholder-shown)]:text-muted2 transition-colors duration-200"
-              : "left-2.5 text-muted2"
+              ? "text-muted2/40 peer-[:not(:placeholder-shown)]:text-muted2 left-0 transition-colors duration-200"
+              : "text-muted2 left-2.5",
           )}
           aria-hidden="true"
         >
@@ -79,8 +79,8 @@ function Input({
           className={cn(
             iconClasses,
             isGhost
-              ? "right-0 text-muted2/40 peer-[:not(:placeholder-shown)]:text-muted2 transition-colors duration-200"
-              : "right-2.5 text-muted2"
+              ? "text-muted2/40 peer-[:not(:placeholder-shown)]:text-muted2 right-0 transition-colors duration-200"
+              : "text-muted2 right-2.5",
           )}
           aria-hidden="true"
         >
@@ -88,8 +88,8 @@ function Input({
         </span>
       )}
     </div>
-  )
+  );
 }
 
-export { Input, inputVariants }
-export type { InputProps }
+export { Input, inputVariants };
+export type { InputProps };

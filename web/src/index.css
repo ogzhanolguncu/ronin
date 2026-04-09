@@ -13,6 +13,7 @@
 @theme inline {
   --font-sans: "Geist", sans-serif;
   --font-mono: "Geist Mono", monospace;
+  --font-serif: "Source Serif 4", Georgia, serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -76,7 +77,7 @@
   input[type="range"] {
     accent-color: var(--primary);
   }
- 
+
   button,
   input,
   textarea,
@@ -124,12 +125,18 @@ html {
   scrollbar-gutter: stable;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "liga" 1, "kern" 1;
+  font-feature-settings:
+    "liga" 1,
+    "kern" 1;
 }
 
 body {
   background:
-    radial-gradient(ellipse at 30% 20%, oklch(0.95 0.01 80 / 0.5), transparent 60%),
+    radial-gradient(
+      ellipse at 30% 20%,
+      oklch(0.95 0.01 80 / 0.5),
+      transparent 60%
+    ),
     oklch(0.927 0.015 80.7);
   display: flex;
   align-items: center;
@@ -140,8 +147,16 @@ body {
 
 .dark body {
   background:
-    radial-gradient(ellipse at 30% 20%, oklch(0.17 0.010 230 / 0.5), transparent 50%),
-    radial-gradient(ellipse at 80% 80%, oklch(0.15 0.008 240 / 0.3), transparent 50%),
+    radial-gradient(
+      ellipse at 30% 20%,
+      oklch(0.17 0.01 230 / 0.5),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 80%,
+      oklch(0.15 0.008 240 / 0.3),
+      transparent 50%
+    ),
     oklch(0.11 0.006 228);
 }
 
@@ -219,25 +234,29 @@ body {
   opacity: 0.03;
   mix-blend-mode: multiply;
   background: repeating-conic-gradient(
-    oklch(0.3 0 0) 0% 25%,
-    transparent 0% 50%
-  ) 0 0 / 4px 4px;
+      oklch(0.3 0 0) 0% 25%,
+      transparent 0% 50%
+    )
+    0 0 / 4px 4px;
 }
 
 .dark .paper-grain::before {
   mix-blend-mode: overlay;
   opacity: 0.12;
   background: repeating-conic-gradient(
-    oklch(0.85 0 0) 0% 25%,
-    transparent 0% 50%
-  ) 0 0 / 4px 4px;
+      oklch(0.85 0 0) 0% 25%,
+      transparent 0% 50%
+    )
+    0 0 / 4px 4px;
 }
 
 /* Active indicator animation */
 .nav-indicator-active {
   --indicator-opacity: 1;
   transition: --indicator-opacity 400ms ease-out;
-  border-left-color: oklch(from var(--primary) l c h / var(--indicator-opacity));
+  border-left-color: oklch(
+    from var(--primary) l c h / var(--indicator-opacity)
+  );
 }
 
 .nav-indicator-inactive {
@@ -302,11 +321,13 @@ body {
   text-shadow: 0 0 20px oklch(from var(--primary) l c h / 0.15);
 }
 
-/* Dark mode — collection dot glow */
+/* Collection / highlight dot glow */
+.dot-glow {
+  box-shadow: 0 0 4px currentColor;
+}
 .dark .dot-glow {
   box-shadow: 0 0 6px currentColor;
 }
-
 
 /* Search highlight — tamago-iro (卵色) wash on washi */
 mark {
@@ -317,7 +338,7 @@ mark {
   box-decoration-break: clone;
 }
 .dark mark {
-  background: oklch(0.55 0.10 80 / 0.3);
+  background: oklch(0.55 0.1 80 / 0.3);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -350,6 +371,11 @@ mark {
 
 /* Ink breathe — calm pulsing for loading states (Seijaku) */
 @keyframes ink-breathe {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }

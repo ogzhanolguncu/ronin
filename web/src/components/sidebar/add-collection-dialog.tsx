@@ -22,13 +22,19 @@ const collectionSchema = z.object({
   name: z
     .string()
     .check(z.refine((v) => v.length >= 1, "Name is required"))
-    .check(z.refine((v) => v.length <= 50, "Name must be 50 characters or less")),
+    .check(
+      z.refine((v) => v.length <= 50, "Name must be 50 characters or less"),
+    ),
   colorId: z.number().check(z.refine((v) => v >= 1, "Please pick a color")),
 });
 
 type CollectionFormValues = z.infer<typeof collectionSchema>;
 
-export function AddCollectionDialog({ hasCollections }: { hasCollections: boolean }) {
+export function AddCollectionDialog({
+  hasCollections,
+}: {
+  hasCollections: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   const {
@@ -68,7 +74,10 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
       <DialogTrigger asChild>
         <button
           type="button"
-          className={cn("flex items-center gap-2.5 px-4 text-xs text-muted2/40 transition-colors hover:text-muted2", hasCollections && "py-2")}
+          className={cn(
+            "text-muted2/40 hover:text-muted2 flex items-center gap-2.5 px-4 text-xs transition-colors",
+            hasCollections && "py-2",
+          )}
         >
           <PlusIcon className="h-3 w-3" />
           New collection
@@ -76,21 +85,21 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className="bg-surface border-border-soft sm:max-w-md max-w-[calc(100vw-32px)] p-0 overflow-hidden shadow-none gap-0 min-w-[400px]"
+        className="bg-surface border-border-soft max-w-[calc(100vw-32px)] min-w-[400px] gap-0 overflow-hidden p-0 shadow-none sm:max-w-md"
       >
         <div className="px-6 pt-8 pb-6">
           <DialogHeader>
             <DialogTitle className="text-base font-medium">
               New collection
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+            <DialogDescription className="text-muted-foreground text-sm">
               Group related bookmarks together.
             </DialogDescription>
           </DialogHeader>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="px-6 py-4 flex flex-col gap-6">
+          <div className="flex flex-col gap-6 px-6 py-4">
             <FormInput
               label="Name"
               required
@@ -106,7 +115,7 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
               name="colorId"
               render={({ field }) => (
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground/80">
+                  <label className="text-foreground/80 text-sm font-medium">
                     Color
                   </label>
                   <div className="flex items-center gap-2">
@@ -115,11 +124,20 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
                         key={color.id}
                         type="button"
                         className={cn(
-                          "size-5 rounded-full cursor-pointer transition-shadow",
-                          field.value === color.id &&
-                          "ring-2 ring-offset-2 ring-foreground/40",
+                          "dot-glow size-5 cursor-pointer rounded-full transition-all duration-200",
+                          field.value === color.id
+                            ? "ring-offset-surface scale-110 ring-2 ring-offset-2"
+                            : "opacity-65 hover:opacity-80",
                         )}
-                        style={{ backgroundColor: color.value }}
+                        style={{
+                          backgroundColor: color.value,
+                          color: color.value,
+                          ...(field.value === color.id
+                            ? ({
+                                "--tw-ring-color": color.value,
+                              } as React.CSSProperties)
+                            : {}),
+                        }}
                         onClick={() => field.onChange(color.id)}
                         aria-label={color.key}
                       />
@@ -131,7 +149,7 @@ export function AddCollectionDialog({ hasCollections }: { hasCollections: boolea
           </div>
 
           <div className="p-6 pb-7">
-            <Button type="submit" className="w-full h-9">
+            <Button type="submit" className="h-9 w-full">
               Create
             </Button>
           </div>

@@ -7,7 +7,7 @@ export function Brand() {
         </span>
         <span className="bg-shu mb-3 ml-1 inline-block size-2 shrink-0 rounded-[1px] shadow-[0_0_4px_oklch(0.55_0.14_30/0.4)]" />
       </div>
-      <div className="text-muted2 text-lg tracking-[0.3em] mt-1">浪人</div>
+      <div className="text-muted2 mt-1 text-lg tracking-[0.3em]">浪人</div>
     </div>
-  )
+  );
 }

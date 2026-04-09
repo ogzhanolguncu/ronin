@@ -1,15 +1,15 @@
-import { Suspense, type ReactNode } from "react"
-import { ErrorBoundary, type FallbackProps } from "react-error-boundary"
-import { ErrorFallback } from "./error-fallback"
-import { SuspenseFallback } from "./suspense-fallback"
+import { Suspense, type ReactNode } from "react";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+import { ErrorFallback } from "./error-fallback";
+import { SuspenseFallback } from "./suspense-fallback";
 
 type QueryBoundaryProps = {
-  children: ReactNode
-  loadingFallback?: ReactNode
-  errorFallback?: (props: FallbackProps) => ReactNode
-  resetKeys?: unknown[]
-  onReset?: () => void
-}
+  children: ReactNode;
+  loadingFallback?: ReactNode;
+  errorFallback?: (props: FallbackProps) => ReactNode;
+  resetKeys?: unknown[];
+  onReset?: () => void;
+};
 
 export function QueryBoundary({
   children,
@@ -20,7 +20,7 @@ export function QueryBoundary({
 }: QueryBoundaryProps) {
   const errorBoundaryProps = errorFallback
     ? { fallbackRender: errorFallback, resetKeys, onReset }
-    : { FallbackComponent: ErrorFallback, resetKeys, onReset }
+    : { FallbackComponent: ErrorFallback, resetKeys, onReset };
 
   return (
     <ErrorBoundary {...errorBoundaryProps}>
@@ -28,5 +28,5 @@ export function QueryBoundary({
         {children}
       </Suspense>
     </ErrorBoundary>
-  )
+  );
 }

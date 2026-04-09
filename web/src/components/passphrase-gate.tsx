@@ -4,7 +4,7 @@ import { Brand } from "./ui/brand";
 import { BrushStroke } from "./ui/brush-stroke";
 import { requester } from "@/lib/requester";
 
-export function PassphraseGate({ onUnlock }: { onUnlock: () => void }) {
+export default function PassphraseGate({ onUnlock }: { onUnlock: () => void }) {
   const [passphrase, setPassphrase] = useState("");
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +54,6 @@ export function PassphraseGate({ onUnlock }: { onUnlock: () => void }) {
         />
         <BrushStroke error={hasError} />
       </form>
-    </div >
+    </div>
   );
 }

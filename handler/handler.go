@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
@@ -37,6 +38,9 @@ type Handler struct {
 	tagCache        *gocache.Cache
 	collectionCache *gocache.Cache
 	sessionCache    *gocache.Cache
+
+	cachedAuthPage   string
+	cachedAuthPageMu sync.RWMutex
 }
 
 func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string, info BuildInfo) *http.Server {
@@ -46,13 +50,13 @@ func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCook
 	}
 
 	h := &Handler{
-		store:         s,
-		distFS:        distFS,
-		passphrase:    passphrase,
-		devMode:       devMode,
-		secureCookie:  secureCookie,
-		dataDir:       dataDir,
-		buildInfo:     info,
+		store:           s,
+		distFS:          distFS,
+		passphrase:      passphrase,
+		devMode:         devMode,
+		secureCookie:    secureCookie,
+		dataDir:         dataDir,
+		buildInfo:       info,
 		metadataCache:   gocache.New(10*time.Minute, 15*time.Minute),
 		tagCache:        gocache.New(gocache.NoExpiration, 0),
 		collectionCache: gocache.New(gocache.NoExpiration, 0),
@@ -114,9 +118,14 @@ func newRouter(h *Handler) http.Handler {
 	mux.HandleFunc("GET    /api/v1/tags", h.getTags)
 
 	mux.HandleFunc("GET    /api/v1/assets/{id}", h.getSnapshot)
-	mux.HandleFunc("GET    /api/v1/assets/{id}/readable", h.getReadable)
 	mux.HandleFunc("GET    /api/v1/assets/{id}/status", h.getAssetStatus)
 	mux.HandleFunc("POST   /api/v1/assets/{id}/regenerate", h.regenerateAssetsHandler)
+	mux.HandleFunc("GET    /api/v1/assets/{id}/readable/content", h.getReadableContent)
+
+	mux.HandleFunc("GET    /api/v1/bookmarks/{id}/highlights", h.getHighlights)
+	mux.HandleFunc("POST   /api/v1/bookmarks/{id}/highlights", h.createHighlight)
+	mux.HandleFunc("PUT    /api/v1/highlights/{id}", h.updateHighlight)
+	mux.HandleFunc("DELETE /api/v1/highlights/{id}", h.deleteHighlight)
 
 	mux.HandleFunc("GET    /api/v1/metadata", h.getMetadata)
 	mux.HandleFunc("GET    /api/v1/favicons/{domain}", h.getFavicon)
