@@ -160,15 +160,19 @@ body {
     oklch(0.11 0.006 228);
 }
 
+#app {
+  width: 100%;
+  max-width: 1400px;
+}
+
 /* App shell */
 .app {
-  width: 1400px;
-  max-width: 100%;
+  width: 100%;
   height: min(1200px, 100dvh);
   border-radius: 12px;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
   background: var(--background);
   border: 1px solid var(--border);
   box-shadow:
