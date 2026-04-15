@@ -7,6 +7,13 @@ import {
   RefreshIcon,
   EditIcon,
 } from "@/components/ui/icons";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { BookmarkEditForm } from "./bookmark-edit-form";
 import { formatRelativeTime } from "@/lib/format";
 import { useRegenerateAssets } from "@/lib/queries/bookmarks";
@@ -17,9 +24,11 @@ import { cn } from "@/lib/utils";
 export function BookmarkDetails({
   bookmark,
   onOpenReader,
+  onReadClick,
 }: {
   bookmark: Bookmark;
   onOpenReader: (id: number) => void;
+  onReadClick?: (bookmark: Bookmark) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const regenerate = useRegenerateAssets();
@@ -42,147 +51,62 @@ export function BookmarkDetails({
     return (
       <BookmarkEditForm
         bookmark={bookmark}
-        onCancel={() => setEditing(false)}
         onSaved={() => setEditing(false)}
       />
     );
   }
 
   return (
-    <div className="bg-surface flex max-h-[70vh] flex-col overflow-y-auto px-8 pt-9 pb-9">
-      {/* Header: favicon + title + url + archive links */}
-      <div className="flex items-start gap-3">
-        <img
-          src={`/api/v1/favicons/${getHostname(bookmark.url)}`}
-          alt=""
-          className="mt-px h-7 w-7 shrink-0 rounded-sm"
-        />
-        <div className="min-w-0 flex-1">
-          <DialogTitle className="text-foreground text-[17px] leading-[1.5] font-semibold">
-            {bookmark.title}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Bookmark details
-          </DialogDescription>
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted2 hover:text-primary mt-1 block truncate font-mono text-[11px]"
-          >
-            {bookmark.url}
-          </a>
-          <div className="mt-3 flex items-center gap-2.5">
-            {readerReady && (
-              <button
-                type="button"
-                onClick={() => onOpenReader(bookmark.id)}
-                className="text-muted2/70 hover:text-muted2 inline-flex items-center gap-1 text-xs"
-              >
-                <ReaderModeIcon className="h-3.5 w-3.5" />
-                Reader mode
-              </button>
-            )}
-            {readablePending && (
-              <span className="text-muted2/50 inline-flex items-center gap-1 text-xs">
-                <ReaderModeIcon className="h-3.5 w-3.5" />
-                Extracting...
-              </span>
-            )}
-            {(readerReady || readablePending) && bookmark.wayback_url && (
-              <span className="text-muted2/30 text-xs">&middot;</span>
-            )}
-            {bookmark.wayback_url && (
-              <a
-                href={bookmark.wayback_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted2/70 hover:text-muted2 inline-flex items-center gap-1 text-xs"
-              >
-                <ExternalLinkIcon className="h-3.5 w-3.5" />
-                Internet Archive
-              </a>
-            )}
-            {(readerReady || readablePending || bookmark.wayback_url) && (
-              <span className="text-muted2/30 text-xs">&middot;</span>
-            )}
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-muted2/70 hover:text-muted2 inline-flex items-center gap-1 text-xs transition-colors duration-300"
-            >
-              <EditIcon className="h-3.5 w-3.5" />
-              Edit
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {bookmark.description && (
-        <>
-          <div className="via-border dark:via-primary/10 mt-9 mb-7 h-px bg-gradient-to-r from-transparent to-transparent" />
-          <p className="text-foreground/80 text-sm leading-[1.8]">
-            {bookmark.description}
-          </p>
-        </>
-      )}
-
-      {bookmark.notes && (
-        <div className="border-border/40 dark:border-border/60 bg-foreground/[0.025] dark:bg-foreground/[0.05] mt-9 rounded-r-sm border-l py-2.5 pr-3 pl-3">
-          <p className="text-foreground/70 text-[12px] leading-[1.75]">
-            {bookmark.notes}
-          </p>
-        </div>
-      )}
-
-      {/* Snapshot + regenerate */}
-      {(snapshotReady ||
-        snapshotPending ||
-        snapshotFailed ||
-        canRegenerate) && (
-        <div className="mt-9 flex items-center gap-2.5">
-          <ArchiveIcon className="text-muted2/60 h-3.5 w-3.5 shrink-0" />
-          {snapshotReady && (
+    <div className="bg-surface flex max-h-[70vh] overflow-y-auto">
+      {/* Left zone: content */}
+      <div className="min-w-0 flex-1 px-8 pt-9 pb-9">
+        {/* Header: favicon + title + url */}
+        <div className="flex items-start gap-3">
+          <img
+            src={`/api/v1/favicons/${getHostname(bookmark.url)}`}
+            alt=""
+            className="mt-px h-7 w-7 shrink-0 rounded-sm"
+          />
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="text-foreground text-[17px] leading-[1.5] font-semibold">
+              {bookmark.title}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Bookmark details
+            </DialogDescription>
             <a
-              href={`/api/v1/assets/${bookmark.id}`}
+              href={bookmark.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted2/70 hover:text-muted2 text-xs"
+              className="text-muted2 hover:text-primary mt-1 block truncate font-mono text-[11px]"
+              onClick={() => onReadClick?.(bookmark)}
             >
-              View snapshot
+              {bookmark.url}
             </a>
-          )}
-          {snapshotPending && (
-            <span className="text-muted2/50 text-xs">Creating snapshot...</span>
-          )}
-          {snapshotFailed && (
-            <span className="text-muted2/50 text-xs">Snapshot failed</span>
-          )}
-          {canRegenerate && !snapshotPending && (
-            <>
-              <span className="text-muted2/30 text-xs">&middot;</span>
-              <button
-                type="button"
-                onClick={() => regenerate.mutate(bookmark.id)}
-                disabled={regenerate.isPending}
-                className="text-muted2/70 hover:text-muted2 inline-flex items-center gap-1 text-xs disabled:opacity-50"
-              >
-                <RefreshIcon
-                  className={cn(
-                    "h-3.5 w-3.5",
-                    regenerate.isPending && "animate-spin",
-                  )}
-                />
-                {regenerate.isPending ? "Regenerating..." : "Regenerate"}
-              </button>
-            </>
-          )}
+          </div>
         </div>
-      )}
 
-      {/* Status badges */}
-      {(bookmark.archived || !bookmark.read) && (
-        <div className="mt-9 flex items-center gap-2">
+        {bookmark.description && (
+          <p className="text-foreground/80 mt-5 text-sm leading-[1.8]">
+            {bookmark.description}
+          </p>
+        )}
+
+        {bookmark.notes && (
+          <div className="border-border/40 dark:border-border/60 bg-foreground/[0.025] dark:bg-foreground/[0.05] mt-4 rounded-r-sm border-l py-2.5 pr-3 pl-3">
+            <p className="text-foreground/70 text-[12px] leading-[1.75]">
+              {bookmark.notes}
+            </p>
+          </div>
+        )}
+
+        {/* Tags + status badges + date */}
+        <div className="mt-6 flex flex-wrap items-center gap-2.5">
+          {bookmark.tags.map((tag) => (
+            <span key={tag} className="text-muted2/70 font-mono text-[11px]">
+              #{tag}
+            </span>
+          ))}
           {bookmark.archived && (
             <span className="text-muted2 ring-border rounded-sm px-1.5 py-0.5 font-mono text-[11px] ring-1">
               archived
@@ -193,25 +117,164 @@ export function BookmarkDetails({
               unread
             </span>
           )}
-        </div>
-      )}
-
-      {/* Tags + date */}
-      <div
-        className={cn(
-          "flex flex-wrap items-center gap-2.5",
-          bookmark.archived || !bookmark.read ? "mt-6" : "mt-9",
-        )}
-      >
-        {bookmark.tags.map((tag) => (
-          <span key={tag} className="text-muted2/70 font-mono text-[11px]">
-            #{tag}
+          <span className="text-muted2 ml-auto font-mono text-[11px]">
+            {formatRelativeTime(bookmark.created_at)}
           </span>
-        ))}
-        <span className="text-muted2 ml-auto font-mono text-[11px]">
-          {formatRelativeTime(bookmark.created_at)}
-        </span>
+        </div>
       </div>
+
+      {/* Right zone: action strip */}
+      <TooltipProvider>
+        <div className="border-border-soft/50  w-12 shrink-0 border-l px-1.5 pt-9 pb-9">
+          <div className="flex-col items-center gap-3 flex justify-center">
+            {/* Reader mode */}
+            {(readerReady || readablePending || readableFailed) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted2/60 hover:text-primary transition-colors duration-300 ease-out"
+                      onClick={() => onOpenReader(bookmark.id)}
+                      disabled={!readerReady}
+                    >
+                      <ReaderModeIcon className="size-3.5" />
+                    </Button>
+                    {readablePending && (
+                      <span className="bg-kitsune absolute -top-0.5 -right-0.5 size-1.5 animate-pulse rounded-full" />
+                    )}
+                    {readableFailed && (
+                      <span className="bg-shu absolute -top-0.5 -right-0.5 size-1.5 rounded-full" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {readablePending
+                    ? "Extracting..."
+                    : readableFailed
+                      ? "Extraction failed"
+                      : "Reader mode"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* View snapshot */}
+            {(snapshotReady || snapshotPending || snapshotFailed) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    {snapshotReady ? (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-muted2/60 hover:text-primary transition-colors duration-300 ease-out"
+                        asChild
+                      >
+                        <a
+                          href={`/api/v1/assets/${bookmark.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ArchiveIcon className="size-3.5" />
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-muted2/60 transition-colors duration-300 ease-out"
+                        disabled
+                      >
+                        <ArchiveIcon className="size-3.5" />
+                      </Button>
+                    )}
+                    {snapshotPending && (
+                      <span className="bg-kitsune absolute -top-0.5 -right-0.5 size-1.5 animate-pulse rounded-full" />
+                    )}
+                    {snapshotFailed && (
+                      <span className="bg-shu absolute -top-0.5 -right-0.5 size-1.5 rounded-full" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {snapshotPending
+                    ? "Creating snapshot..."
+                    : snapshotFailed
+                      ? "Snapshot failed"
+                      : "View snapshot"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Internet Archive */}
+            {bookmark.wayback_url && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted2/60 hover:text-primary transition-colors duration-300 ease-out"
+                    asChild
+                  >
+                    <a
+                      href={bookmark.wayback_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLinkIcon className="size-3.5" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Internet Archive</TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Divider */}
+            <div className="bg-border-soft/50 my-2.5 h-px w-5" />
+
+            {/* Edit */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted2/60 hover:text-foreground transition-colors duration-300 ease-out"
+                  onClick={() => setEditing(true)}
+                >
+                  <EditIcon className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+
+            {/* Regenerate */}
+            {canRegenerate && !snapshotPending && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted2/60 hover:text-foreground transition-colors duration-300 ease-out"
+                    onClick={() => regenerate.mutate(bookmark.id)}
+                    disabled={regenerate.isPending}
+                  >
+                    <RefreshIcon
+                      className={cn(
+                        "size-3.5",
+                        regenerate.isPending && "animate-spin",
+                      )}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {regenerate.isPending ? "Regenerating..." : "Regenerate"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </div>
+      </TooltipProvider>
     </div>
   );
 }

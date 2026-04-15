@@ -75,7 +75,7 @@ export function AddCollectionDialog({
         <button
           type="button"
           className={cn(
-            "text-muted2/40 hover:text-muted2 flex items-center gap-2.5 px-4 text-xs transition-colors",
+            "text-muted2/80 hover:text-muted2 flex items-center gap-2.5 px-4 text-xs transition-colors",
             hasCollections && "py-2",
           )}
         >
@@ -134,8 +134,8 @@ export function AddCollectionDialog({
                           color: color.value,
                           ...(field.value === color.id
                             ? ({
-                                "--tw-ring-color": color.value,
-                              } as React.CSSProperties)
+                              "--tw-ring-color": color.value,
+                            } as React.CSSProperties)
                             : {}),
                         }}
                         onClick={() => field.onChange(color.id)}

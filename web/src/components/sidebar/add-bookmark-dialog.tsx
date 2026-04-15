@@ -132,7 +132,7 @@ export function AddBookmarkDialog() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="text-muted2/40 hover:text-muted2 flex items-center gap-2.5 text-xs transition-colors"
+          className="text-muted2/80 hover:text-muted2 flex items-center gap-2.5 text-xs transition-colors"
         >
           <PlusIcon className="h-3 w-3" />
           Add bookmark

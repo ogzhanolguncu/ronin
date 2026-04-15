@@ -37,11 +37,20 @@ export function BookmarkList({
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const filters = useBookmarkFilters();
-  const { data } = useSuspenseQuery(bookmarksQueryOptions(filters));
+  const { data } = useSuspenseQuery({
+    ...bookmarksQueryOptions(filters),
+    refetchInterval: (query) => {
+      const items = query.state.data?.bookmarks ?? [];
+      return items.some(
+        (b) =>
+          b.readable_status === "pending" || b.snapshot_status === "pending",
+      )
+        ? 3_000
+        : false;
+    },
+  });
 
-  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
-    null,
-  );
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const deleteMutation = useDeleteBookmark();
@@ -83,15 +92,19 @@ export function BookmarkList({
     });
   const meta = data.meta;
 
+  const selectedBookmark =
+    selectedId != null ? bookmarks.find((b) => b.id === selectedId) ?? null : null;
+
   function handleViewClick(bookmark: Bookmark) {
-    setSelectedBookmark(bookmark);
+    setSelectedId(bookmark.id);
     setDetailOpen(true);
+    if (!bookmark.read) readMutation.mutate({ id: bookmark.id, read: true });
   }
 
   function handleDetailOpenChange(open: boolean) {
     setDetailOpen(open);
     if (!open) {
-      setTimeout(() => setSelectedBookmark(null), 200);
+      setTimeout(() => setSelectedId(null), 200);
     }
   }
 
@@ -147,7 +160,8 @@ export function BookmarkList({
       <Dialog open={detailOpen} onOpenChange={handleDetailOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="bg-surface border-border-soft max-w-[calc(100vw-32px)] min-w-[550px] gap-0 overflow-hidden border p-0 shadow-none sm:max-w-md"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="bg-surface border-border-soft max-w-[calc(100vw-32px)] gap-0 overflow-hidden border p-0 shadow-none sm:max-w-xl"
         >
           {selectedBookmark && (
             <BookmarkDetails
@@ -155,6 +169,9 @@ export function BookmarkList({
               onOpenReader={(id) => {
                 setDetailOpen(false);
                 navigate(`/reader/${id}`);
+              }}
+              onReadClick={(b) => {
+                if (!b.read) readMutation.mutate({ id: b.id, read: true });
               }}
             />
           )}
