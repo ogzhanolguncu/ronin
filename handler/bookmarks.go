@@ -14,6 +14,7 @@ import (
 	"github.com/ogzhanolguncu/ronin/httputil"
 	"github.com/ogzhanolguncu/ronin/model"
 	"github.com/ogzhanolguncu/ronin/store"
+	"github.com/ogzhanolguncu/ronin/urlutil"
 )
 
 func (h *Handler) getBookmarkCounts(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +172,10 @@ func (h *Handler) getBookmarkByURL(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "url parameter is required")
 		return
 	}
+	// Best-effort normalization; malformed URLs fall through and will 404.
+	if normalized, err := urlutil.Normalize(rawURL); err == nil {
+		rawURL = normalized
+	}
 
 	var bm model.Bookmark
 	err := h.store.ReadDB.GetContext(r.Context(), &bm,
@@ -208,8 +213,15 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var err error
+	req.URL, err = urlutil.Normalize(req.URL)
+	if err != nil {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid URL: %s", err.Error()))
+		return
+	}
+
 	var bmID int64
-	err := store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
+	err = store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(
 			r.Context(),
 			`INSERT INTO bookmark (url, title, description, notes, favorite, collection_id) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -265,6 +277,17 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.URL == "" {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, "URL is required")
+		return
+	}
+
+	req.URL, err = urlutil.Normalize(req.URL)
+	if err != nil {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid URL: %s", err.Error()))
+		return
+	}
+
 	var oldURL string
 	if err := h.store.ReadDB.GetContext(r.Context(), &oldURL, "SELECT url FROM bookmark WHERE id = ?", id); err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
@@ -303,6 +326,10 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
 			httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
+			return
+		}
+		if store.IsUniqueConstraintErr(err) {
+			httputil.WriteError(w, http.StatusConflict, "bookmark already exists")
 			return
 		}
 		httputil.ServerError(w, "failed to update bookmark", err)

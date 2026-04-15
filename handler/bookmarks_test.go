@@ -338,3 +338,118 @@ func TestBookmarkHandlers(t *testing.T) {
 		}
 	})
 }
+
+func TestURLNormalizationDedup(t *testing.T) {
+	s, err := store.NewStore(":memory:")
+	if err != nil {
+		t.Fatalf("create store: %v", err)
+	}
+	defer s.Close()
+
+	h := &Handler{
+		store:           s,
+		devMode:         true,
+		distFS:          embed.FS{},
+		metadataCache:   gocache.New(gocache.NoExpiration, 0),
+		tagCache:        gocache.New(gocache.NoExpiration, 0),
+		collectionCache: gocache.New(gocache.NoExpiration, 0),
+		sessionCache:    gocache.New(gocache.NoExpiration, 0),
+	}
+	srv := httptest.NewServer(newRouter(h))
+	defer srv.Close()
+
+	// Create a bookmark with a clean URL
+	resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+		URL:   "https://example.com",
+		Title: "Example",
+	})
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", resp.StatusCode)
+	}
+
+	t.Run("duplicate_with_www", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "https://www.example.com",
+			Title: "Duplicate",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusConflict {
+			t.Fatalf("expected 409, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("duplicate_with_trailing_slash", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "https://example.com/",
+			Title: "Duplicate",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusConflict {
+			t.Fatalf("expected 409, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("duplicate_with_tracking_params", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "https://example.com?utm_source=twitter&fbclid=abc",
+			Title: "Duplicate",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusConflict {
+			t.Fatalf("expected 409, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("duplicate_with_uppercase", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "HTTPS://EXAMPLE.COM",
+			Title: "Duplicate",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusConflict {
+			t.Fatalf("expected 409, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("duplicate_with_fragment", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "https://example.com#section",
+			Title: "Duplicate",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusConflict {
+			t.Fatalf("expected 409, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("lookup_by_url_normalizes", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodGet, "/api/v1/bookmarks/exists?url=https://WWW.EXAMPLE.COM/", nil)
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected 200, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("different_url_is_not_duplicate", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "https://example.com/different-page",
+			Title: "Different",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("expected 201, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("url_with_meaningful_params_is_not_duplicate", func(t *testing.T) {
+		resp := doRequest(t, srv, http.MethodPost, "/api/v1/bookmarks", model.CreateBookmarkRequest{
+			URL:   "https://example.com?q=search",
+			Title: "With Query",
+		})
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("expected 201, got %d", resp.StatusCode)
+		}
+	})
+}

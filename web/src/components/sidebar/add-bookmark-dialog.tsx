@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { requester } from "@/lib/requester";
@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PlusIcon } from "@/components/ui/icons";
 import { collectionsQueryOptions } from "@/lib/queries/collections";
 import { useCreateBookmark } from "@/lib/queries/bookmarks";
+import { ApiError } from "@/lib/queries/query-client";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { tagsQueryOptions } from "@/lib/queries/tags";
@@ -37,12 +38,15 @@ export function AddBookmarkDialog() {
   const [fetchingMeta, setFetchingMeta] = useState(false);
   const createBookmark = useCreateBookmark();
   const fetchingMetaRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
 
   const {
     register,
     handleSubmit,
     control,
     reset,
+    setError,
     setValue,
     getValues,
     formState: { errors },
@@ -59,7 +63,9 @@ export function AddBookmarkDialog() {
     },
   });
 
-  async function handleUrlBlur(url: string) {
+  const urlRegistration = register("url");
+
+  async function fetchMeta(url: string) {
     let normalized = url.trim();
     if (normalized && !/^https?:\/\//i.test(normalized)) {
       normalized = `https://${normalized}`;
@@ -96,8 +102,18 @@ export function AddBookmarkDialog() {
     }
   }
 
+  function handleUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
+    urlRegistration.onChange(e);
+    const value = e.target.value;
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchMeta(value);
+    }, 300);
+  }
+
   function handleClose(nextOpen: boolean) {
     if (!nextOpen) {
+      clearTimeout(debounceRef.current);
       reset();
       setNotesOpen(false);
     }
@@ -121,11 +137,16 @@ export function AddBookmarkDialog() {
           setNotesOpen(false);
           setOpen(false);
         },
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 409) {
+            setError("url", { message: "Bookmark already exists" });
+          } else {
+            setError("url", { message: err.message || "Failed to save" });
+          }
+        },
       },
     );
   }
-
-  const urlRegistration = register("url");
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -168,10 +189,7 @@ export function AddBookmarkDialog() {
               }
               autoFocus
               {...urlRegistration}
-              onBlur={(e) => {
-                urlRegistration.onBlur(e);
-                handleUrlBlur(e.currentTarget.value);
-              }}
+              onChange={handleUrlChange}
             />
 
             <FormInput
