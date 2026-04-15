@@ -64,7 +64,10 @@ createRoot(document.getElementById("app")!).render(
         <Router />
       </ErrorBoundary>
       <Suspense>
-        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          buttonPosition="bottom-left"
+        />
       </Suspense>
     </PersistQueryClientProvider>
   </StrictMode>,

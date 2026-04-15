@@ -134,8 +134,8 @@ export function AddCollectionDialog({
                           color: color.value,
                           ...(field.value === color.id
                             ? ({
-                              "--tw-ring-color": color.value,
-                            } as React.CSSProperties)
+                                "--tw-ring-color": color.value,
+                              } as React.CSSProperties)
                             : {}),
                         }}
                         onClick={() => field.onChange(color.id)}

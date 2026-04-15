@@ -93,7 +93,9 @@ export function BookmarkList({
   const meta = data.meta;
 
   const selectedBookmark =
-    selectedId != null ? bookmarks.find((b) => b.id === selectedId) ?? null : null;
+    selectedId != null
+      ? (bookmarks.find((b) => b.id === selectedId) ?? null)
+      : null;
 
   function handleViewClick(bookmark: Bookmark) {
     setSelectedId(bookmark.id);

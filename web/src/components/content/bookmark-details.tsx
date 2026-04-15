@@ -49,10 +49,7 @@ export function BookmarkDetails({
 
   if (editing) {
     return (
-      <BookmarkEditForm
-        bookmark={bookmark}
-        onSaved={() => setEditing(false)}
-      />
+      <BookmarkEditForm bookmark={bookmark} onSaved={() => setEditing(false)} />
     );
   }
 
@@ -125,8 +122,8 @@ export function BookmarkDetails({
 
       {/* Right zone: action strip */}
       <TooltipProvider>
-        <div className="border-border-soft/50  w-12 shrink-0 border-l px-1.5 pt-9 pb-9">
-          <div className="flex-col items-center gap-3 flex justify-center">
+        <div className="border-border-soft/50 w-12 shrink-0 border-l px-1.5 pt-9 pb-9">
+          <div className="flex flex-col items-center justify-center gap-3">
             {/* Reader mode */}
             {(readerReady || readablePending || readableFailed) && (
               <Tooltip>
