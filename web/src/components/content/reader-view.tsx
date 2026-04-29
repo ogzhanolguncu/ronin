@@ -29,10 +29,10 @@ const HIGHLIGHT_COLORS: {
   color: string;
   label: string;
 }[] = [
-  { value: "yellow", color: "oklch(0.78 0.08 80)", label: "Kitsune" },
-  { value: "green", color: "oklch(0.72 0.08 145)", label: "Matcha" },
-  { value: "blue", color: "oklch(0.68 0.08 250)", label: "Ai" },
-  { value: "pink", color: "oklch(0.72 0.07 310)", label: "Fuji" },
+  { value: "yellow", color: "oklch(0.76 0.05 80)", label: "Kitsune" },
+  { value: "green", color: "oklch(0.70 0.05 145)", label: "Matcha" },
+  { value: "blue", color: "oklch(0.66 0.05 250)", label: "Ai" },
+  { value: "pink", color: "oklch(0.70 0.05 310)", label: "Fuji" },
 ];
 
 function getHighlightColor(value: HighlightColor): string {
@@ -66,7 +66,7 @@ export default function ReaderView({
   );
 
   const articleRef = useRef<HTMLDivElement>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selection, setSelection] = useState<SelectionAnchor | null>(null);
   const [activeHighlightId, setActiveHighlightId] = useState<number | null>(
     null,
@@ -276,13 +276,13 @@ export default function ReaderView({
   return (
     <div className="reader-bg fixed inset-0 z-50 flex">
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="border-border-soft/50 flex h-11 shrink-0 items-center justify-between border-b px-5">
+        <div className="flex h-14 shrink-0 items-center justify-between px-8">
           <button
             type="button"
             onClick={onClose}
-            className="text-muted2 hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors duration-300"
+            className="text-muted2/45 hover:text-muted2/80 inline-flex items-center gap-1.5 text-xs uppercase tracking-wider transition-colors duration-300"
           >
-            <ChevronLeftIcon className="size-3.5" strokeWidth={1.5} />
+            <ChevronLeftIcon className="size-3" strokeWidth={1.5} />
             Back
           </button>
           <div className="flex items-center gap-3">
@@ -291,7 +291,7 @@ export default function ReaderView({
                 href={content.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted2 hover:text-foreground text-sm transition-colors duration-300"
+                className="text-muted2/45 hover:text-muted2/80 text-xs uppercase tracking-wider transition-colors duration-300"
               >
                 Source
               </a>
@@ -300,13 +300,13 @@ export default function ReaderView({
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className={cn(
-                "inline-flex items-center gap-1.5 text-sm transition-colors duration-300",
+                "inline-flex items-center gap-1.5 text-xs uppercase tracking-wider transition-colors duration-300",
                 sidebarOpen
-                  ? "text-primary"
-                  : "text-muted2 hover:text-foreground",
+                  ? "text-primary/70"
+                  : "text-muted2/45 hover:text-muted2/80",
               )}
             >
-              <HighlighterIcon className="size-3.5" />
+              <HighlighterIcon className="size-3" />
               Highlights{highlights?.length ? ` (${highlights.length})` : ""}
             </button>
           </div>
@@ -333,8 +333,8 @@ export default function ReaderView({
       </div>
 
       {sidebarOpen && (
-        <aside className="bg-surface reader-sidebar-enter paper-grain border-border-soft/60 sidebar-edge flex w-80 shrink-0 flex-col overflow-hidden border-l">
-          <div className="border-border-soft/50 flex h-11 shrink-0 items-center justify-between border-b px-4">
+        <aside className="bg-surface reader-sidebar-enter paper-grain sidebar-edge flex w-80 shrink-0 flex-col overflow-hidden shadow-[-1px_0_0_oklch(0.80_0.01_80/0.1)]">
+          <div className="flex h-14 shrink-0 items-center justify-between px-5">
             <button
               type="button"
               onClick={() => {
@@ -342,7 +342,7 @@ export default function ReaderView({
                 setEditingHighlight(null);
                 setActiveHighlightId(null);
               }}
-              className="text-muted2 hover:text-foreground ml-auto p-1 transition-colors duration-300"
+              className="text-muted2/30 hover:text-muted2/70 ml-auto p-1 transition-colors duration-300"
             >
               <CloseIcon className="size-3.5" />
             </button>
@@ -362,7 +362,7 @@ export default function ReaderView({
                 <div
                   key={hl.id}
                   className={cn(
-                    "flex cursor-pointer items-start gap-2.5 px-4 py-3 transition-colors duration-200",
+                    "flex cursor-pointer items-start gap-2.5 px-5 py-3.5 transition-colors duration-200",
                     isActive ? "bg-surface2" : "hover:bg-surface2/50",
                   )}
                   onClick={() => {
@@ -373,14 +373,14 @@ export default function ReaderView({
                   }}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2.5">
                       <span
-                        className="dot-glow mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: hlColor, color: hlColor }}
+                        className="mt-0.5 h-4 w-[3px] shrink-0 rounded-[1px] opacity-50"
+                        style={{ backgroundColor: hlColor }}
                       />
                       <p
                         className={cn(
-                          "line-clamp-3 text-sm leading-relaxed transition-colors",
+                          "line-clamp-3 text-xs leading-[1.85] transition-colors",
                           isActive ? "text-foreground" : "text-text2",
                         )}
                       >
@@ -393,7 +393,7 @@ export default function ReaderView({
                       </p>
                     )}
 
-                    <span className="text-text2 mt-4 block font-mono text-xs">
+                    <span className="text-text2/30 mt-3 block font-mono text-[10px]">
                       {formatRelativeTime(hl.created_at)}
                     </span>
 
