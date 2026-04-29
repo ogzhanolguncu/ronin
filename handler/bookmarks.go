@@ -2,7 +2,6 @@ package handler
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,18 +13,12 @@ import (
 	"github.com/ogzhanolguncu/ronin/httputil"
 	"github.com/ogzhanolguncu/ronin/model"
 	"github.com/ogzhanolguncu/ronin/store"
+	"github.com/ogzhanolguncu/ronin/store/dbgen"
 	"github.com/ogzhanolguncu/ronin/urlutil"
 )
 
 func (h *Handler) getBookmarkCounts(w http.ResponseWriter, r *http.Request) {
-	var counts model.BookmarkCounts
-	err := h.store.ReadDB.GetContext(r.Context(), &counts, `
-    SELECT
-        COALESCE(SUM(CASE WHEN archived = 0 THEN 1 ELSE 0 END), 0)    AS all_count,
-        COALESCE(SUM(CASE WHEN favorite = 1 THEN 1 ELSE 0 END), 0)    AS favorites_count,
-        COALESCE(SUM(CASE WHEN read = 0    THEN 1 ELSE 0 END), 0)     AS unread_count,
-        COALESCE(SUM(CASE WHEN archived = 1 THEN 1 ELSE 0 END), 0)    AS archived_count
-    FROM bookmark`)
+	counts, err := h.store.GetBookmarkCounts(r.Context())
 	if err != nil {
 		httputil.ServerError(w, "failed to load bookmark counts", err)
 		return
@@ -53,82 +46,39 @@ func (h *Handler) getBookmarks(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * limit
 
 	var response model.ListBookmarksResponse
+	var totalCount int
+
+	sf := store.BookmarkFilters{Where: f.where, Args: f.args}
 
 	if q != "" {
-		// Full-text search mode
-		terms := strings.Fields(q)
-		for i, t := range terms {
-			if !strings.HasSuffix(t, "*") {
-				terms[i] = t + "*"
-			}
-		}
-		q = strings.Join(terms, " ")
+		match := store.PrepareSearchQuery(q)
 
-		query := `
-			SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
-			       bm.archived, bm.read, bm.favorite, bm.collection_id,
-			       bm.created_at, bm.updated_at, bm.tags,
-			       bm.snapshot_status, bm.readable_status,
-			       (SELECT COUNT(*) FROM bookmark_fts JOIN bookmark bm ON bm.id = bookmark_fts.rowid WHERE bookmark_fts MATCH ?` + f.where + `) AS total_count,
-			       highlight(bookmark_fts, 0, '<mark>', '</mark>') AS title_snippet,
-			       snippet(bookmark_fts, 1, '<mark>', '</mark>', '…', 32) AS description_snippet
-			FROM bookmark_fts
-			JOIN bookmark bm ON bm.id = bookmark_fts.rowid
-			WHERE bookmark_fts MATCH ?` + f.where + `
-			ORDER BY bookmark_fts.rank
-			LIMIT ? OFFSET ?`
-		args := append([]any{q}, f.args...)
-		args = append(args, q)
-		args = append(args, f.args...)
-		args = append(args, limit, offset)
-
-		if err := h.store.ReadDB.SelectContext(r.Context(), &response.Bookmarks, query, args...); err != nil {
+		var bookmarks []model.Bookmark
+		bookmarks, totalCount, err = h.store.SearchBookmarks(r.Context(), match, sf, limit, offset)
+		if err != nil {
 			httputil.ServerError(w, "failed to search bookmarks", err)
 			return
 		}
+		response.Bookmarks = bookmarks
 	} else {
-		// Regular listing mode
 		sortParam, err := httputil.QueryParam(r, "sort", "newest")
 		if err != nil {
 			httputil.WriteError(w, http.StatusUnprocessableEntity, fmt.Sprintf("invalid sort: %s", err.Error()))
 			return
 		}
+		orderBy := store.OrderByClause(sortParam)
 
-		var orderBy string
-		switch sortParam {
-		case "oldest":
-			orderBy = " ORDER BY bm.created_at ASC"
-		case "az":
-			orderBy = " ORDER BY bm.title ASC"
-		case "za":
-			orderBy = " ORDER BY bm.title DESC"
-		default:
-			orderBy = " ORDER BY bm.created_at DESC"
-		}
-
-		query := `
-			SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
-			       bm.archived, bm.read, bm.favorite, bm.collection_id,
-			       bm.created_at, bm.updated_at, bm.tags,
-			       bm.snapshot_status, bm.readable_status,
-			       COUNT(*) OVER() AS total_count
-			FROM bookmark bm
-			WHERE 1=1` + f.where + orderBy + ` LIMIT ? OFFSET ?`
-		args := append(f.args, limit, offset)
-
-		if err := h.store.ReadDB.SelectContext(r.Context(), &response.Bookmarks, query, args...); err != nil {
+		var bookmarks []model.Bookmark
+		bookmarks, totalCount, err = h.store.ListBookmarks(r.Context(), sf, orderBy, limit, offset)
+		if err != nil {
 			httputil.ServerError(w, "failed to query bookmarks", err)
 			return
 		}
+		response.Bookmarks = bookmarks
 	}
 
 	if response.Bookmarks == nil {
 		response.Bookmarks = []model.Bookmark{}
-	}
-
-	var totalCount int
-	if len(response.Bookmarks) > 0 {
-		totalCount = response.Bookmarks[0].TotalCount
 	}
 
 	for i := range response.Bookmarks {
@@ -146,24 +96,14 @@ func (h *Handler) getBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response model.Bookmark
-	err = h.store.ReadDB.GetContext(r.Context(), &response,
-		model.BookmarkBaseQuery+`
-		WHERE bm.id = ?`,
-		id,
-	)
+	bm, err := h.store.GetBookmark(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
-			return
-		}
-		httputil.ServerError(w, "failed to query bookmark", err)
+		writeNotFoundOrErr(w, err, "bookmark not found", "failed to query bookmark")
 		return
 	}
 
-	response.ParseTags()
-
-	httputil.WriteJSON(w, http.StatusOK, response)
+	bm.ParseTags()
+	httputil.WriteJSON(w, http.StatusOK, bm)
 }
 
 func (h *Handler) getBookmarkByURL(w http.ResponseWriter, r *http.Request) {
@@ -172,21 +112,13 @@ func (h *Handler) getBookmarkByURL(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadRequest, "url parameter is required")
 		return
 	}
-	// Best-effort normalization; malformed URLs fall through and will 404.
 	if normalized, err := urlutil.Normalize(rawURL); err == nil {
 		rawURL = normalized
 	}
 
-	var bm model.Bookmark
-	err := h.store.ReadDB.GetContext(r.Context(), &bm,
-		model.BookmarkBaseQuery+` WHERE bm.url = ?`, rawURL,
-	)
+	bm, err := h.store.GetBookmarkByURL(r.Context(), rawURL)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			httputil.WriteError(w, http.StatusNotFound, "not found")
-			return
-		}
-		httputil.ServerError(w, "failed to query bookmark", err)
+		writeNotFoundOrErr(w, err, "not found", "failed to query bookmark")
 		return
 	}
 
@@ -221,24 +153,18 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var bmID int64
-	err = store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(
-			r.Context(),
-			`INSERT INTO bookmark (url, title, description, notes, favorite, collection_id) VALUES (?, ?, ?, ?, ?, ?)`,
-			req.URL,
-			req.Title,
-			req.Description,
-			req.Notes,
-			req.Favorite,
-			req.CollectionID,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create bookmark: %w", err)
-		}
-
-		bmID, err = result.LastInsertId()
-		if err != nil {
-			return fmt.Errorf("failed to get last inserted bookmark id: %w", err)
+	err = h.store.WithTx(r.Context(), func(q *dbgen.Queries, tx *sql.Tx) error {
+		var txErr error
+		bmID, txErr = q.CreateBookmark(r.Context(), dbgen.CreateBookmarkParams{
+			Url:          req.URL,
+			Title:        req.Title,
+			Description:  req.Description,
+			Notes:        req.Notes,
+			Favorite:     store.BoolToInt64(req.Favorite),
+			CollectionID: store.NullInt64FromPtr(req.CollectionID),
+		})
+		if txErr != nil {
+			return fmt.Errorf("failed to create bookmark: %w", txErr)
 		}
 
 		return store.UpsertTagsAndLink(r.Context(), tx, bmID, req.Tags)
@@ -252,12 +178,10 @@ func (h *Handler) createBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.invalidateTagCache()
 	h.generateAssets(bmID, req.URL)
 
-	var created model.Bookmark
-	if err := h.store.ReadDB.GetContext(r.Context(), &created,
-		model.BookmarkBaseQuery+` WHERE bm.id = ?`, bmID); err != nil {
+	created, err := h.store.GetBookmark(r.Context(), bmID)
+	if err != nil {
 		httputil.ServerError(w, "failed to fetch created bookmark", err)
 		return
 	}
@@ -288,55 +212,47 @@ func (h *Handler) updateBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var oldURL string
-	if err := h.store.ReadDB.GetContext(r.Context(), &oldURL, "SELECT url FROM bookmark WHERE id = ?", id); err != nil {
+	oldURL, err := h.store.GetBookmarkURL(r.Context(), id)
+	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
 		return
 	}
 
-	err = store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
-		result, err := tx.ExecContext(
-			r.Context(),
-			`UPDATE bookmark SET url = ?, title = ?, description = ?, notes = ?, favorite = ?, collection_id = ? WHERE id = ?`,
-			req.URL,
-			req.Title,
-			req.Description,
-			req.Notes,
-			req.Favorite,
-			req.CollectionID,
-			id,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to update bookmark: %w", err)
+	err = h.store.WithTx(r.Context(), func(q *dbgen.Queries, tx *sql.Tx) error {
+		result, txErr := q.UpdateBookmark(r.Context(), dbgen.UpdateBookmarkParams{
+			Url:          req.URL,
+			Title:        req.Title,
+			Description:  req.Description,
+			Notes:        req.Notes,
+			Favorite:     store.BoolToInt64(req.Favorite),
+			CollectionID: store.NullInt64FromPtr(req.CollectionID),
+			ID:           id,
+		})
+		if txErr != nil {
+			return fmt.Errorf("failed to update bookmark: %w", txErr)
 		}
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("failed to check rows affected: %w", err)
+		rows, txErr := result.RowsAffected()
+		if txErr != nil {
+			return fmt.Errorf("failed to check rows affected: %w", txErr)
 		}
 		if rows == 0 {
 			return model.ErrNotFound
 		}
 
-		if _, err = tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", id); err != nil {
-			return fmt.Errorf("failed to delete bookmark tags: %w", err)
+		if txErr = q.DeleteBookmarkTags(r.Context(), id); txErr != nil {
+			return fmt.Errorf("failed to delete bookmark tags: %w", txErr)
 		}
 
 		return store.UpsertTagsAndLink(r.Context(), tx, id, req.Tags)
 	})
 	if err != nil {
-		if errors.Is(err, model.ErrNotFound) {
-			httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
-			return
-		}
 		if store.IsUniqueConstraintErr(err) {
 			httputil.WriteError(w, http.StatusConflict, "bookmark already exists")
 			return
 		}
-		httputil.ServerError(w, "failed to update bookmark", err)
+		writeNotFoundOrErr(w, err, "bookmark not found", "failed to update bookmark")
 		return
 	}
-
-	h.invalidateTagCache()
 
 	if req.URL != oldURL {
 		go func() {
@@ -357,34 +273,16 @@ func (h *Handler) deleteBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(r.Context(), "DELETE FROM bookmark_tag WHERE bookmark_id = ?", id); err != nil {
-			return fmt.Errorf("failed to delete bookmark tags: %w", err)
-		}
-		result, err := tx.ExecContext(r.Context(), "DELETE FROM bookmark WHERE id = ?", id)
-		if err != nil {
-			return fmt.Errorf("failed to delete bookmark: %w", err)
-		}
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("failed to check rows affected: %w", err)
-		}
-		if rows == 0 {
-			return model.ErrNotFound
-		}
-
-		return nil
-	})
+	result, err := h.store.DeleteBookmark(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, model.ErrNotFound) {
-			httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
-			return
-		}
 		httputil.ServerError(w, "failed to delete bookmark", err)
 		return
 	}
+	if n, _ := result.RowsAffected(); n == 0 {
+		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
+		return
+	}
 
-	h.invalidateTagCache()
 	go func() {
 		if err := os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10))); err != nil {
 			slog.Warn("failed to remove assets", "bookmark_id", id, "err", err)
@@ -400,21 +298,11 @@ func (h *Handler) deleteBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := store.WithTx(r.Context(), h.store.WriteDB, func(tx *sql.Tx) error {
-		if err := store.BulkDelete(r.Context(), tx, "bookmark_tag", "bookmark_id", req.IDs); err != nil {
-			return fmt.Errorf("failed to delete bookmark tags: %w", err)
-		}
-		if err := store.BulkDelete(r.Context(), tx, "bookmark", "id", req.IDs); err != nil {
-			return fmt.Errorf("failed to delete bookmarks: %w", err)
-		}
-		return nil
-	})
-	if err != nil {
+	if err := h.store.BulkDeleteBookmarks(r.Context(), "id", req.IDs); err != nil {
 		httputil.ServerError(w, "failed to delete bookmarks", err)
 		return
 	}
 
-	h.invalidateTagCache()
 	go func() {
 		for _, id := range req.IDs {
 			if err := os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.Itoa(id))); err != nil {
@@ -431,22 +319,11 @@ func (h *Handler) archiveBookmarks(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if len(req.IDs) == 0 {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "at least 1 archive entry is required")
-		return
-	}
-
 	entries := make([]store.BulkCaseEntry, len(req.IDs))
 	for i, e := range req.IDs {
 		entries[i] = store.BulkCaseEntry{ID: e.ID, Value: e.Archived}
 	}
-
-	if err := store.BulkCaseUpdate(r.Context(), h.store.WriteDB, "bookmark", "archived", entries); err != nil {
-		httputil.ServerError(w, "failed to archive bookmarks", err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	h.bulkUpdate(w, r, "archived", entries)
 }
 
 func (h *Handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
@@ -454,22 +331,11 @@ func (h *Handler) readBookmarks(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if len(req.IDs) == 0 {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "at least 1 read entry is required")
-		return
-	}
-
 	entries := make([]store.BulkCaseEntry, len(req.IDs))
 	for i, e := range req.IDs {
 		entries[i] = store.BulkCaseEntry{ID: e.ID, Value: e.Read}
 	}
-
-	if err := store.BulkCaseUpdate(r.Context(), h.store.WriteDB, "bookmark", "read", entries); err != nil {
-		httputil.ServerError(w, "failed to mark bookmarks as read", err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	h.bulkUpdate(w, r, "read", entries)
 }
 
 func (h *Handler) favoriteBookmarks(w http.ResponseWriter, r *http.Request) {
@@ -477,21 +343,22 @@ func (h *Handler) favoriteBookmarks(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if len(req.IDs) == 0 {
-		httputil.WriteError(w, http.StatusUnprocessableEntity, "at least 1 favorite entry is required")
-		return
-	}
-
 	entries := make([]store.BulkCaseEntry, len(req.IDs))
 	for i, e := range req.IDs {
 		entries[i] = store.BulkCaseEntry{ID: e.ID, Value: e.Favorite}
 	}
+	h.bulkUpdate(w, r, "favorite", entries)
+}
 
-	if err := store.BulkCaseUpdate(r.Context(), h.store.WriteDB, "bookmark", "favorite", entries); err != nil {
-		httputil.ServerError(w, "failed to favorite bookmarks", err)
+func (h *Handler) bulkUpdate(w http.ResponseWriter, r *http.Request, column string, entries []store.BulkCaseEntry) {
+	if len(entries) == 0 {
+		httputil.WriteError(w, http.StatusUnprocessableEntity, "at least 1 entry is required")
 		return
 	}
-
+	if err := h.store.BulkCaseUpdateBookmark(r.Context(), column, entries); err != nil {
+		httputil.ServerError(w, "failed to update bookmarks", err)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -524,7 +391,7 @@ func parseBookmarkFilters(r *http.Request) bookmarkFilters {
 	}
 	if unread != -1 {
 		f.where += " AND bm.read = ?"
-		f.args = append(f.args, 1-unread) // unread=1 means read=0
+		f.args = append(f.args, 1-unread)
 	}
 
 	for tag := range strings.SplitSeq(tagsParam, ",") {

@@ -5,7 +5,6 @@ go 1.25.1
 require (
 	codeberg.org/readeck/go-readability/v2 v2.1.1
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/jmoiron/sqlx v1.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	modernc.org/sqlite v1.46.1
 )

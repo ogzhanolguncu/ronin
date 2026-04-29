@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
 	"github.com/ogzhanolguncu/ronin/model"
 	"github.com/ogzhanolguncu/ronin/store"
+	"github.com/ogzhanolguncu/ronin/store/dbgen"
 )
 
 var validHighlightColors = map[string]bool{
@@ -25,10 +24,7 @@ func (h *Handler) getHighlights(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var highlights []model.Highlight
-	err = h.store.ReadDB.SelectContext(r.Context(), &highlights,
-		`SELECT id, bookmark_id, text, note, color, start_path, start_offset, end_path, end_offset, created_at, updated_at
-		 FROM highlight WHERE bookmark_id = ? ORDER BY created_at ASC`, id)
+	highlights, err := h.store.GetHighlightsByBookmark(r.Context(), id)
 	if err != nil {
 		httputil.ServerError(w, "failed to query highlights", err)
 		return
@@ -76,30 +72,22 @@ func (h *Handler) createHighlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.WriteDB.ExecContext(r.Context(),
-		`INSERT INTO highlight (bookmark_id, text, note, color, start_path, start_offset, end_path, end_offset)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		bookmarkID, req.Text, req.Note, req.Color, req.StartPath, req.StartOffset, req.EndPath, req.EndOffset)
+	created, err := h.store.CreateHighlight(r.Context(), dbgen.CreateHighlightParams{
+		BookmarkID:  bookmarkID,
+		Text:        req.Text,
+		Note:        req.Note,
+		Color:       req.Color,
+		StartPath:   req.StartPath,
+		StartOffset: int64(req.StartOffset),
+		EndPath:     req.EndPath,
+		EndOffset:   int64(req.EndOffset),
+	})
 	if err != nil {
 		if store.IsForeignKeyConstraintErr(err) {
 			httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
 			return
 		}
 		httputil.ServerError(w, "failed to create highlight", err)
-		return
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		httputil.ServerError(w, "failed to get last insert id", err)
-		return
-	}
-
-	var created model.Highlight
-	if err := h.store.ReadDB.GetContext(r.Context(), &created,
-		`SELECT id, bookmark_id, text, note, color, start_path, start_offset, end_path, end_offset, created_at, updated_at
-		 FROM highlight WHERE id = ?`, id); err != nil {
-		httputil.ServerError(w, "failed to fetch created highlight", err)
 		return
 	}
 
@@ -127,15 +115,9 @@ func (h *Handler) updateHighlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var highlight model.Highlight
-	err = h.store.ReadDB.GetContext(r.Context(), &highlight,
-		`SELECT id, note, color FROM highlight WHERE id = ?`, id)
+	highlight, err := h.store.GetHighlight(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			httputil.WriteError(w, http.StatusNotFound, "highlight not found")
-			return
-		}
-		httputil.ServerError(w, "failed to query highlight", err)
+		writeNotFoundOrErr(w, err, "highlight not found", "failed to query highlight")
 		return
 	}
 
@@ -145,10 +127,7 @@ func (h *Handler) updateHighlight(w http.ResponseWriter, r *http.Request) {
 		color = highlight.Color
 	}
 
-	_, err = h.store.WriteDB.ExecContext(r.Context(),
-		`UPDATE highlight SET note = ?, color = ? WHERE id = ?`,
-		note, color, id)
-	if err != nil {
+	if _, err := h.store.UpdateHighlight(r.Context(), id, note, color); err != nil {
 		httputil.ServerError(w, "failed to update highlight", err)
 		return
 	}
@@ -163,8 +142,7 @@ func (h *Handler) deleteHighlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.WriteDB.ExecContext(r.Context(),
-		`DELETE FROM highlight WHERE id = ?`, id)
+	result, err := h.store.DeleteHighlight(r.Context(), id)
 	if err != nil {
 		httputil.ServerError(w, "failed to delete highlight", err)
 		return

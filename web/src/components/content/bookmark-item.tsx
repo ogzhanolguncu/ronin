@@ -173,10 +173,10 @@ export function BookmarkItem({
           className="text-muted2 mt-4 line-clamp-2 max-w-130 text-xs leading-relaxed font-light"
           {...(bookmark.description_snippet
             ? {
-                dangerouslySetInnerHTML: {
-                  __html: bookmark.description_snippet,
-                },
-              }
+              dangerouslySetInnerHTML: {
+                __html: bookmark.description_snippet,
+              },
+            }
             : { children: bookmark.description })}
         />
       )}

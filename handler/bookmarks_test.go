@@ -51,10 +51,8 @@ func TestBookmarkHandlers(t *testing.T) {
 		store:           s,
 		devMode:         true,
 		distFS:          embed.FS{},
-		metadataCache:   gocache.New(gocache.NoExpiration, 0),
-		tagCache:        gocache.New(gocache.NoExpiration, 0),
-		collectionCache: gocache.New(gocache.NoExpiration, 0),
-		sessionCache:    gocache.New(gocache.NoExpiration, 0),
+		metadataCache: gocache.New(gocache.NoExpiration, 0),
+		sessionCache:  gocache.New(gocache.NoExpiration, 0),
 	}
 	srv := httptest.NewServer(newRouter(h))
 	defer srv.Close()
@@ -350,10 +348,8 @@ func TestURLNormalizationDedup(t *testing.T) {
 		store:           s,
 		devMode:         true,
 		distFS:          embed.FS{},
-		metadataCache:   gocache.New(gocache.NoExpiration, 0),
-		tagCache:        gocache.New(gocache.NoExpiration, 0),
-		collectionCache: gocache.New(gocache.NoExpiration, 0),
-		sessionCache:    gocache.New(gocache.NoExpiration, 0),
+		metadataCache: gocache.New(gocache.NoExpiration, 0),
+		sessionCache:  gocache.New(gocache.NoExpiration, 0),
 	}
 	srv := httptest.NewServer(newRouter(h))
 	defer srv.Close()

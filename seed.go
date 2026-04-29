@@ -12,6 +12,7 @@ import (
 
 	"github.com/ogzhanolguncu/ronin/metadata"
 	"github.com/ogzhanolguncu/ronin/store"
+	"github.com/ogzhanolguncu/ronin/store/dbgen"
 )
 
 const maxFaviconBytes = 10 * 1024 // 10KB
@@ -174,45 +175,43 @@ var seedTemplates = []bookmarkTemplate{
 func seedBookmarks(ctx context.Context, s *store.Store, count int) error {
 	limit := min(count, len(seedTemplates))
 
-	// Insert bookmarks and collections inside a transaction
-	err := store.WithTx(ctx, s.WriteDB, func(tx *sql.Tx) error {
-		// Seed collections first
+	err := s.WithTx(ctx, func(q *dbgen.Queries, tx *sql.Tx) error {
 		collectionIDs := make(map[string]int64, len(seedCollections))
 		for _, c := range seedCollections {
-			res, err := tx.ExecContext(ctx,
-				`INSERT INTO collection (name, slug, color_id) VALUES (?, ?, ?)`,
-				c.name, c.slug, c.colorID,
-			)
+			created, err := q.CreateCollection(ctx, dbgen.CreateCollectionParams{
+				Name:    c.name,
+				Slug:    c.slug,
+				ColorID: int64(c.colorID),
+			})
 			if err != nil {
 				return fmt.Errorf("insert collection %s: %w", c.slug, err)
 			}
-			id, _ := res.LastInsertId()
-			collectionIDs[c.slug] = id
+			collectionIDs[c.slug] = created.ID
 		}
 		slog.Info("seed collections", "count", len(seedCollections))
 
 		for i := range limit {
 			t := seedTemplates[i]
 
-			var collectionID *int64
+			var collectionID sql.NullInt64
 			if t.collection != "" {
 				if cid, ok := collectionIDs[t.collection]; ok {
-					collectionID = &cid
+					collectionID = sql.NullInt64{Int64: cid, Valid: true}
 				}
 			}
 
-			res, err := tx.ExecContext(ctx,
-				`INSERT INTO bookmark (url, title, description, notes, archived, read, favorite, collection_id)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-				t.url, t.title, t.description, t.notes, t.archived, t.read, t.favorite, collectionID,
-			)
+			bookmarkID, err := q.CreateBookmarkFull(ctx, dbgen.CreateBookmarkFullParams{
+				Url:          t.url,
+				Title:        t.title,
+				Description:  t.description,
+				Notes:        t.notes,
+				Archived:     store.BoolToInt64(t.archived),
+				Read:         store.BoolToInt64(t.read),
+				Favorite:     store.BoolToInt64(t.favorite),
+				CollectionID: collectionID,
+			})
 			if err != nil {
 				return fmt.Errorf("insert bookmark %d: %w", i, err)
-			}
-
-			bookmarkID, err := res.LastInsertId()
-			if err != nil {
-				return fmt.Errorf("last insert id %d: %w", i, err)
 			}
 
 			if t.tags != "" {
@@ -232,14 +231,12 @@ func seedBookmarks(ctx context.Context, s *store.Store, count int) error {
 		return err
 	}
 
-	// Fetch real favicons outside the transaction to avoid holding it open during network I/O
 	seedFavicons(ctx, s, limit)
 
 	return nil
 }
 
 func seedFavicons(ctx context.Context, s *store.Store, limit int) {
-	// Collect unique domains
 	seen := make(map[string]bool)
 	var domains []string
 	for i := range limit {
@@ -258,7 +255,7 @@ func seedFavicons(ctx context.Context, s *store.Store, limit int) {
 
 	client := metadata.NewHTTPClient()
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 10) // max 10 concurrent fetches
+	sem := make(chan struct{}, 10)
 
 	for _, domain := range domains {
 		wg.Add(1)
@@ -274,10 +271,7 @@ func seedFavicons(ctx context.Context, s *store.Store, limit int) {
 				return
 			}
 
-			if _, err := s.WriteDB.ExecContext(ctx,
-				`INSERT OR IGNORE INTO favicon (domain, data, content_type, fetched_at) VALUES (?, ?, ?, unixepoch())`,
-				domain, data, contentType,
-			); err != nil {
+			if err := s.UpsertFaviconIgnore(ctx, domain, data, contentType); err != nil {
 				slog.Warn("seed favicon: insert failed", "domain", domain, "err", err)
 			} else {
 				slog.Info("seed favicon", "domain", domain, "bytes", len(data))

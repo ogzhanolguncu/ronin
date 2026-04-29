@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
-	"sync"
 	"time"
 
 	"github.com/ogzhanolguncu/ronin/httputil"
@@ -34,13 +33,8 @@ type Handler struct {
 	dataDir      string
 	buildInfo    BuildInfo
 
-	metadataCache   *gocache.Cache
-	tagCache        *gocache.Cache
-	collectionCache *gocache.Cache
-	sessionCache    *gocache.Cache
-
-	cachedAuthPage   string
-	cachedAuthPageMu sync.RWMutex
+	metadataCache *gocache.Cache
+	sessionCache  *gocache.Cache
 }
 
 func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string, info BuildInfo) *http.Server {
@@ -50,17 +44,15 @@ func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCook
 	}
 
 	h := &Handler{
-		store:           s,
-		distFS:          distFS,
-		passphrase:      passphrase,
-		devMode:         devMode,
-		secureCookie:    secureCookie,
-		dataDir:         dataDir,
-		buildInfo:       info,
-		metadataCache:   gocache.New(10*time.Minute, 15*time.Minute),
-		tagCache:        gocache.New(gocache.NoExpiration, 0),
-		collectionCache: gocache.New(gocache.NoExpiration, 0),
-		sessionCache:    gocache.New(30*time.Second, 1*time.Minute),
+		store:         s,
+		distFS:        distFS,
+		passphrase:    passphrase,
+		devMode:       devMode,
+		secureCookie:  secureCookie,
+		dataDir:       dataDir,
+		buildInfo:     info,
+		metadataCache: gocache.New(10*time.Minute, 15*time.Minute),
+		sessionCache:  gocache.New(30*time.Second, 1*time.Minute),
 	}
 	srv := &http.Server{
 		Addr:         ":8080",
@@ -148,7 +140,6 @@ func applyMiddleware(h http.Handler, middlewares ...func(http.Handler) http.Hand
 	return h
 }
 
-// sub returns the embedded dist filesystem, panicking on error.
 func (h *Handler) sub() fs.FS {
 	sub, err := fs.Sub(h.distFS, "web/dist")
 	if err != nil {

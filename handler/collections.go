@@ -1,9 +1,6 @@
 package handler
 
 import (
-	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -12,33 +9,8 @@ import (
 	"github.com/ogzhanolguncu/ronin/store"
 )
 
-const collectionCacheKey = "collections"
-
-func (h *Handler) loadCollections(ctx context.Context) ([]model.Collection, error) {
-	if cached, ok := h.collectionCache.Get(collectionCacheKey); ok {
-		return cached.([]model.Collection), nil
-	}
-	var collections []model.Collection
-	err := h.store.ReadDB.SelectContext(ctx, &collections,
-		`SELECT id, name, slug, color_id, created_at, updated_at
-		 FROM collection ORDER BY name ASC`)
-	if err != nil {
-		return nil, err
-	}
-	if collections == nil {
-		collections = []model.Collection{}
-	}
-	h.collectionCache.Set(collectionCacheKey, collections, 0)
-	return collections, nil
-}
-
-func (h *Handler) invalidateCollectionCache() {
-	h.collectionCache.Delete(collectionCacheKey)
-	h.invalidateAuthPageCache()
-}
-
 func (h *Handler) getCollections(w http.ResponseWriter, r *http.Request) {
-	collections, err := h.loadCollections(r.Context())
+	collections, err := h.store.ListCollections(r.Context())
 	if err != nil {
 		httputil.ServerError(w, "failed to query collections", err)
 		return
@@ -53,16 +25,9 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var c model.Collection
-	err = h.store.ReadDB.GetContext(r.Context(), &c,
-		`SELECT id, name, slug, color_id, created_at, updated_at
-		 FROM collection WHERE id = ?`, id)
+	c, err := h.store.GetCollection(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			httputil.WriteError(w, http.StatusNotFound, "collection not found")
-			return
-		}
-		httputil.ServerError(w, "failed to query collection", err)
+		writeNotFoundOrErr(w, err, "collection not found", "failed to query collection")
 		return
 	}
 
@@ -88,9 +53,7 @@ func (h *Handler) createCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.WriteDB.ExecContext(r.Context(),
-		`INSERT INTO collection (name, slug, color_id) VALUES (?, ?, ?)`,
-		req.Name, req.Slug, req.ColorID)
+	created, err := h.store.CreateCollection(r.Context(), req.Name, req.Slug, req.ColorID)
 	if err != nil {
 		if store.IsUniqueConstraintErr(err) {
 			httputil.WriteError(w, http.StatusConflict, "collection with this slug already exists")
@@ -100,19 +63,6 @@ func (h *Handler) createCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.invalidateCollectionCache()
-	id, err := result.LastInsertId()
-	if err != nil {
-		httputil.ServerError(w, "failed to get last insert id", err)
-		return
-	}
-
-	var created model.Collection
-	if err := h.store.ReadDB.GetContext(r.Context(), &created,
-		`SELECT id, name, slug, color_id, created_at, updated_at FROM collection WHERE id = ?`, id); err != nil {
-		httputil.ServerError(w, "failed to fetch created collection", err)
-		return
-	}
 	httputil.WriteJSON(w, http.StatusCreated, created)
 }
 
@@ -141,9 +91,7 @@ func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.WriteDB.ExecContext(r.Context(),
-		`UPDATE collection SET name = ?, slug = ?, color_id = ? WHERE id = ?`,
-		req.Name, req.Slug, req.ColorID, id)
+	result, err := h.store.UpdateCollection(r.Context(), id, req.Name, req.Slug, req.ColorID)
 	if err != nil {
 		if store.IsUniqueConstraintErr(err) {
 			httputil.WriteError(w, http.StatusConflict, "collection with this slug already exists")
@@ -163,7 +111,6 @@ func (h *Handler) updateCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.invalidateCollectionCache()
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -174,8 +121,7 @@ func (h *Handler) deleteCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.store.WriteDB.ExecContext(r.Context(),
-		`DELETE FROM collection WHERE id = ?`, id)
+	result, err := h.store.DeleteCollection(r.Context(), id)
 	if err != nil {
 		httputil.ServerError(w, "failed to delete collection", err)
 		return
@@ -191,6 +137,5 @@ func (h *Handler) deleteCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.invalidateCollectionCache()
 	w.WriteHeader(http.StatusNoContent)
 }

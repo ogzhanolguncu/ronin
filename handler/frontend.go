@@ -26,7 +26,6 @@ func (h *Handler) frontendHandler() http.Handler {
 	fileServer := http.FileServer(http.FS(sub))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Serve static assets directly
 		path := strings.TrimPrefix(r.URL.Path, "/")
 		if path != "" && path != "index.html" {
 			if _, err := fs.Stat(sub, path); err == nil {
@@ -38,7 +37,6 @@ func (h *Handler) frontendHandler() http.Handler {
 			}
 		}
 
-		// Redirect unauthenticated users to /auth
 		status := h.resolveAuthStatus(r)
 		if status == "login" && r.URL.Path != "/auth" {
 			http.Redirect(w, r, "/auth", http.StatusFound)
@@ -48,7 +46,7 @@ func (h *Handler) frontendHandler() http.Handler {
 		var page string
 
 		if status == "authenticated" {
-			page = h.getOrBuildAuthPage(r, indexHTML)
+			page = h.buildAuthPage(r, indexHTML)
 		} else {
 			page = strings.Replace(indexHTML, "<!--AUTH-->",
 				`<script>window.__AUTH__="`+status+`"</script>`, 1)
@@ -62,18 +60,11 @@ func (h *Handler) frontendHandler() http.Handler {
 	})
 }
 
-func (h *Handler) getOrBuildAuthPage(r *http.Request, indexHTML string) string {
-	h.cachedAuthPageMu.RLock()
-	if cached := h.cachedAuthPage; cached != "" {
-		h.cachedAuthPageMu.RUnlock()
-		return cached
-	}
-	h.cachedAuthPageMu.RUnlock()
-
+func (h *Handler) buildAuthPage(r *http.Request, indexHTML string) string {
 	page := strings.Replace(indexHTML, "<!--AUTH-->",
 		`<script>window.__AUTH__="authenticated"</script>`, 1)
 
-	tags, err := h.loadTags(r.Context())
+	tags, err := h.store.ListActiveTags(r.Context())
 	if err != nil {
 		slog.Warn("failed to load tags for injection", "err", err)
 	}
@@ -84,7 +75,7 @@ func (h *Handler) getOrBuildAuthPage(r *http.Request, indexHTML string) string {
 	page = strings.Replace(page, "<!--TAGS-->",
 		`<script>window.__TAGS__=`+string(tagsJSON)+`</script>`, 1)
 
-	collections, err := h.loadCollections(r.Context())
+	collections, err := h.store.ListCollections(r.Context())
 	if err != nil {
 		slog.Warn("failed to load collections for injection", "err", err)
 	}
@@ -95,17 +86,7 @@ func (h *Handler) getOrBuildAuthPage(r *http.Request, indexHTML string) string {
 	page = strings.Replace(page, "<!--COLLECTIONS-->",
 		`<script>window.__COLLECTIONS__=`+string(collectionsJSON)+`</script>`, 1)
 
-	h.cachedAuthPageMu.Lock()
-	h.cachedAuthPage = page
-	h.cachedAuthPageMu.Unlock()
-
 	return page
-}
-
-func (h *Handler) invalidateAuthPageCache() {
-	h.cachedAuthPageMu.Lock()
-	h.cachedAuthPage = ""
-	h.cachedAuthPageMu.Unlock()
 }
 
 func (h *Handler) resolveAuthStatus(r *http.Request) string {

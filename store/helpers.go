@@ -6,23 +6,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/ogzhanolguncu/ronin/store/dbgen"
 )
 
-type DBTX interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-}
-
-func WithTx(ctx context.Context, db *sqlx.DB, fn func(*sql.Tx) error) error {
-	tx, err := db.BeginTx(ctx, nil)
+func (s *Store) WithTx(ctx context.Context, fn func(q *dbgen.Queries, tx *sql.Tx) error) error {
+	tx, err := s.writeDB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	if err := fn(tx); err != nil {
+	if err := fn(dbgen.New(tx), tx); err != nil {
 		return err
 	}
 
@@ -34,8 +28,7 @@ type BulkCaseEntry struct {
 	Value any
 }
 
-// BulkCaseUpdate builds and executes: UPDATE <table> SET <column> = CASE id WHEN ? THEN ? ... END WHERE id IN (...)
-func BulkCaseUpdate(ctx context.Context, db DBTX, table, column string, entries []BulkCaseEntry) error {
+func BulkCaseUpdate(ctx context.Context, db dbgen.DBTX, table, column string, entries []BulkCaseEntry) error {
 	if len(entries) == 0 {
 		return nil
 	}
@@ -61,7 +54,7 @@ func BulkCaseUpdate(ctx context.Context, db DBTX, table, column string, entries 
 	return nil
 }
 
-func BulkDelete(ctx context.Context, db DBTX, table, column string, ids []int) error {
+func BulkDelete(ctx context.Context, db dbgen.DBTX, table, column string, ids []int) error {
 	if len(ids) == 0 {
 		return nil
 	}

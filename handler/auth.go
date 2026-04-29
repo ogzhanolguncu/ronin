@@ -29,8 +29,7 @@ func (h *Handler) authLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Clean expired sessions
-	h.store.WriteDB.ExecContext(r.Context(), "DELETE FROM session WHERE expires_at < ?", time.Now().Unix())
+	h.store.DeleteExpiredSessions(r.Context(), time.Now().Unix())
 
 	token, err := h.createSession(r)
 	if err != nil {
@@ -46,7 +45,7 @@ func (h *Handler) authLogout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	if err == nil {
 		h.sessionCache.Delete(cookie.Value)
-		h.store.WriteDB.ExecContext(r.Context(), "DELETE FROM session WHERE token = ?", cookie.Value)
+		h.store.DeleteSession(r.Context(), cookie.Value)
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -90,12 +89,8 @@ func (h *Handler) isValidSession(ctx context.Context, token string) bool {
 	if _, ok := h.sessionCache.Get(token); ok {
 		return true
 	}
-	var exists int
-	err := h.store.ReadDB.QueryRowContext(ctx,
-		"SELECT COUNT(*) FROM session WHERE token = ? AND expires_at > ?",
-		token, time.Now().Unix(),
-	).Scan(&exists)
-	if err != nil || exists == 0 {
+	count, err := h.store.CountValidSessions(ctx, token, time.Now().Unix())
+	if err != nil || count == 0 {
 		return false
 	}
 	h.sessionCache.Set(token, true, 0)
@@ -110,7 +105,7 @@ func (h *Handler) createSession(r *http.Request) (string, error) {
 	token := hex.EncodeToString(b)
 	expiresAt := time.Now().Add(sessionDuration).Unix()
 
-	if _, err := h.store.WriteDB.ExecContext(r.Context(), "INSERT INTO session (token, expires_at) VALUES (?, ?)", token, expiresAt); err != nil {
+	if err := h.store.CreateSession(r.Context(), token, expiresAt); err != nil {
 		return "", err
 	}
 

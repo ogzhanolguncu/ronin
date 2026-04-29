@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -24,12 +25,8 @@ func (h *Handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data []byte
-	var contentType string
-	err := h.store.ReadDB.QueryRowContext(r.Context(),
-		"SELECT data, content_type FROM favicon WHERE domain = ?", domain,
-	).Scan(&data, &contentType)
-	if err == sql.ErrNoRows {
+	data, contentType, err := h.store.GetFavicon(r.Context(), domain)
+	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
 	}
@@ -45,14 +42,8 @@ func (h *Handler) getFavicon(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// fetchAndStoreFavicon downloads a favicon and stores it in the database.
-// It tries iconURL first (from <link rel="icon">), then falls back to /favicon.ico.
 func (h *Handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
-	// Check if we already have a fresh favicon
-	var fetchedAt int64
-	err := h.store.ReadDB.QueryRowContext(context.Background(),
-		"SELECT fetched_at FROM favicon WHERE domain = ?", domain,
-	).Scan(&fetchedAt)
+	fetchedAt, err := h.store.GetFaviconFetchedAt(context.Background(), domain)
 	if err == nil && time.Since(time.Unix(fetchedAt, 0)) < faviconMaxAge {
 		return
 	}
@@ -92,14 +83,9 @@ func (h *Handler) fetchAndStoreFavicon(domain, baseOrigin, iconURL string) {
 			contentType = "image/x-icon"
 		}
 
-		_, err = h.store.WriteDB.ExecContext(context.Background(),
-			`INSERT INTO favicon (domain, data, content_type, fetched_at) VALUES (?, ?, ?, unixepoch())
-			 ON CONFLICT(domain) DO UPDATE SET data = excluded.data, content_type = excluded.content_type, fetched_at = excluded.fetched_at`,
-			domain, data, contentType,
-		)
-		if err != nil {
+		if err := h.store.UpsertFavicon(context.Background(), domain, data, contentType); err != nil {
 			slog.Error("failed to store favicon", "domain", domain, "err", err)
 		}
-		return // success
+		return
 	}
 }

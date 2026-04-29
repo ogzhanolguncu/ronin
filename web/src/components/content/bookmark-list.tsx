@@ -100,7 +100,7 @@ export function BookmarkList({
   function handleViewClick(bookmark: Bookmark) {
     setSelectedId(bookmark.id);
     setDetailOpen(true);
-    if (!bookmark.read) readMutation.mutate({ id: bookmark.id, read: true });
+    // if (!bookmark.read) readMutation.mutate({ id: bookmark.id, read: true });
   }
 
   function handleDetailOpenChange(open: boolean) {

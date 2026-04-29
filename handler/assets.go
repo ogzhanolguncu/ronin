@@ -90,14 +90,12 @@ func (h *Handler) getReadableContent(w http.ResponseWriter, r *http.Request) {
 func extractReadableContent(fullHTML string) readableContentResponse {
 	var resp readableContentResponse
 
-	// Extract title from <h1>...</h1>
 	if i := strings.Index(fullHTML, "<h1>"); i != -1 {
 		if j := strings.Index(fullHTML[i:], "</h1>"); j != -1 {
 			resp.Title = html.UnescapeString(fullHTML[i+4 : i+j])
 		}
 	}
 
-	// Extract source URL from <p class="source"><a href="...">
 	sourcePrefix := `<p class="source"><a href="`
 	if i := strings.Index(fullHTML, sourcePrefix); i != -1 {
 		start := i + len(sourcePrefix)
@@ -106,7 +104,6 @@ func extractReadableContent(fullHTML string) readableContentResponse {
 		}
 	}
 
-	// Extract article content: everything between </p>\n and \n</body>
 	sourceEnd := "</p>\n"
 	bodyEnd := "\n</body>"
 	if i := strings.Index(fullHTML, `<p class="source">`); i != -1 {
@@ -128,18 +125,16 @@ func (h *Handler) getAssetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var status struct {
-		SnapshotStatus string `db:"snapshot_status" json:"snapshot_status"`
-		ReadableStatus string `db:"readable_status" json:"readable_status"`
-	}
-	err = h.store.ReadDB.GetContext(r.Context(), &status,
-		"SELECT snapshot_status, readable_status FROM bookmark WHERE id = ?", id)
+	status, err := h.store.GetAssetStatus(r.Context(), id)
 	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
+		writeNotFoundOrErr(w, err, "bookmark not found", "failed to query asset status")
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, status)
+	httputil.WriteJSON(w, http.StatusOK, map[string]string{
+		"snapshot_status": status.SnapshotStatus,
+		"readable_status": status.ReadableStatus,
+	})
 }
 
 func (h *Handler) generateAssets(bookmarkID int64, bookmarkURL string) {
@@ -155,15 +150,12 @@ func (h *Handler) regenerateAssetsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var bookmarkURL string
-	err = h.store.ReadDB.GetContext(r.Context(), &bookmarkURL,
-		"SELECT url FROM bookmark WHERE id = ?", id)
+	bookmarkURL, err := h.store.GetBookmarkURL(r.Context(), id)
 	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "bookmark not found")
 		return
 	}
 
-	// Clean old assets
 	if err := os.RemoveAll(filepath.Join(h.dataDir, "assets", strconv.FormatInt(id, 10))); err != nil {
 		slog.Warn("failed to remove old assets", "bookmark_id", id, "err", err)
 	}
@@ -210,15 +202,13 @@ func (h *Handler) generateSnapshot(bookmarkID int64, bookmarkURL string) {
 	gzPath := filepath.Join(dir, "snapshot.html.gz")
 	tmpPath := gzPath + ".tmp"
 
-	if _, err := h.store.WriteDB.ExecContext(context.Background(),
-		"UPDATE bookmark SET snapshot_status = 'pending' WHERE id = ?", bookmarkID); err != nil {
+	if err := h.store.UpdateSnapshotStatus(context.Background(), bookmarkID, "pending"); err != nil {
 		slog.Error("failed to set snapshot status to pending", "bookmark_id", bookmarkID, "err", err)
 	}
 
 	if _, err := exec.LookPath("monolith"); err != nil {
 		slog.Warn("monolith not installed, skipping snapshot", "bookmark_id", bookmarkID)
-		if _, err := h.store.WriteDB.ExecContext(context.Background(),
-			"UPDATE bookmark SET snapshot_status = 'failed' WHERE id = ?", bookmarkID); err != nil {
+		if err := h.store.UpdateSnapshotStatus(context.Background(), bookmarkID, "failed"); err != nil {
 			slog.Error("failed to set snapshot status to failed", "bookmark_id", bookmarkID, "err", err)
 		}
 		return
@@ -249,8 +239,7 @@ func (h *Handler) generateSnapshot(bookmarkID int64, bookmarkURL string) {
 		}
 		os.Remove(tmpPath)
 
-		if _, err := h.store.WriteDB.ExecContext(context.Background(),
-			"UPDATE bookmark SET snapshot_status = 'ready' WHERE id = ?", bookmarkID); err != nil {
+		if err := h.store.UpdateSnapshotStatus(context.Background(), bookmarkID, "ready"); err != nil {
 			slog.Error("failed to set snapshot status to ready", "bookmark_id", bookmarkID, "err", err)
 		}
 		slog.Info("snapshot created", "bookmark_id", bookmarkID)
@@ -258,8 +247,7 @@ func (h *Handler) generateSnapshot(bookmarkID int64, bookmarkURL string) {
 	}
 
 	slog.Error("monolith failed after retries", "bookmark_id", bookmarkID, "err", lastErr)
-	if _, err := h.store.WriteDB.ExecContext(context.Background(),
-		"UPDATE bookmark SET snapshot_status = 'failed' WHERE id = ?", bookmarkID); err != nil {
+	if err := h.store.UpdateSnapshotStatus(context.Background(), bookmarkID, "failed"); err != nil {
 		slog.Error("failed to set snapshot status to failed", "bookmark_id", bookmarkID, "err", err)
 	}
 }
@@ -273,8 +261,7 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 
 	gzPath := filepath.Join(dir, "readable.html.gz")
 
-	if _, err := h.store.WriteDB.ExecContext(context.Background(),
-		"UPDATE bookmark SET readable_status = 'pending' WHERE id = ?", bookmarkID); err != nil {
+	if err := h.store.UpdateReadableStatus(context.Background(), bookmarkID, "pending"); err != nil {
 		slog.Error("failed to set readable status to pending", "bookmark_id", bookmarkID, "err", err)
 	}
 
@@ -309,8 +296,7 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 			continue
 		}
 
-		if _, err := h.store.WriteDB.ExecContext(context.Background(),
-			"UPDATE bookmark SET readable_status = 'ready' WHERE id = ?", bookmarkID); err != nil {
+		if err := h.store.UpdateReadableStatus(context.Background(), bookmarkID, "ready"); err != nil {
 			slog.Error("failed to set readable status to ready", "bookmark_id", bookmarkID, "err", err)
 		}
 		slog.Info("readable created", "bookmark_id", bookmarkID)
@@ -322,8 +308,7 @@ func (h *Handler) generateReadable(bookmarkID int64, bookmarkURL string) {
 
 func (h *Handler) setReadableStatus(id int64, status string, err error) {
 	slog.Error("readable generation failed", "bookmark_id", id, "err", err)
-	if _, dbErr := h.store.WriteDB.ExecContext(context.Background(),
-		"UPDATE bookmark SET readable_status = ? WHERE id = ?", status, id); dbErr != nil {
+	if dbErr := h.store.UpdateReadableStatus(context.Background(), id, status); dbErr != nil {
 		slog.Error("failed to set readable status", "bookmark_id", id, "status", status, "err", dbErr)
 	}
 }

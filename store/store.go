@@ -1,17 +1,29 @@
 package store
 
 import (
+	"database/sql"
+	_ "embed"
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/ogzhanolguncu/ronin/store/dbgen"
 	"modernc.org/sqlite"
+	_ "modernc.org/sqlite"
 )
 
+//go:embed schema.sql
+var schemaSQL string
+
+//go:embed schema_fts.sql
+var schemaFTSSQL string
+
 type Store struct {
-	ReadDB  *sqlx.DB
-	WriteDB *sqlx.DB
+	readDB  *sql.DB
+	writeDB *sql.DB
+	ReadQ   *dbgen.Queries
+	WriteQ  *dbgen.Queries
 }
 
 func NewStore(path string) (*Store, error) {
@@ -25,10 +37,13 @@ func NewStore(path string) (*Store, error) {
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 
-	// For in-memory DBs, reuse the same connection since each :memory:
-	// connection creates a separate database.
 	if path == ":memory:" {
-		return &Store{ReadDB: writeDB, WriteDB: writeDB}, nil
+		return &Store{
+			readDB:  writeDB,
+			writeDB: writeDB,
+			ReadQ:   dbgen.New(writeDB),
+			WriteQ:  dbgen.New(writeDB),
+		}, nil
 	}
 
 	readDB, err := openDB(path, 4)
@@ -37,18 +52,23 @@ func NewStore(path string) (*Store, error) {
 		return nil, fmt.Errorf("open read db: %w", err)
 	}
 
-	return &Store{ReadDB: readDB, WriteDB: writeDB}, nil
+	return &Store{
+		readDB:  readDB,
+		writeDB: writeDB,
+		ReadQ:   dbgen.New(readDB),
+		WriteQ:  dbgen.New(writeDB),
+	}, nil
 }
 
 func (s *Store) Close() error {
 	var readErr error
-	if s.ReadDB != s.WriteDB {
-		readErr = s.ReadDB.Close()
+	if s.readDB != s.writeDB {
+		readErr = s.readDB.Close()
 	}
-	return errors.Join(readErr, s.WriteDB.Close())
+	return errors.Join(readErr, s.writeDB.Close())
 }
 
-func openDB(path string, maxConns int) (*sqlx.DB, error) {
+func openDB(path string, maxConns int) (*sql.DB, error) {
 	params := url.Values{
 		"_foreign_keys": {"on"},
 		"_journal_mode": {"WAL"},
@@ -61,7 +81,7 @@ func openDB(path string, maxConns int) (*sqlx.DB, error) {
 
 	dsn := path + "?" + params.Encode()
 
-	db, err := sqlx.Open("sqlite", dsn)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
@@ -77,169 +97,60 @@ func openDB(path string, maxConns int) (*sqlx.DB, error) {
 	return db, nil
 }
 
-func migrate(db *sqlx.DB) error {
-	stmts := []string{
-		`CREATE TABLE IF NOT EXISTS collection (
-			id         INTEGER PRIMARY KEY AUTOINCREMENT,
-			name       TEXT    NOT NULL CHECK(length(name) >= 1 AND length(name) <= 50),
-			slug       TEXT    NOT NULL UNIQUE CHECK(length(slug) >= 1 AND length(slug) <= 64),
-			color_id   INTEGER NOT NULL DEFAULT 1 CHECK(color_id >= 1 AND color_id <= 10),
-			created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at INTEGER NOT NULL DEFAULT (unixepoch())
-		)`,
-		`CREATE TABLE IF NOT EXISTS bookmark (
-			id            INTEGER  PRIMARY KEY AUTOINCREMENT,
-			url           TEXT NOT NULL UNIQUE CHECK(length(url) >= 1   AND length(url) <= 2048),
-			title         TEXT NOT NULL        CHECK(length(title) >= 1 AND length(title) <= 512),
-			description   TEXT NOT NULL DEFAULT '' CHECK(length(description) <= 1024),
-			notes         TEXT NOT NULL DEFAULT '' CHECK(length(notes) <= 8192),
-			archived      INTEGER  NOT NULL DEFAULT 0,
-			read          INTEGER  NOT NULL DEFAULT 0,
-			favorite      INTEGER  NOT NULL DEFAULT 0,
-			collection_id   INTEGER REFERENCES collection(id) ON DELETE SET NULL,
-			tags            TEXT     NOT NULL DEFAULT '',
-			snapshot_status TEXT     NOT NULL DEFAULT '',
-			readable_status TEXT     NOT NULL DEFAULT '',
-			created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at      INTEGER NOT NULL DEFAULT (unixepoch())
-		)`,
-		`CREATE TABLE IF NOT EXISTS tag (
-			id         INTEGER  PRIMARY KEY AUTOINCREMENT,
-			name       TEXT    NOT NULL UNIQUE CHECK(length(name) >= 1 AND length(name) <= 64),
-			count      INTEGER NOT NULL DEFAULT 0,
-			created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at INTEGER NOT NULL DEFAULT (unixepoch())
-		)`,
-		`CREATE TABLE IF NOT EXISTS bookmark_tag (
-			bookmark_id INTEGER NOT NULL REFERENCES bookmark(id) ON DELETE CASCADE,
-			tag_id      INTEGER NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
-			PRIMARY KEY (bookmark_id, tag_id)
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_bookmark_archived ON bookmark(archived)`,
-		`CREATE INDEX IF NOT EXISTS idx_bookmark_read ON bookmark(read)`,
-		`CREATE INDEX IF NOT EXISTS idx_bookmark_favorite ON bookmark(favorite)`,
-		`CREATE INDEX IF NOT EXISTS idx_bookmark_archived_read_id ON bookmark(archived, read, id)`,
-		`CREATE INDEX IF NOT EXISTS idx_bookmark_tag_tag_id ON bookmark_tag(tag_id)`,
-		`CREATE TRIGGER IF NOT EXISTS bookmark_updated_at
-		AFTER UPDATE ON bookmark
-		BEGIN
-			UPDATE bookmark SET updated_at = unixepoch() WHERE id = NEW.id;
-		END`,
-		`CREATE TRIGGER IF NOT EXISTS tag_updated_at
-		AFTER UPDATE ON tag
-		BEGIN
-			UPDATE tag SET updated_at = unixepoch() WHERE id = NEW.id;
-		END`,
-		`CREATE TRIGGER IF NOT EXISTS collection_updated_at
-		AFTER UPDATE ON collection
-		BEGIN
-			UPDATE collection SET updated_at = unixepoch() WHERE id = NEW.id;
-		END`,
-		`CREATE INDEX IF NOT EXISTS idx_bookmark_collection_id ON bookmark(collection_id)`,
-
-		`CREATE TRIGGER IF NOT EXISTS inc_tag_count AFTER INSERT ON bookmark_tag
-		BEGIN
-			UPDATE tag SET count = count + 1 WHERE id = NEW.tag_id;
-		END`,
-
-		`CREATE TRIGGER IF NOT EXISTS dec_tag_count AFTER DELETE ON bookmark_tag
-		BEGIN
-			UPDATE tag SET count = count - 1 WHERE id = OLD.tag_id;
-		END`,
-
-		// FTS5 table for full-text search
-		`CREATE VIRTUAL TABLE IF NOT EXISTS bookmark_fts USING fts5(
-			title, description, notes, url, tags
-		)`,
-
-		// FTS triggers on bookmark
-		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_insert
-		AFTER INSERT ON bookmark
-		BEGIN
-			INSERT INTO bookmark_fts(rowid, title, description, notes, url, tags)
-			VALUES (NEW.id, NEW.title, NEW.description, NEW.notes, NEW.url, NEW.tags);
-		END`,
-
-		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_update
-		AFTER UPDATE ON bookmark
-		BEGIN
-			DELETE FROM bookmark_fts WHERE rowid = OLD.id;
-			INSERT INTO bookmark_fts(rowid, title, description, notes, url, tags)
-			VALUES (NEW.id, NEW.title, NEW.description, NEW.notes, NEW.url, NEW.tags);
-		END`,
-
-		`CREATE TRIGGER IF NOT EXISTS bookmark_fts_delete
-		AFTER DELETE ON bookmark
-		BEGIN
-			DELETE FROM bookmark_fts WHERE rowid = OLD.id;
-		END`,
-
-		// Sync bookmark.tags from bookmark_tag join
-		`CREATE TRIGGER IF NOT EXISTS sync_bookmark_tags_insert
-		AFTER INSERT ON bookmark_tag
-		BEGIN
-			UPDATE bookmark SET tags = COALESCE(
-				(SELECT GROUP_CONCAT(t.name, ' ')
-				 FROM bookmark_tag bt
-				 JOIN tag t ON t.id = bt.tag_id
-				 WHERE bt.bookmark_id = NEW.bookmark_id),
-				''
-			) WHERE id = NEW.bookmark_id;
-		END`,
-
-		`CREATE TRIGGER IF NOT EXISTS sync_bookmark_tags_delete
-		AFTER DELETE ON bookmark_tag
-		BEGIN
-			UPDATE bookmark SET tags = COALESCE(
-				(SELECT GROUP_CONCAT(t.name, ' ')
-				 FROM bookmark_tag bt
-				 JOIN tag t ON t.id = bt.tag_id
-				 WHERE bt.bookmark_id = OLD.bookmark_id),
-				''
-			) WHERE id = OLD.bookmark_id;
-		END`,
-
-		`CREATE TABLE IF NOT EXISTS session (
-			token      TEXT    PRIMARY KEY,
-			expires_at INTEGER NOT NULL
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_session_expires_at ON session(expires_at)`,
-
-		`CREATE TABLE IF NOT EXISTS favicon (
-			domain       TEXT PRIMARY KEY,
-			data         BLOB NOT NULL,
-			content_type TEXT NOT NULL DEFAULT 'image/x-icon',
-			fetched_at   INTEGER NOT NULL DEFAULT (unixepoch())
-		)`,
-
-		`CREATE TABLE IF NOT EXISTS highlight (
-			id           INTEGER PRIMARY KEY AUTOINCREMENT,
-			bookmark_id  INTEGER NOT NULL REFERENCES bookmark(id) ON DELETE CASCADE,
-			text         TEXT    NOT NULL CHECK(length(text) >= 1 AND length(text) <= 4096),
-			note         TEXT    NOT NULL DEFAULT '' CHECK(length(note) <= 4096),
-			color        TEXT    NOT NULL DEFAULT 'yellow' CHECK(color IN ('yellow','green','blue','pink')),
-			start_path   TEXT    NOT NULL,
-			start_offset INTEGER NOT NULL,
-			end_path     TEXT    NOT NULL,
-			end_offset   INTEGER NOT NULL,
-			created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
-			updated_at   INTEGER NOT NULL DEFAULT (unixepoch())
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_highlight_bookmark_id ON highlight(bookmark_id)`,
-		`CREATE TRIGGER IF NOT EXISTS highlight_updated_at
-		AFTER UPDATE ON highlight
-		BEGIN
-			UPDATE highlight SET updated_at = unixepoch() WHERE id = NEW.id;
-		END`,
-	}
-
-	for _, stmt := range stmts {
+func migrate(db *sql.DB) error {
+	for _, stmt := range splitStatements(schemaSQL) {
 		if _, err := db.Exec(stmt); err != nil {
 			return fmt.Errorf("migrate: %w\nstatement: %s", err, stmt)
 		}
 	}
-
+	for _, stmt := range splitStatements(schemaFTSSQL) {
+		if _, err := db.Exec(stmt); err != nil {
+			return fmt.Errorf("migrate fts: %w\nstatement: %s", err, stmt)
+		}
+	}
 	return nil
+}
+
+// splitStatements splits SQL text into individual statements,
+// respecting BEGIN...END blocks used in triggers.
+func splitStatements(sql string) []string {
+	var stmts []string
+	var current strings.Builder
+	inBlock := false
+
+	for _, line := range strings.Split(sql, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		upper := strings.ToUpper(trimmed)
+		if upper == "BEGIN" {
+			inBlock = true
+		}
+
+		current.WriteString(line)
+		current.WriteString("\n")
+
+		if strings.HasSuffix(trimmed, ";") && !inBlock {
+			if s := strings.TrimSpace(current.String()); s != "" {
+				stmts = append(stmts, s)
+			}
+			current.Reset()
+		} else if inBlock && (upper == "END;" || strings.HasSuffix(upper, "\nEND;")) {
+			inBlock = false
+			if s := strings.TrimSpace(current.String()); s != "" {
+				stmts = append(stmts, s)
+			}
+			current.Reset()
+		}
+	}
+
+	if s := strings.TrimSpace(current.String()); s != "" {
+		stmts = append(stmts, s)
+	}
+
+	return stmts
 }
 
 const (

@@ -7,13 +7,6 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
-const BookmarkBaseQuery = `
-	SELECT bm.id, bm.url, bm.title, bm.description, bm.notes,
-	       bm.archived, bm.read, bm.favorite, bm.collection_id,
-	       bm.created_at, bm.updated_at, bm.tags,
-	       bm.snapshot_status, bm.readable_status
-	FROM bookmark bm`
-
 type Bookmark struct {
 	ID                 int64    `db:"id"          json:"id"`
 	URL                string   `db:"url"         json:"url"`

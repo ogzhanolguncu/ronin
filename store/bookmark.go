@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/ogzhanolguncu/ronin/store/dbgen"
 )
 
-// UpsertTagsAndLink upserts tags by name, then inserts bookmark_tag rows for the given bookmark ID.
-// Caller is responsible for deleting old bookmark_tag rows if needed.
-func UpsertTagsAndLink(ctx context.Context, db DBTX, bookmarkID int64, tags string) error {
+func UpsertTagsAndLink(ctx context.Context, db dbgen.DBTX, bookmarkID int64, tags string) error {
 	var tagIDs []int64
 	if tags != "" {
 		stmt, err := db.PrepareContext(ctx,
