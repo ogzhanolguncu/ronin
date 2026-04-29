@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.app.json && vite build",
+    "ext:check": "tsc -p tsconfig.extension.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "fmt": "prettier --write 'src/**/*.{ts,tsx,css}'",

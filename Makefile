@@ -1,4 +1,4 @@
-.PHONY: help dev run build web preview prod prod-dev seed ext ext-dev ext-build fmt
+.PHONY: help dev run build web preview prod prod-dev seed ext-dev ext-preview ext-build fmt
 
 VERSION    ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT     ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -12,8 +12,8 @@ BUILD_GO  = go build -ldflags "$(LDFLAGS)" -o ronin .
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 
-dev: ## Run backend + frontend in dev mode
-	$(MAKE) -j2 dev-backend dev-frontend
+dev: ## Run backend + frontend + extension in dev mode
+	$(MAKE) -j3 dev-backend dev-frontend ext-dev
 
 dev-backend:
 	DEV=1 go run .
@@ -42,11 +42,12 @@ prod-dev: ## Production build with dev settings
 seed: ## Seed database with 100 entries
 	DEV=1 go run . -seed 100
 
-ext: ## Run backend + frontend + extension in dev mode
-	$(MAKE) -j3 dev-backend ext-dev dev-frontend
-
 ext-dev:
-	cd web && pnpm ext:dev
+	cd web && pnpm ext:dev --port 5174
+
+ext-preview: ## Preview extension UI in browser (no backend needed)
+	sleep 1 && open http://localhost:5174/popup.html && open http://localhost:5174/settings.html &
+	cd web && pnpm ext:dev --port 5174
 
 ext-build: ## Build browser extension
 	cd web && pnpm ext:build

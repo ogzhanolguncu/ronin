@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ExternalLink, Keyboard } from "lucide-react";
 import { getServerUrl, setServerUrl } from "../lib/storage";
 import { api, ApiError } from "../lib/api";
 
@@ -104,6 +105,25 @@ export function App() {
         )}
       </section>
 
+      {/* Keyboard shortcut */}
+      <section className="mb-6">
+        <label className="text-muted-foreground mb-2 block text-xs font-medium tracking-wider uppercase">
+          Keyboard shortcut
+        </label>
+        <div className="text-foreground flex items-center gap-2 text-sm">
+          <Keyboard className="text-muted-foreground size-3.5" />
+          <kbd className="bg-surface border-border-soft rounded border px-1.5 py-0.5 font-mono text-xs">
+            {navigator.platform?.includes("Mac") ? "⌘⇧S" : "Ctrl+Shift+S"}
+          </kbd>
+          <span className="text-muted-foreground text-xs">
+            Save current page
+          </span>
+        </div>
+        <p className="text-muted-foreground mt-1.5 text-[11px]">
+          Customize in your browser's extension shortcuts settings.
+        </p>
+      </section>
+
       {/* Session */}
       <section className="mb-6">
         <label className="text-muted-foreground mb-2 block text-xs font-medium tracking-wider uppercase">
@@ -113,6 +133,21 @@ export function App() {
           Clear session &amp; logout
         </Button>
       </section>
+
+      {/* Dashboard link */}
+      {url && (
+        <section className="mb-6">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs transition-colors"
+          >
+            <ExternalLink className="size-3" />
+            Open Rōnin dashboard
+          </a>
+        </section>
+      )}
 
       <p className="text-muted-foreground mt-10 text-[11px]">
         Ronin Extension v1.0.0

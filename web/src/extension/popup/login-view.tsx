@@ -47,6 +47,8 @@ export function LoginView({
           type="password"
           variant="ghost"
           autoFocus
+          aria-label="Passphrase"
+          placeholder="passphrase"
           value={passphrase}
           disabled={isLoading}
           onChange={(e) => {

@@ -123,7 +123,12 @@ export function BookmarkForm({
       onSaved();
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 409) {
+        if (err.status === 0) {
+          setMessage({
+            text: "Cannot reach server — check your connection",
+            type: "error",
+          });
+        } else if (err.status === 409) {
           setMessage({ text: "Bookmark already exists", type: "warn" });
         } else if (err.status === 401) {
           onAuthError();

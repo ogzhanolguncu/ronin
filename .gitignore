@@ -25,6 +25,6 @@ dist-ssr
 .env
 *.db
 ronin
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 /data/assets
 .DS_Store

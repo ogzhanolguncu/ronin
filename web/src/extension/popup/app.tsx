@@ -21,6 +21,11 @@ export function App() {
   const [metadata, setMetadata] = useState<MetadataResponse | null>(null);
 
   useEffect(() => {
+    const devView = new URLSearchParams(window.location.search).get("view");
+    if (devView && import.meta.env.DEV) {
+      setView(devView as View);
+      return;
+    }
     init();
   }, []);
 
