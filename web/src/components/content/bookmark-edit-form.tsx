@@ -73,7 +73,7 @@ export function BookmarkEditForm({
   return (
     <div className="bg-surface animate-in fade-in flex max-h-[70vh] flex-col overflow-hidden duration-200">
       {/* Preserved bookmark identity */}
-      <div className="flex items-start gap-3 px-6 pt-8 pb-6">
+      <div className="flex items-start gap-3 px-8 pt-9 pb-6">
         <img
           src={`/api/v1/favicons/${getHostname(bookmark.url)}`}
           alt=""
@@ -89,8 +89,8 @@ export function BookmarkEditForm({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex flex-col gap-6 overflow-y-auto px-6 py-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-8 py-4">
           <FormInput
             label="URL"
             required
@@ -215,10 +215,11 @@ export function BookmarkEditForm({
             />
           </div>
         </div>
-        <div className="p-6 pb-7">
+        <div className="flex justify-end px-8 pt-4 pb-8">
           <Button
             type="submit"
-            className="h-9 w-full"
+            variant="outline"
+            className="h-9 px-6"
             disabled={updateBookmark.isPending}
           >
             {updateBookmark.isPending ? (

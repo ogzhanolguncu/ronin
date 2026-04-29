@@ -163,7 +163,7 @@ export function AddBookmarkDialog() {
         showCloseButton={false}
         className="bg-surface border-border-soft max-w-[calc(100vw-32px)] min-w-[550px] gap-0 overflow-hidden p-0 shadow-none sm:max-w-md"
       >
-        <div className="px-6 pt-8 pb-6">
+        <div className="px-8 pt-9 pb-6">
           <DialogHeader>
             <DialogTitle className="text-base font-medium">
               Add bookmark
@@ -175,7 +175,7 @@ export function AddBookmarkDialog() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-col gap-6 px-6 py-4">
+          <div className="flex flex-col gap-6 px-8 py-4">
             <FormInput
               label="URL"
               required
@@ -307,10 +307,11 @@ export function AddBookmarkDialog() {
               />
             </div>
           </div>
-          <div className="p-6 pb-7">
+          <div className="flex justify-end px-8 pt-4 pb-8">
             <Button
               type="submit"
-              className="h-9 w-full"
+              variant="outline"
+              className="h-9 px-6"
               disabled={createBookmark.isPending}
             >
               {createBookmark.isPending ? (

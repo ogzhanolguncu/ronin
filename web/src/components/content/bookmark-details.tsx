@@ -54,9 +54,9 @@ export function BookmarkDetails({
   }
 
   return (
-    <div className="bg-surface flex max-h-[70vh] overflow-y-auto">
-      {/* Left zone: content */}
-      <div className="min-w-0 flex-1 px-8 pt-9 pb-9">
+    <div className="bg-surface relative max-h-[70vh] overflow-y-auto">
+      {/* Content */}
+      <div className="px-8 pr-24 pt-9 pb-9">
         {/* Header: favicon + title + url */}
         <div className="flex items-start gap-3">
           <img
@@ -120,10 +120,10 @@ export function BookmarkDetails({
         </div>
       </div>
 
-      {/* Right zone: action strip */}
+      {/* Floating action strip */}
       <TooltipProvider>
-        <div className="border-border-soft/50 w-12 shrink-0 border-l px-1.5 pt-9 pb-9">
-          <div className="flex flex-col items-center justify-center gap-3">
+        <div className="absolute top-1/2 right-3 -translate-y-1/2">
+          <div className="bg-surface/60 dark:bg-surface/90 dark:border-border-soft/50 flex flex-col items-center gap-3 rounded-lg p-1.5 shadow-sm backdrop-blur-md dark:border dark:shadow-none">
             {/* Reader mode */}
             {(readerReady || readablePending || readableFailed) && (
               <Tooltip>
