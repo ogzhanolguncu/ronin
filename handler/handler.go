@@ -38,9 +38,13 @@ type Handler struct {
 }
 
 func New(s *store.Store, distFS embed.FS, passphrase []byte, devMode, secureCookie bool, dataDir string, info BuildInfo) *http.Server {
-	if err := os.MkdirAll(filepath.Join(dataDir, "assets"), 0o755); err != nil {
+	assetsDir := filepath.Join(dataDir, "assets")
+	if err := os.MkdirAll(assetsDir, 0o755); err != nil {
 		slog.Error("failed to create assets directory", "err", err)
 		os.Exit(1)
+	}
+	if err := cleanupStaleTempFiles(assetsDir); err != nil {
+		slog.Warn("asset tmp cleanup failed", "err", err)
 	}
 
 	h := &Handler{

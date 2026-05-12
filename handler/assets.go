@@ -347,6 +347,33 @@ func gzipFile(src, dst string) error {
 	return w.Close()
 }
 
+// cleanupStaleTempFiles removes orphan .tmp files left in the assets tree by
+// snapshot writes that were interrupted (process killed, crash, OOM). Safe to
+// run only on startup — no concurrent writes are in flight at that point.
+func cleanupStaleTempFiles(assetsDir string) error {
+	var removed int
+	err := filepath.WalkDir(assetsDir, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			// Tolerate per-entry errors so one bad file doesn't abort the sweep.
+			slog.Warn("asset cleanup walk error", "path", path, "err", walkErr)
+			return nil
+		}
+		if d.IsDir() || !strings.HasSuffix(path, ".tmp") {
+			return nil
+		}
+		if err := os.Remove(path); err != nil {
+			slog.Warn("failed to remove stale tmp file", "path", path, "err", err)
+			return nil
+		}
+		removed++
+		return nil
+	})
+	if removed > 0 {
+		slog.Info("cleaned up stale snapshot tmp files", "count", removed)
+	}
+	return err
+}
+
 func wrapReadableHTML(title, sourceURL, content string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html><head>

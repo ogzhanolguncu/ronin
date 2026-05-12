@@ -1,4 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
+import { navigate } from "@/lib/router";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -25,7 +26,15 @@ declare module "@tanstack/react-query" {
   }
 }
 
+function handleAuthError(error: unknown) {
+  if (!(error instanceof ApiError) || error.status !== 401) return;
+  if (window.location.pathname === "/auth") return;
+  navigate("/auth", { replace: true });
+}
+
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: handleAuthError }),
+  mutationCache: new MutationCache({ onError: handleAuthError }),
   defaultOptions: {
     queries: {
       staleTime: 60_000,
