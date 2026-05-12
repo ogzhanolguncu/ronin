@@ -1,0 +1,23 @@
+[Unit]
+Description=Ronin bookmark manager
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ronin
+Group=ronin
+WorkingDirectory=/var/lib/ronin
+ExecStart=/usr/local/bin/ronin
+EnvironmentFile=/etc/ronin/env
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ronin
+
+[Install]
+WantedBy=multi-user.target

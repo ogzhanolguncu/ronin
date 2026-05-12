@@ -1,4 +1,4 @@
-.PHONY: help dev run build web preview prod prod-dev seed ext-dev ext-preview ext-build fmt
+.PHONY: help dev run build web preview prod prod-dev seed ext-dev ext-preview ext-build fmt deploy-build deploy-bootstrap deploy deploy-logs deploy-status
 
 VERSION    ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT     ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -55,3 +55,32 @@ ext-build: ## Build browser extension
 fmt: ## Format Go and frontend code
 	gofmt -w .
 	cd web && pnpm fmt
+
+# --- Deployment (Tailscale + systemd on Ubuntu 24.04) ---
+DEPLOY_HOST ?=
+DEPLOY_ARCH ?= amd64
+SSH          = ssh $(DEPLOY_HOST)
+SCP          = scp
+REQUIRE_HOST = @test -n "$(DEPLOY_HOST)" || (echo "DEPLOY_HOST=user@host required" && exit 1)
+
+deploy-build: ## Cross-compile linux binary (DEPLOY_ARCH=amd64|arm64)
+	$(BUILD_WEB)
+	GOOS=linux GOARCH=$(DEPLOY_ARCH) CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o ronin-linux-$(DEPLOY_ARCH) .
+
+deploy-bootstrap: ## One-time server setup (installs monolith, tailscale, systemd unit)
+	$(REQUIRE_HOST)
+	$(SCP) deploy/bootstrap.sh deploy/ronin.service $(DEPLOY_HOST):/tmp/
+	$(SSH) "sudo bash /tmp/bootstrap.sh"
+
+deploy: deploy-build ## Build, upload, restart ronin (DEPLOY_HOST=user@host)
+	$(REQUIRE_HOST)
+	$(SCP) ronin-linux-$(DEPLOY_ARCH) $(DEPLOY_HOST):/tmp/ronin.new
+	$(SSH) "sudo install -o root -g root -m 0755 /tmp/ronin.new /usr/local/bin/ronin && sudo systemctl restart ronin && rm /tmp/ronin.new"
+
+deploy-logs: ## Tail ronin logs on remote
+	$(REQUIRE_HOST)
+	$(SSH) "sudo journalctl -u ronin -f -n 100"
+
+deploy-status: ## Show ronin + tailscale status on remote
+	$(REQUIRE_HOST)
+	$(SSH) "sudo systemctl status ronin --no-pager; echo; tailscale status; echo; sudo tailscale serve status"
