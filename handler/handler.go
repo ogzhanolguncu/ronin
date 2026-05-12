@@ -126,7 +126,6 @@ func newRouter(h *Handler) http.Handler {
 
 	return applyMiddleware(mux,
 		gzipMiddleware,
-		corsMiddleware,
 		h.authMiddleware,
 		recoveryMiddleware,
 		loggingMiddleware,

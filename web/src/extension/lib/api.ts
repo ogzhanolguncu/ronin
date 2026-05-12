@@ -46,7 +46,9 @@ async function request<T>(
     let errBody: { error?: string; code?: string } | undefined;
     try {
       errBody = await response.json();
-    } catch {}
+    } catch {
+      // Non-JSON error body — fall through with status-based message.
+    }
     throw new ApiError(
       response.status,
       errBody?.error ?? `HTTP ${response.status}`,

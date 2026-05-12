@@ -26,5 +26,11 @@ dist-ssr
 *.db
 ronin
 *.tsbuildinfo
-/data/assets
-.DS_Store
+
+# Runtime asset trees (snapshots, readable HTML). Whatever the server writes
+# — never source. Covers DATA_DIR=./data (default) and any stray leak.
+data/assets/
+handler/assets/
+*.html.gz
+*.html.gz.tmp
+

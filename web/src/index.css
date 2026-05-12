@@ -142,7 +142,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
-  padding: 0px 24px;
+  padding: 24px;
 }
 
 .dark body {
@@ -168,7 +168,7 @@ body {
 /* App shell */
 .app {
   width: 100%;
-  height: min(1200px, 100dvh);
+  height: min(1200px, calc(100dvh - 48px));
   border-radius: 12px;
   overflow: hidden;
   display: grid;

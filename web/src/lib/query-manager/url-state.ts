@@ -18,9 +18,13 @@ export const URL_STATE_EVENT = "url-state";
 
 // Strips the ZodMiniDefault wrapper to get the underlying type for coercion.
 // WARNING: `_zod.def.innerType` is a Zod internal API — may break on Zod upgrades.
+type ZodDefaultInternal = {
+  _zod: { def: { innerType: z.ZodMiniType } };
+};
+
 function unwrapDefault(schema: z.ZodMiniType): z.ZodMiniType {
   if (schema instanceof z.ZodMiniDefault) {
-    return (schema as any)._zod.def.innerType;
+    return (schema as unknown as ZodDefaultInternal)._zod.def.innerType;
   }
   return schema;
 }
@@ -95,7 +99,8 @@ export function createUrlState<S extends z.ZodMiniObject>(schema: S) {
 
   const defaults = schema.parse({}) as Record<string, unknown>;
   // WARNING: `.shape` is a Zod internal API — may break on Zod upgrades.
-  const shape = (schema as any).shape as Record<string, z.ZodMiniType>;
+  const shape = (schema as unknown as { shape: Record<string, z.ZodMiniType> })
+    .shape;
 
   // "\0" is a sentinel that can never equal `window.location.search`,
   // ensuring the first call to getSnapshot() always parses the URL.

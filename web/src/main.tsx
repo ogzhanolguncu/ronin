@@ -1,3 +1,6 @@
+/* eslint-disable react-refresh/only-export-components --
+   Entry point: this module bootstraps the app and is never hot-reloaded itself,
+   so the fast-refresh rule's component-only constraint doesn't apply. */
 import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";

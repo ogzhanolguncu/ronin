@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Input, inputVariants, type InputProps } from "@/components/ui/input";
+import { Input, type InputProps } from "@/components/ui/input";
+import { inputVariants } from "@/components/ui/input-variants";
 import {
   NativeSelect,
   NativeSelectOption,

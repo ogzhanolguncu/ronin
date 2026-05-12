@@ -1,4 +1,11 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import {
@@ -476,9 +483,11 @@ function FloatingToolbar({
   onSelect: (color: HighlightColor) => void;
 }) {
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
 
-  useEffect(() => {
+  // Measure the toolbar after mount and position it via direct style writes
+  // (no React state, no extra render). Must run pre-paint so the toolbar
+  // doesn't flash at (0,0) on the first frame.
+  useLayoutEffect(() => {
     const toolbar = toolbarRef.current;
     if (!toolbar) return;
 
@@ -493,15 +502,20 @@ function FloatingToolbar({
       left = window.innerWidth - toolbarRect.width - 8;
     }
 
-    setPosition({ top, left });
+    toolbar.style.top = `${top}px`;
+    toolbar.style.left = `${left}px`;
   }, [rect]);
 
+  // The inline {top:0,left:0} sets the initial paint position; the layout
+  // effect overwrites these via direct style writes. Keep this object literal
+  // stable — if it becomes conditional or gains other properties, React's
+  // style diff will clobber the imperative positions on every render.
   return (
     <div
       id="highlight-toolbar"
       ref={toolbarRef}
       className="bg-surface/90 border-border-soft reader-toolbar-enter fixed z-[100] flex items-center gap-1.5 rounded-sm border px-2 py-1.5 shadow-sm backdrop-blur-sm"
-      style={{ top: position.top, left: position.left }}
+      style={{ top: 0, left: 0 }}
     >
       {HIGHLIGHT_COLORS.map((c) => (
         <button

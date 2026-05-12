@@ -18,16 +18,7 @@ export function App() {
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [statusText, setStatusText] = useState("");
 
-  useEffect(() => {
-    getServerUrl().then((u) => {
-      if (u) {
-        setUrl(u);
-        testConnection();
-      }
-    });
-  }, []);
-
-  async function testConnection() {
+  const testConnection = async () => {
     setStatus("testing");
     setStatusText("Testing connection...");
     try {
@@ -45,7 +36,16 @@ export function App() {
         );
       }
     }
-  }
+  };
+
+  useEffect(() => {
+    getServerUrl().then((u) => {
+      if (u) {
+        setUrl(u);
+        testConnection();
+      }
+    });
+  }, []);
 
   async function handleSave() {
     if (!url.trim()) return;
@@ -56,7 +56,9 @@ export function App() {
   async function handleLogout() {
     try {
       await api.logout();
-    } catch {}
+    } catch {
+      // Logout failures are non-fatal — we clear local state regardless.
+    }
     setStatus("idle");
     setStatusText("Session cleared");
   }

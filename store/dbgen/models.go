@@ -25,6 +25,14 @@ type Bookmark struct {
 	UpdatedAt      int64
 }
 
+type BookmarkFt struct {
+	Title       string
+	Description string
+	Notes       string
+	Url         string
+	Tags        string
+}
+
 type BookmarkTag struct {
 	BookmarkID int64
 	TagID      int64

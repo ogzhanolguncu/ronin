@@ -2,10 +2,13 @@ package store
 
 import (
 	"database/sql"
-	_ "embed"
+	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/url"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ogzhanolguncu/ronin/store/dbgen"
@@ -13,11 +16,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-//go:embed schema.sql
-var schemaSQL string
-
-//go:embed schema_fts.sql
-var schemaFTSSQL string
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 type Store struct {
 	readDB  *sql.DB
@@ -98,17 +98,87 @@ func openDB(path string, maxConns int) (*sql.DB, error) {
 }
 
 func migrate(db *sql.DB) error {
-	for _, stmt := range splitStatements(schemaSQL) {
-		if _, err := db.Exec(stmt); err != nil {
-			return fmt.Errorf("migrate: %w\nstatement: %s", err, stmt)
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS schema_version (
+		version    INTEGER PRIMARY KEY,
+		applied_at INTEGER NOT NULL DEFAULT (unixepoch())
+	)`); err != nil {
+		return fmt.Errorf("create schema_version: %w", err)
+	}
+
+	var currentVersion int
+	if err := db.QueryRow(`SELECT COALESCE(MAX(version), 0) FROM schema_version`).Scan(&currentVersion); err != nil {
+		return fmt.Errorf("read current version: %w", err)
+	}
+
+	pending, err := collectPendingMigrations(currentVersion)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range pending {
+		content, err := migrationsFS.ReadFile(m.path)
+		if err != nil {
+			return fmt.Errorf("read migration %s: %w", m.path, err)
+		}
+
+		tx, err := db.Begin()
+		if err != nil {
+			return fmt.Errorf("begin migration %d: %w", m.version, err)
+		}
+
+		for _, stmt := range splitStatements(string(content)) {
+			if _, err := tx.Exec(stmt); err != nil {
+				_ = tx.Rollback()
+				return fmt.Errorf("migration %d: %w\nstatement: %s", m.version, err, stmt)
+			}
+		}
+
+		if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (?)`, m.version); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("record migration %d: %w", m.version, err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit migration %d: %w", m.version, err)
 		}
 	}
-	for _, stmt := range splitStatements(schemaFTSSQL) {
-		if _, err := db.Exec(stmt); err != nil {
-			return fmt.Errorf("migrate fts: %w\nstatement: %s", err, stmt)
-		}
-	}
+
 	return nil
+}
+
+type migration struct {
+	version int
+	path    string
+}
+
+func collectPendingMigrations(currentVersion int) ([]migration, error) {
+	entries, err := fs.ReadDir(migrationsFS, "migrations")
+	if err != nil {
+		return nil, fmt.Errorf("read migrations dir: %w", err)
+	}
+
+	var pending []migration
+	for _, e := range entries {
+		name := e.Name()
+		if !strings.HasSuffix(name, ".sql") {
+			continue
+		}
+		// Expected format: NNNN_description.sql (e.g. 0001_init.sql).
+		parts := strings.SplitN(name, "_", 2)
+		if len(parts) < 2 {
+			return nil, fmt.Errorf("invalid migration filename: %s", name)
+		}
+		v, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return nil, fmt.Errorf("invalid migration version in %s: %w", name, err)
+		}
+		if v > currentVersion {
+			pending = append(pending, migration{version: v, path: "migrations/" + name})
+		}
+	}
+
+	sort.Slice(pending, func(i, j int) bool { return pending[i].version < pending[j].version })
+	return pending, nil
 }
 
 // splitStatements splits SQL text into individual statements,

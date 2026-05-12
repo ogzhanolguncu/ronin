@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { inputVariants, type InputProps } from "@/components/ui/input";
+import { type InputProps } from "@/components/ui/input";
+import { inputVariants } from "@/components/ui/input-variants";
 
 type TagInputProps = {
   value: string[];

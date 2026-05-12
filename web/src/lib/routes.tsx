@@ -6,8 +6,6 @@ import { MainLayout } from "@/components/main-layout";
 const PassphraseGate = lazy(() => import("@/components/passphrase-gate"));
 const ReaderView = lazy(() => import("@/components/content/reader-view"));
 
-export { navigate };
-
 const routes = [
   route({
     path: "/auth",

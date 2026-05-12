@@ -16,7 +16,7 @@ import {
 } from "@/lib/queries/bookmarks";
 import type { Bookmark } from "@/lib/types";
 import { Interlude } from "@/components/interlude";
-import { navigate } from "@/lib/routes";
+import { navigate } from "@/lib/router";
 
 function useBookmarkFilters(): BookmarkFilters {
   const [s] = useUrlState();

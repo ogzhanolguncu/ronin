@@ -9,8 +9,14 @@ import { BookmarkForm } from "./bookmark-form";
 
 type View = "loading" | "setup" | "login" | "form";
 
+function getDevViewOverride(): View | null {
+  if (!import.meta.env.DEV) return null;
+  const v = new URLSearchParams(window.location.search).get("view");
+  return v ? (v as View) : null;
+}
+
 export function App() {
-  const [view, setView] = useState<View>("loading");
+  const [view, setView] = useState<View>(() => getDevViewOverride() ?? "loading");
   const [collections, setCollections] = useState<Collection[]>([]);
   const [tags, setTags] = useState<TagsResponse["tags"]>([]);
   const [tabUrl, setTabUrl] = useState("");
@@ -20,16 +26,7 @@ export function App() {
   );
   const [metadata, setMetadata] = useState<MetadataResponse | null>(null);
 
-  useEffect(() => {
-    const devView = new URLSearchParams(window.location.search).get("view");
-    if (devView && import.meta.env.DEV) {
-      setView(devView as View);
-      return;
-    }
-    init();
-  }, []);
-
-  async function init() {
+  const init = async () => {
     const serverUrl = await getServerUrl();
     if (!serverUrl) {
       setView("setup");
@@ -74,7 +71,17 @@ export function App() {
         setView("setup");
       }
     }
-  }
+  };
+
+  useEffect(() => {
+    if (getDevViewOverride()) return;
+    // init() is the on-mount data fetch: it awaits storage/API calls and then
+    // transitions the view. That is the standard useEffect use case — the
+    // set-state-in-effect lint rule's "cascading renders" concern doesn't
+    // apply because the writes are guarded by awaits and unique view states.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    init();
+  }, []);
 
   async function handleConnected() {
     await init();

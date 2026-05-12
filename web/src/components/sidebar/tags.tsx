@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { formatCount } from "@/lib/format";
-import { tagsQueryOptions } from "@/lib/queries/tags";
+import { tagsQueryOptions, type Tag } from "@/lib/queries/tags";
 import { urlState } from "@/lib/query-manager/url-state-instance";
 import { useUrlState } from "@/lib/query-manager/use-url-state";
 import { useScrollMist } from "@/hooks/use-scroll-mist";
@@ -36,6 +36,20 @@ export const Tags = () => {
     );
   }
 
+  return (
+    <TagsList tags={tags} activeTags={activeTags} onTagClick={handleTagClick} />
+  );
+};
+
+function TagsList({
+  tags,
+  activeTags,
+  onTagClick,
+}: {
+  tags: Tag[];
+  activeTags: string[];
+  onTagClick: (name: string) => void;
+}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollMist(scrollRef);
 
@@ -58,7 +72,7 @@ export const Tags = () => {
                     ? "text-primary"
                     : "text-muted2 hover:bg-surface2 hover:text-text2",
                 )}
-                onClick={() => handleTagClick(tag.name)}
+                onClick={() => onTagClick(tag.name)}
               >
                 #{tag.name}
                 <span
@@ -76,4 +90,4 @@ export const Tags = () => {
       </div>
     </div>
   );
-};
+}
