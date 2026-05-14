@@ -6,9 +6,22 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-echo "==> Installing monolith + curl"
+echo "==> Installing curl + ca-certificates"
 apt-get update -y
-apt-get install -y monolith curl ca-certificates
+apt-get install -y curl ca-certificates
+
+echo "==> Installing monolith"
+if ! command -v monolith &>/dev/null; then
+  MONOLITH_VERSION=v2.10.1
+  case "$(uname -m)" in
+    x86_64)  MONOLITH_ARCH=x86_64 ;;
+    aarch64) MONOLITH_ARCH=aarch64 ;;
+    *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+  esac
+  curl -fsSL -o /usr/local/bin/monolith \
+    "https://github.com/Y2Z/monolith/releases/download/${MONOLITH_VERSION}/monolith-gnu-linux-${MONOLITH_ARCH}"
+  chmod 0755 /usr/local/bin/monolith
+fi
 
 echo "==> Installing Tailscale"
 if ! command -v tailscale &>/dev/null; then
